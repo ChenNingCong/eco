@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R-oko</title>
+<style>
+:root {
+  --bg:        #1a2a1a;
+  --bg-dark:   #111a11;
+  --rim:       #0e160e;
+  --gold:      #c9a84c;
+  --gold-dim:  #7a6230;
+  --text:      #e8dcc8;
+  --text-dim:  #8a7a60;
+  --highlight: #f0c040;
+
+  --glass:     #4fc3f7;  --glass-dark: #0277bd;  --glass-bg: #0d3a5c;
+  --paper:     #aed581;  --paper-dark: #558b2f;  --paper-bg: #1e3a12;
+  --plastic:   #ffd54f;  --plastic-dark: #f57f17; --plastic-bg: #4a3508;
+  --tin:       #ef9a9a;  --tin-dark: #c62828;     --tin-bg: #3c1010;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--rim); font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  color: var(--text); min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* Header */
+header {
+  width: 100%; padding: 10px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--gold-dim); background: var(--bg-dark);
+}
+.logo { font-size: 1.3rem; letter-spacing: 0.08em; color: var(--gold); font-weight: bold; font-family: 'Courier New', monospace; }
+.logo span { color: #aed581; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.model-badge { font-size: 0.65rem; color: var(--text-dim); }
+.model-badge.live { color: #5ec45e; }
+button.primary {
+  font-family: inherit; font-size: 0.75rem; letter-spacing: 0.05em;
+  text-transform: uppercase; font-weight: 600;
+  border: 1px solid var(--gold); background: transparent; color: var(--gold);
+  padding: 6px 16px; cursor: pointer; border-radius: 3px;
+  transition: background 0.15s, color 0.15s;
+}
+button.primary:hover { background: var(--gold); color: #111; }
+button.primary.danger { border-color: #c62828; color: #ef9a9a; }
+button.primary.danger:hover { background: #c62828; color: #fff; }
+
+/* Config */
+.config-bar {
+  width: 100%; max-width: 1100px;
+  display: flex; gap: 10px; padding: 8px 16px; align-items: center; flex-wrap: wrap;
+}
+.config-bar label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; }
+.config-bar select {
+  font-family: inherit; font-size: 0.75rem;
+  background: var(--bg-dark); color: var(--text);
+  border: 1px solid var(--gold-dim); padding: 4px 8px; border-radius: 2px;
+}
+
+/* Layout */
+.game-area { width: 100%; max-width: 1100px; padding: 10px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+/* Status bar */
+.status-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-dark); border: 1px solid var(--gold-dim);
+  padding: 6px 14px; border-radius: 3px; font-size: 0.78rem;
+}
+.phase-badge {
+  padding: 2px 10px; border-radius: 2px; font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.phase-play    { background: #1b5e20; color: #a5d6a7; border: 1px solid #2e7d32; }
+.phase-discard { background: #b71c1c; color: #ffcdd2; border: 1px solid #c62828; }
+.score-display { display: flex; gap: 14px; }
+.score-item { text-align: center; }
+.score-label { font-size: 0.58rem; color: var(--text-dim); }
+.score-val { font-size: 0.95rem; color: var(--gold); font-weight: bold; }
+
+/* ── SVG Card ───────────────────────────────────────────── */
+.card-svg { flex-shrink: 0; }
+.card-svg.clickable { cursor: pointer; }
+.card-svg.clickable:hover rect.card-bg { filter: brightness(1.3); }
+.card-svg.selected rect.card-bg { stroke: var(--highlight); stroke-width: 3; }
+
+/* ── Factories ──────────────────────────────────────────── */
+.factories-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.factory-box {
+  background: var(--bg); border: 2px solid var(--gold-dim);
+  border-radius: 5px; padding: 8px; display: flex; flex-direction: column; gap: 6px;
+  min-height: 280px;
+}
+.factory-box.glass   { border-color: var(--glass-dark); }
+.factory-box.paper   { border-color: var(--paper-dark); }
+.factory-box.plastic { border-color: var(--plastic-dark); }
+.factory-box.tin     { border-color: var(--tin-dark); }
+
+.factory-header {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: bold; text-align: center; padding-bottom: 4px;
+  border-bottom: 1px solid currentColor;
+}
+.factory-box.glass   .factory-header { color: var(--glass); }
+.factory-box.paper   .factory-header { color: var(--paper); }
+.factory-box.plastic .factory-header { color: var(--plastic); }
+.factory-box.tin     .factory-header { color: var(--tin); }
+
+.factory-section-label {
+  font-size: 0.58rem; color: var(--text-dim); text-transform: uppercase;
+  letter-spacing: 0.04em; margin-bottom: 2px;
+}
+
+/* Stack display */
+.stack-row {
+  display: flex; gap: 3px; align-items: center; justify-content: center; flex-wrap: wrap;
+  min-height: 30px;
+}
+.stack-token {
+  width: 26px; height: 26px; border-radius: 4px; display: flex; align-items: center;
+  justify-content: center; font-size: 0.7rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.15);
+}
+.stack-token.consumed { opacity: 0.2; text-decoration: line-through; }
+.stack-token.current { outline: 2px solid var(--highlight); outline-offset: 1px; }
+.stack-token.positive { background: #1b5e20; color: #a5d6a7; }
+.stack-token.zero     { background: #333; color: #888; }
+.stack-token.negative { background: #5c1010; color: #ef9a9a; }
+
+/* Recycling / waste areas */
+.factory-area {
+  height: 56px; background: rgba(0,0,0,0.2); border-radius: 3px;
+  padding: 4px; display: flex; flex-wrap: wrap; gap: 3px; align-items: center;
+  justify-content: center; overflow: hidden;
+}
+.factory-area.empty-hint { justify-content: center; }
+.factory-area .empty-text { font-size: 0.6rem; color: #555; font-style: italic; }
+.recycle-value {
+  font-size: 0.75rem; font-weight: bold; color: var(--highlight);
+  background: rgba(240,192,64,0.15); border: 1px solid var(--gold-dim);
+  border-radius: 3px; padding: 1px 6px; margin-left: 4px;
+}
+
+/* ── Players ────────────────────────────────────────────── */
+.players-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px; }
+.player-panel {
+  background: var(--bg); border: 1px solid var(--gold-dim);
+  border-radius: 4px; padding: 10px;
+}
+.player-panel.active { border-color: var(--highlight); box-shadow: 0 0 10px rgba(240,192,64,0.2); }
+.player-title {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--gold); margin-bottom: 6px; font-weight: bold;
+}
+.hand-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; min-height: 72px; }
+.sub-label { font-size: 0.58rem; color: var(--text-dim); margin-bottom: 3px; text-transform: uppercase; }
+.collected-row { display: flex; flex-wrap: wrap; gap: 4px; min-height: 24px; }
+.coll-badge {
+  font-size: 0.62rem; padding: 2px 6px; border-radius: 2px;
+  display: flex; align-items: center; gap: 3px;
+}
+.coll-badge.glass   { background: rgba(79,195,247,0.15);  border: 1px solid var(--glass-dark); }
+.coll-badge.paper   { background: rgba(174,213,129,0.15); border: 1px solid var(--paper-dark); }
+.coll-badge.plastic { background: rgba(255,213,79,0.15);  border: 1px solid var(--plastic-dark); }
+.coll-badge.tin     { background: rgba(239,154,154,0.15); border: 1px solid var(--tin-dark); }
+.coll-badge.counts  { font-weight: bold; }
+.coll-badge.no-count{ opacity: 0.4; font-style: italic; }
+.penalty-line { font-size: 0.62rem; color: #ef9a9a; margin-top: 4px; min-height: 18px; }
+
+/* ── Action panel ───────────────────────────────────────── */
+.action-panel {
+  background: var(--bg); border: 1px solid var(--gold-dim); border-radius: 4px; padding: 10px;
+}
+.action-panel h3 { font-size: 0.7rem; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+.action-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+.action-btn {
+  font-family: inherit; font-size: 0.68rem; font-weight: 600;
+  padding: 5px 10px; border-radius: 3px; cursor: pointer;
+  border: 2px solid transparent; transition: filter 0.1s, transform 0.1s;
+}
+.action-btn:hover { filter: brightness(1.25); transform: translateY(-1px); }
+.action-btn.glass   { background: var(--glass-bg);   color: var(--glass);   border-color: var(--glass-dark); }
+.action-btn.paper   { background: var(--paper-bg);   color: var(--paper);   border-color: var(--paper-dark); }
+.action-btn.plastic { background: var(--plastic-bg); color: var(--plastic); border-color: var(--plastic-dark); }
+.action-btn.tin     { background: var(--tin-bg);     color: var(--tin);     border-color: var(--tin-dark); }
+.action-btn.selected { outline: 3px solid var(--highlight); outline-offset: 1px; filter: brightness(1.3); }
+
+.confirm-bar {
+  display: none; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--gold-dim);
+  align-items: center; gap: 12px;
+}
+.confirm-bar.show { display: flex; }
+.confirm-label { font-size: 0.78rem; color: var(--highlight); flex: 1; }
+
+/* Log */
+.log-area {
+  background: var(--bg-dark); border: 1px solid var(--gold-dim);
+  border-radius: 3px; padding: 6px 12px; font-size: 0.68rem; color: var(--text-dim);
+  max-height: 90px; overflow-y: auto;
+}
+.log-area p { line-height: 1.5; }
+.log-area p.hi { color: var(--highlight); }
+.log-area p.ok { color: #aed581; }
+.log-area p.warn { color: #ef9a9a; }
+
+/* Action announcement banner */
+.action-announce {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  background: linear-gradient(135deg, rgba(26,42,26,0.95), rgba(17,26,17,0.95));
+  border-bottom: 2px solid var(--gold);
+  color: var(--highlight); text-align: center;
+  font-size: 1rem; font-weight: bold; padding: 14px 20px;
+  transform: translateY(-100%); transition: transform 0.25s ease;
+  pointer-events: none;
+}
+.action-announce.show { transform: translateY(0); }
+.action-announce .announce-sub {
+  font-size: 0.72rem; color: var(--text-dim); font-weight: normal; margin-top: 2px;
+}
+
+/* Flying card overlay */
+.fly-card {
+  position: fixed; z-index: 60; pointer-events: none;
+  transition: left 0.45s cubic-bezier(0.4,0,0.2,1),
+              top 0.45s cubic-bezier(0.4,0,0.2,1),
+              transform 0.45s ease, opacity 0.45s ease;
+}
+
+/* Pulse highlight on changed areas */
+@keyframes area-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(240,192,64,0.7); }
+  70%  { box-shadow: 0 0 20px 6px rgba(240,192,64,0.25); }
+  100% { box-shadow: 0 0 0 0 rgba(240,192,64,0); }
+}
+.pulse-highlight { animation: area-pulse 0.8s ease-out; }
+
+/* Overlay */
+#overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75); z-index: 100;
+  align-items: center; justify-content: center;
+}
+#overlay.show { display: flex; }
+.overlay-box {
+  background: var(--bg-dark); border: 2px solid var(--gold);
+  border-radius: 6px; padding: 28px 36px; text-align: center;
+  max-width: 400px; width: 90%;
+}
+.overlay-box h2 { color: var(--gold); font-size: 1.3rem; margin-bottom: 14px; }
+.final-scores { margin: 10px 0 18px; }
+.final-scores p { font-size: 0.9rem; margin: 4px 0; }
+.winner-line { color: #aed581; font-size: 1rem; font-weight: bold; margin-bottom: 14px; }
+
+/* Rules hint */
+.rules-hint {
+  font-size: 0.62rem; color: var(--text-dim); line-height: 1.6;
+  background: var(--bg-dark); border: 1px solid var(--gold-dim);
+  border-radius: 3px; padding: 10px 14px;
+}
+.rules-hint strong { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">R-<span>oko</span></div>
+  <button class="primary" onclick="newGame()">New Game</button>
+  <span class="model-badge" id="modelBadge">no model</span>
+</header>
+
+<div class="config-bar">
+  <label>Players:</label>
+  <select id="numPlayersSel">
+    <option value="2">2</option>
+    <option value="3" selected>3</option>
+    <option value="4">4</option>
+    <option value="5">5</option>
+  </select>
+  <label>Opponent:</label>
+  <select id="opponentSel">
+    <option value="random">Random</option>
+    <option value="trained" selected>Trained AI</option>
+  </select>
+  <label>Model:</label>
+  <select id="modelSel">
+    <option value="latest">Latest</option>
+  </select>
+</div>
+
+<div class="game-area">
+  <div class="rules-hint" id="rulesHint">
+    <strong>How to play R-oko:</strong>
+    Play cards from your hand onto a factory's recycling side (matching color).
+    If the recycling value reaches 4+, you claim the top factory token and the recycling side clears.
+    Otherwise, 1 + recycling value cards are drawn to the waste side.
+    You pick up all waste cards from that factory. Hand limit = 5; excess goes to your penalty pile (-1 pt each).
+    <br><strong>Scoring:</strong> Factory tokens only score if you have 2+ of that color. No penalty = bonus.
+    <strong>Click "New Game" to start!</strong>
+  </div>
+
+  <div class="status-bar" style="display:none" id="statusBar">
+    <div>
+      <span id="turnLabel" style="font-size:0.8rem">---</span>
+      &nbsp;
+      <span class="phase-badge phase-play" id="phaseBadge">Play</span>
+    </div>
+    <div class="score-display" id="scoreDisplay"></div>
+  </div>
+
+  <div class="factories-row" id="factories"></div>
+  <div class="players-row" id="playersRow"></div>
+
+  <div class="action-panel" id="actionPanel" style="display:none">
+    <h3 id="actionTitle">Waiting...</h3>
+    <div class="action-grid" id="actionGrid"></div>
+    <div class="confirm-bar" id="confirmBar">
+      <span class="confirm-label" id="confirmLabel"></span>
+      <button class="primary" id="confirmBtn" onclick="confirmAction()">Confirm</button>
+      <button class="primary danger" onclick="cancelSelection()">Cancel</button>
+    </div>
+  </div>
+
+  <div class="log-area" id="log"><p>Start a new game to play.</p></div>
+</div>
+
+<div class="action-announce" id="announce"></div>
+
+<div id="overlay">
+  <div class="overlay-box">
+    <h2>Game Over</h2>
+    <div class="final-scores" id="finalScores"></div>
+    <div class="winner-line" id="winnerLine"></div>
+    <button class="primary" onclick="newGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+const COLORS      = ["glass","paper","plastic","tin"];
+const COLOR_LABEL = ["Glass","Paper","Plastic","Tin"];
+const TYPE_LABEL  = ["Single","Double"];
+
+// Color palette for SVG cards
+const C = {
+  glass:   { fill: "#0d3a5c", stroke: "#0277bd", text: "#4fc3f7" },
+  paper:   { fill: "#1e3a12", stroke: "#558b2f", text: "#aed581" },
+  plastic: { fill: "#4a3508", stroke: "#f57f17", text: "#ffd54f" },
+  tin:     { fill: "#3c1010", stroke: "#c62828", text: "#ef9a9a" },
+};
+
+// Simple material icons as SVG path snippets
+const ICON = {
+  glass:   `<circle cx="20" cy="14" r="6" fill="none" stroke="{c}" stroke-width="1.5"/>
+             <line x1="17" y1="20" x2="23" y2="20" stroke="{c}" stroke-width="1.5"/>`,
+  paper:   `<rect x="14" y="8" width="12" height="14" rx="1" fill="none" stroke="{c}" stroke-width="1.5"/>
+             <line x1="17" y1="12" x2="23" y2="12" stroke="{c}" stroke-width="0.8"/>
+             <line x1="17" y1="15" x2="23" y2="15" stroke="{c}" stroke-width="0.8"/>
+             <line x1="17" y1="18" x2="21" y2="18" stroke="{c}" stroke-width="0.8"/>`,
+  plastic: `<rect x="16" y="8" width="8" height="13" rx="3" fill="none" stroke="{c}" stroke-width="1.5"/>
+             <line x1="18" y1="8" x2="22" y2="8" stroke="{c}" stroke-width="2"/>`,
+  tin:     `<rect x="15" y="9" width="10" height="12" rx="2" fill="none" stroke="{c}" stroke-width="1.5"/>
+             <line x1="15" y1="12" x2="25" y2="12" stroke="{c}" stroke-width="1"/>`,
+};
+
+let sessionId = null;
+let state = null;
+let numPlayers = 2;
+
+// Selection state — cards clicked in hand
+// Each entry: { uid, color, type(0/1) }
+let selectedCards = [];
+let legalPlaySet = new Set();  // set of legal action IDs for quick lookup
+
+// ── SVG card builder ───────────────────────────────────────────────────────
+function cardSVG(color, type, opts = {}) {
+  // type: 0=single(1), 1=double(2)
+  const w = opts.w || 44, h = opts.h || 62;
+  const pal = C[color];
+  const val = type === 0 ? "1" : "2";
+  const icon = ICON[color].replace(/\{c\}/g, pal.text);
+  const cls = [opts.clickable ? "clickable" : "", opts.selected ? "selected" : ""].join(" ");
+  const onclick = opts.onclick ? `onclick="${opts.onclick}"` : "";
+  return `<svg class="card-svg ${cls}" width="${w}" height="${h}" ${onclick} style="${opts.style||""}">
+    <rect class="card-bg" x="1" y="1" width="${w-2}" height="${h-2}" rx="5"
+          fill="${pal.fill}" stroke="${pal.stroke}" stroke-width="1.5"/>
+    <g transform="translate(${(w-40)/2}, ${(h-62)/2})">${icon}</g>
+    <text x="${w/2}" y="${h-10}" text-anchor="middle" fill="${pal.text}"
+          font-size="14" font-weight="bold" font-family="inherit">${val}</text>
+  </svg>`;
+}
+
+// Build N cards for a count
+function cardGroup(color, type, count) {
+  let html = "";
+  for (let i = 0; i < count; i++) html += cardSVG(color, type);
+  return html;
+}
+
+// ── Action decode ──────────────────────────────────────────────────────────
+function decodePlay(a) {
+  const color = Math.floor(a / 25), rem = a % 25;
+  return { color: COLORS[color], label: COLOR_LABEL[color], single: Math.floor(rem/5), double: rem%5 };
+}
+function decodeDiscard(a) {
+  const idx = a - 100;
+  return { color: COLORS[Math.floor(idx/2)], label: COLOR_LABEL[Math.floor(idx/2)], type: idx%2 };
+}
+function describeAction(id) {
+  if (id < 100) {
+    const a = decodePlay(id);
+    const p = [];
+    if (a.single) p.push(a.single + " single" + (a.single>1?"s":""));
+    if (a.double) p.push(a.double + " double" + (a.double>1?"s":""));
+    return `Play ${p.join(" + ")} ${a.label} (value ${a.single + a.double*2})`;
+  }
+  const a = decodeDiscard(id);
+  return `Discard ${a.label} ${TYPE_LABEL[a.type]}`;
+}
+
+// ── API ────────────────────────────────────────────────────────────────────
+async function api(path, body) {
+  const r = await fetch(path, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  return r.json();
+}
+
+async function newGame() {
+  document.getElementById("overlay").classList.remove("show");
+  numPlayers = parseInt(document.getElementById("numPlayersSel").value);
+  const opponent = document.getElementById("opponentSel").value;
+  const modelFile = document.getElementById("modelSel").value;
+  const data = await api("/api/eco/new_game", { num_players: numPlayers, opponent, model_file: modelFile });
+  sessionId = data.session_id;
+  document.getElementById("rulesHint").style.display = "none";
+  document.getElementById("statusBar").style.display = "flex";
+  document.getElementById("actionPanel").style.display = "block";
+  document.getElementById("log").innerHTML = "<p class='ok'>New game started!</p>";
+  buildPlayerPanels(data.num_players, data.human_seat);
+  buildScoreDisplay(data.num_players, data.human_seat);
+  await replayAndRender(data);
+  checkModel();
+}
+
+let replayBusy = false;  // true while animating opponent turns
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showAnnounce(html) {
+  const el = document.getElementById("announce");
+  el.innerHTML = html;
+  el.classList.add("show");
+}
+function hideAnnounce() {
+  document.getElementById("announce").classList.remove("show");
+}
+
+async function flyCards(fromEl, toEl, cards) {
+  if (!fromEl || !toEl || !cards.length) return;
+  const fromRect = fromEl.getBoundingClientRect();
+  const toRect   = toEl.getBoundingClientRect();
+  const n = cards.length;
+
+  const flyEls = cards.map((card, i) => {
+    const div = document.createElement("div");
+    div.className = "fly-card";
+    div.innerHTML = cardSVG(card.color, card.type, { w: 44, h: 62 });
+    const offsetX = (i - (n-1)/2) * 16;
+    div.style.left = (fromRect.left + fromRect.width/2 - 22 + offsetX) + "px";
+    div.style.top  = (fromRect.top + fromRect.height/2 - 31) + "px";
+    div.style.transform = "scale(1)";
+    div.style.opacity = "1";
+    document.body.appendChild(div);
+    return div;
+  });
+
+  // Force reflow so initial position is committed
+  flyEls[0]?.offsetHeight;
+
+  // Animate to destination
+  flyEls.forEach((el, i) => {
+    const offsetX = (i - (n-1)/2) * 12;
+    el.style.left = (toRect.left + toRect.width/2 - 22 + offsetX) + "px";
+    el.style.top  = (toRect.top + toRect.height/2 - 31) + "px";
+    el.style.transform = "scale(0.75)";
+  });
+
+  await sleep(500);
+  flyEls.forEach(el => el.remove());
+}
+
+function pulseElement(el) {
+  if (!el) return;
+  el.classList.remove("pulse-highlight");
+  el.offsetHeight; // reflow
+  el.classList.add("pulse-highlight");
+  setTimeout(() => el.classList.remove("pulse-highlight"), 900);
+}
+
+// Animate a factory token flying from the stack to the collected area
+async function animateTokenClaim(colorIdx, tokenVal, player) {
+  const factoryEl = document.querySelectorAll(".factory-box")[colorIdx];
+  const stackRow = factoryEl?.querySelector(".stack-row");
+  const collEl = document.getElementById("coll" + player);
+  if (!stackRow || !collEl) return;
+
+  const fromRect = stackRow.getBoundingClientRect();
+  const toRect = collEl.getBoundingClientRect();
+
+  const cls = tokenVal > 0 ? "positive" : tokenVal < 0 ? "negative" : "zero";
+  const label = tokenVal >= 0 ? "+" + tokenVal : "" + tokenVal;
+  const div = document.createElement("div");
+  div.className = "fly-card";
+  div.innerHTML = `<div class="stack-token ${cls}" style="width:32px;height:32px;font-size:0.85rem">${label}</div>`;
+  div.style.left = (fromRect.left + fromRect.width/2 - 16) + "px";
+  div.style.top = (fromRect.top + fromRect.height/2 - 16) + "px";
+  document.body.appendChild(div);
+
+  div.offsetHeight;
+  div.style.left = (toRect.left + toRect.width/2 - 16) + "px";
+  div.style.top = (toRect.top + toRect.height/2 - 16) + "px";
+  div.style.transform = "scale(1.3)";
+
+  await sleep(500);
+  div.remove();
+  pulseElement(collEl);
+}
+
+// Animate waste cards flying from factory waste area to player's hand
+async function animateWastePickup(colorIdx, wasteCards, player) {
+  if (!wasteCards || !wasteCards.length) return;
+  const factoryEl = document.querySelectorAll(".factory-box")[colorIdx];
+  const wasteEl = factoryEl?.querySelectorAll(".factory-area")[1];
+  const handEl = document.getElementById("hand" + player);
+  const cards = [];
+  for (const w of wasteCards) {
+    for (let i = 0; i < (w.single||0); i++) cards.push({ color: w.color, type: 0 });
+    for (let i = 0; i < (w.double||0); i++) cards.push({ color: w.color, type: 1 });
+  }
+  if (cards.length > 0) {
+    await flyCards(wasteEl, handEl, cards);
+    pulseElement(handEl);
+  }
+}
+
+// Detect and animate consequences of a play action (token claim + waste pickup)
+async function animatePlayConsequences(colorIdx, preFactories, postFactories, player) {
+  const preFac = preFactories[colorIdx];
+  const postFac = postFactories[colorIdx];
+
+  // Token claimed? Stack got shorter.
+  if (postFac.stack_remaining < preFac.stack_remaining) {
+    await animateTokenClaim(colorIdx, preFac.stack_top, player);
+  }
+
+  // Waste pickup: if pre had waste cards, they flew to hand
+  if (preFac.waste && preFac.waste.length > 0) {
+    await animateWastePickup(colorIdx, preFac.waste, player);
+  }
+}
+
+async function animateOpponentAction(ev, dataMeta) {
+  const action = ev.action;
+  const player = ev.player;
+
+  // 1. Render the pre-action state so we see the cards still in hand
+  if (ev.pre_snapshot) {
+    const preSnap = { ...dataMeta, ...ev.pre_snapshot, events: [], legal_plays: [], legal_discards: [] };
+    render(preSnap);
+  }
+
+  // 2. Show announcement banner
+  showAnnounce(`Player ${player}: ${describeAction(action)}`);
+  await sleep(350);
+
+  // 3. Fly cards from hand to destination
+  const handEl = document.getElementById("hand" + player);
+  if (action < 100) {
+    const decoded = decodePlay(action);
+    const colorIdx = COLORS.indexOf(decoded.color);
+    const factoryEl = document.querySelectorAll(".factory-box")[colorIdx];
+    const recycleEl = factoryEl?.querySelectorAll(".factory-area")[0];
+    const cards = [];
+    for (let i = 0; i < decoded.single; i++) cards.push({ color: decoded.color, type: 0 });
+    for (let i = 0; i < decoded.double; i++) cards.push({ color: decoded.color, type: 1 });
+    await flyCards(handEl, recycleEl, cards);
+
+    // 4. Render post state, then animate consequences
+    if (ev.snapshot) {
+      const postSnap = { ...dataMeta, ...ev.snapshot, events: [], legal_plays: [], legal_discards: [] };
+      render(postSnap);
+    }
+    await animatePlayConsequences(colorIdx, ev.pre_snapshot.factories, ev.snapshot.factories, player);
+  } else {
+    const decoded = decodeDiscard(action);
+    const penEl = document.getElementById("pen" + player);
+    await flyCards(handEl, penEl, [{ color: decoded.color, type: decoded.type }]);
+    pulseElement(penEl);
+    if (ev.snapshot) {
+      const postSnap = { ...dataMeta, ...ev.snapshot, events: [], legal_plays: [], legal_discards: [] };
+      render(postSnap);
+    }
+  }
+
+  addLog("Player " + player + ": " + describeAction(action));
+  await sleep(400);
+  hideAnnounce();
+}
+
+async function sendAction(actionId) {
+  if (!sessionId || replayBusy) return;
+  replayBusy = true;
+
+  // Save pre-action factory state for consequence detection
+  const preFactories = state.factories;
+  const humanSeat = state.human_seat;
+
+  // Animate cards leaving hand
+  const handEl = document.getElementById("hand" + humanSeat);
+  if (actionId < 100) {
+    const decoded = decodePlay(actionId);
+    const colorIdx = COLORS.indexOf(decoded.color);
+    const factoryEl = document.querySelectorAll(".factory-box")[colorIdx];
+    const recycleEl = factoryEl?.querySelectorAll(".factory-area")[0];
+    const cards = [];
+    for (let i = 0; i < decoded.single; i++) cards.push({ color: decoded.color, type: 0 });
+    for (let i = 0; i < decoded.double; i++) cards.push({ color: decoded.color, type: 1 });
+    await flyCards(handEl, recycleEl, cards);
+  } else {
+    const decoded = decodeDiscard(actionId);
+    const penEl = document.getElementById("pen" + humanSeat);
+    await flyCards(handEl, penEl, [{ color: decoded.color, type: decoded.type }]);
+    pulseElement(penEl);
+  }
+
+  // Get result from server
+  const data = await api("/api/eco/play", { session_id: sessionId, action_id: actionId });
+  if (data.error) { replayBusy = false; addLog(data.error, "warn"); return; }
+
+  // Determine post-human-action factories (before opponents act)
+  let postHumanFactories;
+  const firstOpp = (data.events || []).find(e => e.type === "opponent_action" && e.pre_snapshot);
+  if (firstOpp) {
+    postHumanFactories = firstOpp.pre_snapshot.factories;
+  } else {
+    postHumanFactories = data.factories;
+  }
+
+  // Render the post-human-action state and animate consequences
+  if (actionId < 100) {
+    // Render intermediate state (after human, before opponents)
+    if (firstOpp && firstOpp.pre_snapshot) {
+      const midSnap = { ...data, ...firstOpp.pre_snapshot, events: [], legal_plays: [], legal_discards: [] };
+      render(midSnap);
+    } else {
+      render(data);
+    }
+    const colorIdx = COLORS.indexOf(decodePlay(actionId).color);
+    await animatePlayConsequences(colorIdx, preFactories, postHumanFactories, humanSeat);
+  }
+
+  replayBusy = false;
+  await replayAndRender(data);
+}
+
+async function replayAndRender(data) {
+  const events = data.events || [];
+  const oppEvents = events.filter(e => e.type === "opponent_action");
+
+  if (oppEvents.length > 0) {
+    replayBusy = true;
+    for (const ev of oppEvents) {
+      await animateOpponentAction(ev, data);
+    }
+    replayBusy = false;
+  }
+
+  // Render the final state with human controls
+  render(data);
+
+  // Log non-opponent events
+  for (const e of events) {
+    if (e.type === "game_over") {
+      addLog("Game over! Scores: " + e.scores.map((s,i) => (i===state.human_seat?"You":"P"+i)+":"+s.toFixed(1)).join(" / "), "ok");
+    } else if (e.type === "human_action") {
+      addLog("You: " + describeAction(e.action), "hi");
+    }
+  }
+  if (data.done) showGameOver(data);
+}
+
+// ── Card selection logic ───────────────────────────────────────────────────
+// Click a card in your hand → toggle its selection.
+// Play phase: all selected must be same color; encodes to (color, nS, nD).
+// Discard phase: exactly one card selected.
+window.toggleHandCard = function(uid, color, type) {
+  const idx = selectedCards.findIndex(c => c.uid === uid);
+  if (idx >= 0) {
+    // Deselect this card
+    selectedCards.splice(idx, 1);
+  } else {
+    if (state.phase === 1) {
+      // Discard: only one card at a time
+      selectedCards = [{ uid, color, type }];
+    } else {
+      // Play: must match color of existing selection
+      if (selectedCards.length > 0 && selectedCards[0].color !== color) {
+        // Different color — clear and start fresh
+        selectedCards = [];
+      }
+      selectedCards.push({ uid, color, type });
+    }
+  }
+  updateSelectionUI();
+};
+
+function getSelectionActionId() {
+  if (selectedCards.length === 0) return null;
+  const color = selectedCards[0].color;
+  const colorIdx = COLORS.indexOf(color);
+  if (state.phase === 1) {
+    // Discard: encode_discard = 100 + color*2 + type
+    const type = selectedCards[0].type;
+    return 100 + colorIdx * 2 + type;
+  } else {
+    // Play: encode_play = color*25 + nS*5 + nD
+    const nS = selectedCards.filter(c => c.type === 0).length;
+    const nD = selectedCards.filter(c => c.type === 1).length;
+    return colorIdx * 25 + nS * 5 + nD;
+  }
+}
+
+function updateSelectionUI() {
+  // Update visual highlights
+  document.querySelectorAll("#hand" + state.human_seat + " .card-svg").forEach(el => {
+    el.classList.remove("selected");
+  });
+  for (const c of selectedCards) {
+    const el = document.getElementById(c.uid);
+    if (el) el.classList.add("selected");
+  }
+
+  const bar = document.getElementById("confirmBar");
+  const label = document.getElementById("confirmLabel");
+
+  if (selectedCards.length === 0) {
+    bar.classList.remove("show");
+    return;
+  }
+
+  const actionId = getSelectionActionId();
+  const isLegal = actionId !== null && legalPlaySet.has(actionId);
+
+  bar.classList.add("show");
+  if (isLegal) {
+    label.textContent = describeAction(actionId);
+    label.style.color = "";
+    document.getElementById("confirmBtn").style.display = "";
+  } else {
+    // Show what they've selected but mark as not a legal move
+    const color = selectedCards[0].color;
+    const nS = selectedCards.filter(c => c.type === 0).length;
+    const nD = selectedCards.filter(c => c.type === 1).length;
+    const val = nS + nD * 2;
+    label.textContent = `${COLOR_LABEL[COLORS.indexOf(color)]} ${nS}S+${nD}D (value ${val}) — not a valid play`;
+    label.style.color = "#ef9a9a";
+    document.getElementById("confirmBtn").style.display = "none";
+  }
+}
+
+function confirmAction() {
+  if (replayBusy) return;
+  const actionId = getSelectionActionId();
+  if (actionId === null || !legalPlaySet.has(actionId)) return;
+  selectedCards = [];
+  document.getElementById("confirmBar").classList.remove("show");
+  sendAction(actionId);
+}
+
+function cancelSelection() {
+  selectedCards = [];
+  document.querySelectorAll(".card-svg.selected").forEach(b => b.classList.remove("selected"));
+  document.getElementById("confirmBar").classList.remove("show");
+}
+
+async function checkModel() {
+  const r = await fetch("/api/eco/model_status");
+  const d = await r.json();
+  const badge = document.getElementById("modelBadge");
+  badge.textContent = d.available ? "model: " + d.path : "no model";
+  badge.className = "model-badge" + (d.available ? " live" : "");
+
+  // Populate model selector dropdown
+  const sel = document.getElementById("modelSel");
+  sel.innerHTML = '<option value="latest">Latest</option>';
+  if (d.models) {
+    for (const m of d.models) {
+      if (m.name === "latest") continue;
+      const opt = document.createElement("option");
+      opt.value = m.file;
+      opt.textContent = "Step " + m.name;
+      sel.appendChild(opt);
+    }
+  }
+}
+
+// ── Layout builders ────────────────────────────────────────────────────────
+function buildPlayerPanels(np, humanSeat) {
+  const row = document.getElementById("playersRow");
+  row.innerHTML = "";
+  for (let p = 0; p < np; p++) {
+    const isHuman = p === humanSeat;
+    const div = document.createElement("div");
+    div.className = "player-panel"; div.id = "panel" + p;
+    div.innerHTML = `
+      <div class="player-title">${isHuman ? "You (seat "+p+")" : "Player "+p+" (AI)"}</div>
+      <div class="sub-label">Hand</div>
+      <div class="hand-row" id="hand${p}"></div>
+      <div class="sub-label">Collected tokens</div>
+      <div class="collected-row" id="coll${p}"></div>
+      <div class="penalty-line" id="pen${p}"></div>
+    `;
+    row.appendChild(div);
+  }
+}
+
+function buildScoreDisplay(np, humanSeat) {
+  const sd = document.getElementById("scoreDisplay");
+  sd.innerHTML = "";
+  for (let p = 0; p < np; p++) {
+    const lbl = p === humanSeat ? "You" : "P"+p;
+    sd.innerHTML += `<div class="score-item"><div class="score-label">${lbl}</div><div class="score-val" id="score${p}">0</div></div>`;
+  }
+  sd.innerHTML += `<div class="score-item"><div class="score-label">Deck</div><div class="score-val" id="drawSize">-</div></div>`;
+}
+
+// ── Render ──────────────────────────────────────────────────────────────────
+function render(data) {
+  state = data;
+  const np = data.num_players;
+  const isHumanTurn = data.current_player === data.human_seat && !data.done;
+
+  // Status
+  document.getElementById("turnLabel").textContent =
+    data.done ? "Game over" : isHumanTurn ? "Your turn" : "Player " + data.current_player + "'s turn...";
+  const pb = document.getElementById("phaseBadge");
+  pb.textContent = data.phase === 0 ? "Play" : "Discard";
+  pb.className = "phase-badge " + (data.phase === 0 ? "phase-play" : "phase-discard");
+
+  for (let p = 0; p < np; p++) {
+    const el = document.getElementById("score" + p);
+    if (el) el.textContent = data.scores[p].toFixed(1);
+  }
+  document.getElementById("drawSize").textContent = data.draw_pile_size;
+
+  for (let p = 0; p < np; p++) {
+    const panel = document.getElementById("panel" + p);
+    if (panel) panel.classList.toggle("active", p === data.current_player && !data.done);
+  }
+
+  renderFactories(data);
+  for (let p = 0; p < np; p++) {
+    renderHand(p, data.hands[p], data);
+    renderCollected(p, data.collected[p]);
+    renderPenalty(p, data.penalty[p]);
+  }
+  renderActions(data);
+}
+
+function renderFactories(data) {
+  const el = document.getElementById("factories");
+  el.innerHTML = "";
+
+  // We need the full stack info. The server sends stack_remaining and stack_top.
+  // For full stack display we also need the original stack template.
+  const STACKS = { 2:[0,1,2,-2,4,5], 3:[0,1,2,3,-2,4,5], 4:[0,1,2,3,-2,4,5], 5:[0,1,2,3,3,-2,4,5] };
+  const fullStack = STACKS[data.num_players] || STACKS[2];
+
+  for (const f of data.factories) {
+    const div = document.createElement("div");
+    div.className = "factory-box " + f.color;
+
+    // Stack tokens
+    const consumed = fullStack.length - f.stack_remaining;
+    let stackHtml = "";
+    for (let i = 0; i < fullStack.length; i++) {
+      const v = fullStack[i];
+      const isCurrent = (i === consumed && f.stack_remaining > 0);
+      const isConsumed = i < consumed;
+      let cls = "stack-token";
+      if (isConsumed) cls += " consumed";
+      if (isCurrent) cls += " current";
+      cls += v > 0 ? " positive" : v < 0 ? " negative" : " zero";
+      const label = v >= 0 ? "+" + v : "" + v;
+      stackHtml += `<div class="${cls}">${label}</div>`;
+    }
+
+    // Recycling side cards
+    const recVal = f.recycling_single + f.recycling_double * 2;
+    let recCards = "";
+    for (let i = 0; i < f.recycling_single; i++) recCards += cardSVG(f.color, 0, {w:34,h:48});
+    for (let i = 0; i < f.recycling_double; i++) recCards += cardSVG(f.color, 1, {w:34,h:48});
+    const recContent = recCards || '<span class="empty-text">empty</span>';
+    const recBadge = `<span class="recycle-value">= ${recVal}</span>`;
+
+    // Waste side cards
+    let wasteCards = "";
+    for (const w of f.waste) {
+      for (let i = 0; i < w.single; i++) wasteCards += cardSVG(w.color, 0, {w:34,h:48});
+      for (let i = 0; i < w.double; i++) wasteCards += cardSVG(w.color, 1, {w:34,h:48});
+    }
+    const wasteContent = wasteCards || '<span class="empty-text">empty</span>';
+
+    div.innerHTML = `
+      <div class="factory-header">${f.color.toUpperCase()}</div>
+      <div class="factory-section-label">Factory tokens</div>
+      <div class="stack-row">${stackHtml}</div>
+      <div class="factory-section-label">Recycling side ${recBadge}</div>
+      <div class="factory-area">${recContent}</div>
+      <div class="factory-section-label">Waste side</div>
+      <div class="factory-area">${wasteContent}</div>
+    `;
+    el.appendChild(div);
+  }
+}
+
+function renderHand(p, hand, data) {
+  const el = document.getElementById("hand" + p);
+  if (!el) return;
+  el.innerHTML = "";
+
+  const isHuman = p === data.human_seat;
+  const isMyTurn = isHuman && !data.done && data.current_player === data.human_seat;
+
+  let cardIdx = 0;
+  for (const h of hand) {
+    for (let t = 0; t < 2; t++) {
+      const count = t === 0 ? h.single : h.double;
+      for (let i = 0; i < count; i++) {
+        const uid = "hc_" + p + "_" + h.color + "_" + t + "_" + (cardIdx++);
+        if (isMyTurn) {
+          // Clickable card
+          el.innerHTML += cardSVG(h.color, t, {
+            w: 48, h: 66, clickable: true,
+            onclick: `toggleHandCard('${uid}','${h.color}',${t})`,
+          }).replace('class="card-svg', `id="${uid}" class="card-svg`);
+        } else {
+          el.innerHTML += cardSVG(h.color, t, { w: 48, h: 66 });
+        }
+      }
+    }
+  }
+
+  if (el.innerHTML === "") {
+    el.innerHTML = '<span style="font-size:0.6rem;color:#555;font-style:italic">empty hand</span>';
+  }
+}
+
+function renderCollected(p, collected) {
+  const el = document.getElementById("coll" + p);
+  if (!el) return;
+  el.innerHTML = "";
+  for (const c of collected) {
+    if (c.cards.length === 0) continue;
+    const div = document.createElement("div");
+    div.className = "coll-badge " + c.color + (c.counts ? " counts" : " no-count");
+    const vals = c.cards.map(v => v >= 0 ? "+"+v : ""+v).join(", ");
+    const scoreNote = c.counts ? "" : " (need 2+)";
+    div.innerHTML = `<strong>${c.color.substring(0,3).toUpperCase()}</strong> [${vals}] = ${c.total}${scoreNote}`;
+    el.appendChild(div);
+  }
+  if (!el.innerHTML) el.innerHTML = '<span style="font-size:0.6rem;color:#555;font-style:italic">none</span>';
+}
+
+function renderPenalty(p, pile) {
+  const el = document.getElementById("pen" + p);
+  if (!el) return;
+  if (!pile.length) { el.textContent = ""; return; }
+  const total = pile.reduce((s,c) => s + c.count, 0);
+  el.textContent = "Penalty: " + total + " card" + (total>1?"s":"") + " (-" + total + " pts)";
+}
+
+function renderActions(data) {
+  const title = document.getElementById("actionTitle");
+  const grid  = document.getElementById("actionGrid");
+  grid.innerHTML = "";
+  selectedCards = [];
+  document.getElementById("confirmBar").classList.remove("show");
+
+  // Build set of legal action IDs
+  legalPlaySet = new Set();
+  if (data.legal_plays) data.legal_plays.forEach(p => legalPlaySet.add(p.action_id));
+  if (data.legal_discards) data.legal_discards.forEach(d => legalPlaySet.add(d.action_id));
+
+  if (data.done) { title.textContent = "Game finished"; return; }
+  if (data.current_player !== data.human_seat) { title.textContent = "Opponent is thinking..."; return; }
+
+  if (data.phase === 1) {
+    title.textContent = "Hand limit exceeded! Click a card in your hand to discard, then confirm.";
+  } else {
+    title.textContent = "Click cards in your hand to select (same color), then confirm to play.";
+  }
+}
+
+
+function addLog(text, cls) {
+  const log = document.getElementById("log");
+  const p = document.createElement("p");
+  if (cls) p.className = cls;
+  p.textContent = text;
+  log.appendChild(p);
+  log.scrollTop = log.scrollHeight;
+}
+
+function showGameOver(data) {
+  document.getElementById("overlay").classList.add("show");
+  const fs = document.getElementById("finalScores");
+  let html = "";
+  for (let p = 0; p < data.num_players; p++) {
+    const lbl = p === data.human_seat ? "You" : "Player " + p;
+    html += `<p>${lbl}: <strong>${data.scores[p].toFixed(1)}</strong></p>`;
+  }
+  fs.innerHTML = html;
+  const wl = document.getElementById("winnerLine");
+  const maxScore = Math.max(...data.scores);
+  wl.textContent = data.scores[data.human_seat] >= maxScore ? "You win!" : "You lost.";
+}
+
+document.getElementById("overlay").addEventListener("click", function(e) {
+  if (e.target === this) this.classList.remove("show");
+});
+
+checkModel();
+</script>
+</body>
+</html>

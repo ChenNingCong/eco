@@ -1,13 +1,10 @@
 """
-server.py — Flask server to play Hearts against AI opponents.
+server.py — Flask server to play R-öko against AI opponents.
 
 Usage:
-    python server.py                        # random opponents, no trained agent
-    python server.py --model model/latest.pkt
-    python server.py --model model/latest.pkt --port 5000
-
-The server watches the model directory and always loads the newest .pkt file
-so you don't need to restart between training runs.
+    python server.py                        # random opponent
+    python server.py --model-dir model      # with trained agent
+    python server.py --port 5000
 """
 
 import argparse
@@ -30,346 +27,365 @@ class NumpyJSONProvider(DefaultJSONProvider):
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-from hearts_env import (
-    HeartsEnv, NUM_PLAYERS, NUM_CARDS, MAX_SCORE,
-    card_suit, card_rank, card_points,
-    CLUBS, DIAMONDS, HEARTS, SPADES,
-    TWO_OF_CLUBS, QUEEN_OF_SPADES,
-)
+# ── Agent loading (Eco) ─────────────────────────────────────────────────────
 
-# ── Card helpers ──────────────────────────────────────────────────────────────
+_eco_agent_cache = {"path": None, "agent": None, "mtime": 0, "num_players": None}
 
-RANK_NAMES  = ['2','3','4','5','6','7','8','9','10','J','Q','K','A']
-SUIT_NAMES  = {CLUBS: 'clubs', DIAMONDS: 'diamonds', HEARTS: 'hearts', SPADES: 'spades'}
-
-def card_to_dict(card_id: int) -> dict:
-    return {
-        "id":     int(card_id),
-        "rank":   RANK_NAMES[card_rank(card_id)],
-        "suit":   SUIT_NAMES[card_suit(card_id)],
-        "points": int(card_points(card_id)),
-    }
-
-# ── Agent loading ─────────────────────────────────────────────────────────────
-
-_agent_cache = {"path": None, "agent": None, "mtime": 0}
-
-def _newest_model(model_dir: str):
-    """Return path to the newest .pkt file in model_dir, or None."""
-    files = glob.glob(os.path.join(model_dir, "*.pkt"))
-    return max(files, key=os.path.getmtime) if files else None
-
-def get_trained_agent(model_dir: str):
-    """Load (and cache) the newest trained agent. Returns None if unavailable."""
+def get_eco_agent(model_dir: str, num_players: int = 2, model_file: str = "latest"):
+    """Load (and cache) a trained Eco agent. Returns None if unavailable."""
     try:
         import torch
-        from obs_encoder import PyTreeObs
-        from ppo import Agent, obs_to_tensor
+        from eco_ppo import EcoAgent, obs_to_tensor
+        from eco_obs_encoder import EcoPyTreeObs
     except ImportError:
         return None
-
-    path = _newest_model(model_dir)
-    if path is None:
-        return None
-
+    if model_file == "latest":
+        files = glob.glob(os.path.join(model_dir, "eco_*.pkt"))
+        if not files:
+            return None
+        path = max(files, key=os.path.getmtime)
+    else:
+        path = os.path.join(model_dir, model_file)
+        if not os.path.exists(path):
+            return None
     mtime = os.path.getmtime(path)
-    if _agent_cache["path"] == path and _agent_cache["mtime"] == mtime:
-        return _agent_cache["agent"]
-
+    if (_eco_agent_cache["path"] == path and _eco_agent_cache["mtime"] == mtime
+            and _eco_agent_cache["num_players"] == num_players):
+        return _eco_agent_cache["agent"]
     try:
         device = torch.device("cpu")
-        agent = Agent().to(device)
+        agent  = EcoAgent(num_players=num_players).to(device)
         agent.load_state_dict(torch.load(path, map_location=device))
         agent.eval()
-        _agent_cache.update({"path": path, "agent": agent, "mtime": mtime})
-        print(f"[server] Loaded model: {path}")
+        _eco_agent_cache.update({"path": path, "agent": agent, "mtime": mtime,
+                                 "num_players": num_players})
+        print(f"[server] Loaded eco model: {path}")
         return agent
     except Exception as e:
-        print(f"[server] Failed to load model {path}: {e}")
+        print(f"[server] Failed to load eco model {path}: {e}")
         return None
 
-# ── Heuristic agents (copied from ppo.py to avoid circular import) ────────────
 
-class RandomAgent:
-    name = "random"
-    def act(self, mask: np.ndarray) -> int:
-        legal = np.where(mask)[0]
-        return int(np.random.choice(legal))
+COLOR_NAMES = ["Glass", "Paper", "Plastic", "Tin"]
+COLOR_KEYS  = ["glass", "paper", "plastic", "tin"]
+TYPE_NAMES  = ["single", "double"]
+TYPE_VALUES = [1, 2]
 
-class AvoidPointsAgent:
-    name = "avoid_points"
-    def act(self, mask: np.ndarray) -> int:
-        legal = sorted(np.where(mask)[0], key=lambda c: (card_points(c), card_rank(c)))
-        return int(legal[0])
 
-class BleedHeartsAgent:
-    name = "bleed_hearts"
-    def act(self, mask: np.ndarray) -> int:
-        legal = np.where(mask)[0]
-        if QUEEN_OF_SPADES in legal:
-            return int(QUEEN_OF_SPADES)
-        legal = sorted(legal, key=lambda c: (card_points(c), card_rank(c)), reverse=True)
-        return int(legal[0])
+# ── R-öko game session ──────────────────────────────────────────────────────
 
-class SafeAgent:
-    name = "safe"
-    def act(self, mask: np.ndarray) -> int:
-        legal = list(np.where(mask)[0])
-        safe  = [c for c in legal if card_points(c) == 0]
-        if safe:
-            return int(max(safe, key=card_rank))
-        return int(min(legal, key=lambda c: (card_points(c), card_rank(c))))
+class EcoGameSession:
+    """Manages a multi-player R-öko game between a human and AI opponents."""
 
-class TrainedAgent:
-    name = "trained"
-    def __init__(self, model_dir):
-        self.model_dir = model_dir
-        # SinglePlayerEnv wrapper used purely for its _encode_for helper
-        self._wrapper = None
-
-    def _get_wrapper(self, env: HeartsEnv):
-        """Lazily create a SinglePlayerEnv wrapper around the raw env."""
-        from obs_encoder import SinglePlayerEnv
-        if self._wrapper is None:
-            self._wrapper = SinglePlayerEnv.__new__(SinglePlayerEnv)
-            self._wrapper.env = env
-            self._wrapper._seat = env.state.current_player
-        else:
-            self._wrapper.env = env
-            self._wrapper._seat = env.state.current_player
-        return self._wrapper
-
-    def act(self, mask: np.ndarray, env: HeartsEnv) -> int:
-        try:
-            import torch
-            from obs_encoder import PyTreeObs
-            from ppo import Agent, obs_to_tensor
-        except ImportError:
-            return int(np.random.choice(np.where(mask)[0]))
-
-        agent = get_trained_agent(self.model_dir)
-        if agent is None:
-            return int(np.random.choice(np.where(mask)[0]))
-
-        wrapper = self._get_wrapper(env)
-        obs = wrapper._encode_for(env.state.current_player)
-        obs_t  = obs_to_tensor(PyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
-                               torch.device("cpu"))
-        mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
-        with torch.no_grad():
-            action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
-        return int(action.item())
-
-# ── Game session ──────────────────────────────────────────────────────────────
-
-class GameSession:
-    def __init__(self, human_seat: int, opponent_types: dict, model_dir: str):
-        """
-        opponent_types: dict mapping seat -> type string, e.g. {1:'random', 2:'safe', 3:'trained'}
-        """
-        self.human_seat    = human_seat
-        self.opponent_types = opponent_types  # seat -> type string
-        self.model_dir     = model_dir
-        self.env           = HeartsEnv(seed=int(time.time()))
-        self.state         = self.env.reset()
-        self.pending_events = []  # events queued for frontend to animate
-
-        # Build opponent agents for the 3 non-human seats
-        self.opponents = {}
-        for seat in range(NUM_PLAYERS):
-            if seat != human_seat:
-                t = opponent_types.get(seat, 'random')
-                self.opponents[seat] = self._make_opponent(t, model_dir)
-
-        # Auto-play until it's the human's turn
+    def __init__(self, num_players: int, opponent_type: str, model_dir: str,
+                 model_file: str = "latest"):
+        from eco_env import EcoEnv
+        self.num_players    = num_players
+        self.model_dir      = model_dir
+        self.model_file     = model_file
+        self.opponent_type  = opponent_type
+        self.env            = EcoEnv(num_players=num_players, seed=int(time.time()))
+        self.state          = self.env.reset()
+        self.human_seat     = 0
+        self.pending_events = []
         self._advance()
 
-    def _make_opponent(self, opp_type: str, model_dir: str):
-        if opp_type == "avoid_points":
-            return AvoidPointsAgent()
-        elif opp_type == "bleed_hearts":
-            return BleedHeartsAgent()
-        elif opp_type == "safe":
-            return SafeAgent()
-        elif opp_type == "trained":
-            return TrainedAgent(model_dir)
-        else:
-            return RandomAgent()
+    def _opponent_act(self) -> int:
+        mask = self.env.legal_actions()
+        if self.opponent_type == "trained":
+            agent = get_eco_agent(self.model_dir, self.num_players, self.model_file)
+            if agent is not None:
+                try:
+                    import torch
+                    from eco_obs_encoder import SinglePlayerEcoEnv, EcoPyTreeObs
+                    from eco_ppo import obs_to_tensor
+                    wrapper = SinglePlayerEcoEnv.__new__(SinglePlayerEcoEnv)
+                    wrapper.env          = self.env
+                    wrapper._num_players = self.num_players
+                    wrapper._seat        = self.state.current_player
+                    obs   = wrapper._encode_for(self.state.current_player)
+                    obs_t = obs_to_tensor(
+                        EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
+                        torch.device("cpu"))
+                    mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
+                    with torch.no_grad():
+                        action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
+                    return int(action.item())
+                except Exception:
+                    pass
+        # fallback: random
+        return int(np.random.choice(np.where(mask)[0]))
 
     def _advance(self):
-        """Play AI turns, collecting events, until it's the human's turn or game over."""
-        while not self.state.done and self.state.current_player != self.human_seat:
-            p    = self.state.current_player
-            mask = self.env.legal_actions()
-            opp  = self.opponents[p]
-            trick_count_before = self.state.current_trick_count
-            if isinstance(opp, TrainedAgent):
-                action = opp.act(mask, self.env)
-            else:
-                action = opp.act(mask)
-            prev_state = self.state
-            self.state, rewards, done, _ = self.env.step(action)
+        """Drive opponent turns until it's the human's turn (or game over).
+        Collects intermediate state snapshots so the frontend can replay them."""
+        s = self.state
+        while not s.done and s.current_player != self.human_seat:
+            actor = int(s.current_player)
+            pre_snap = self._snapshot()
+            action = self._opponent_act()
+            self.state, _, done, _ = self.env.step(action)
             self.pending_events.append({
-                "type":   "play",
-                "player": p,
-                "card":   card_to_dict(action),
+                "type": "opponent_action",
+                "action": int(action),
+                "player": actor,
+                "pre_snapshot": pre_snap,
+                "snapshot": self._snapshot(),
             })
-            # Did a trick just complete?
-            if trick_count_before == NUM_PLAYERS - 1 or done:
-                if self.state.history:
-                    rec = self.state.history[-1]
-                    self.pending_events.append({
-                        "type":   "trick_complete",
-                        "winner": int(rec.winner),
-                        "points": int(sum(card_points(c) for c in rec.cards if c >= 0)),
-                    })
             if done:
-                self._append_result()
+                self.pending_events.append({"type": "game_over",
+                                            "scores": self.env.compute_scores(self.state).tolist()})
                 break
+            s = self.state
 
-    def _append_result(self):
-        scores = self.state.scores.tolist()
-        winner = int(np.argmin(scores))
-        self.pending_events.append({
-            "type":    "game_over",
-            "scores":  scores,
-            "winner":  winner,
-        })
+    def _snapshot(self) -> dict:
+        """Lightweight state snapshot for opponent action replay."""
+        from eco_env import NUM_COLORS
+        s = self.state
+        np_ = self.num_players
+        hands = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                row.append({"color": COLOR_KEYS[c],
+                            "single": int(s.hands[p, c, 0]),
+                            "double": int(s.hands[p, c, 1])})
+            hands.append(row)
+        factories = []
+        for c in range(NUM_COLORS):
+            rec_val = int(s.recycling_side[c, 0] * 1 + s.recycling_side[c, 1] * 2)
+            factories.append({
+                "color": COLOR_KEYS[c],
+                "recycling_single": int(s.recycling_side[c, 0]),
+                "recycling_double": int(s.recycling_side[c, 1]),
+                "recycling_value": rec_val,
+                "waste": [
+                    {"color": COLOR_KEYS[cc],
+                     "single": int(s.waste_side[c, cc, 0]),
+                     "double": int(s.waste_side[c, cc, 1])}
+                    for cc in range(NUM_COLORS)
+                    if s.waste_side[c, cc].sum() > 0
+                ],
+                "stack_remaining": len(s.factory_stacks[c]),
+                "stack_top": s.factory_stacks[c][0] if s.factory_stacks[c] else None,
+            })
+        collected = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                cards = s.collected[p][c]
+                row.append({"color": COLOR_KEYS[c], "cards": list(cards),
+                            "total": sum(cards),
+                            "counts": True if len(cards) > 1 else False})
+            collected.append(row)
+        penalty = []
+        for p in range(np_):
+            pile = []
+            for c in range(NUM_COLORS):
+                if s.penalty_pile[p, c, 0] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "single",
+                                 "count": int(s.penalty_pile[p, c, 0])})
+                if s.penalty_pile[p, c, 1] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "double",
+                                 "count": int(s.penalty_pile[p, c, 1])})
+            penalty.append(pile)
+        return {
+            "current_player": int(s.current_player),
+            "phase": int(s.phase),
+            "done": bool(s.done),
+            "draw_pile_size": len(s.draw_pile),
+            "hands": hands,
+            "factories": factories,
+            "collected": collected,
+            "penalty": penalty,
+            "scores": self.env.compute_scores(s).tolist(),
+        }
 
-    def human_play(self, card_id: int) -> dict:
-        """Process a human card play. Returns updated game state + animation events."""
+    def human_action(self, action_id: int) -> dict:
         mask = self.env.legal_actions()
-        if not mask[card_id]:
-            return {"error": "Illegal card"}
-
+        if not mask[action_id]:
+            return {"error": "Illegal action"}
         self.pending_events = []
-        trick_count_before = self.state.current_trick_count
-        self.state, rewards, done, _ = self.env.step(card_id)
-        self.pending_events.append({
-            "type":   "play",
-            "player": self.human_seat,
-            "card":   card_to_dict(card_id),
-        })
-        if trick_count_before == NUM_PLAYERS - 1 or done:
-            if self.state.history:
-                rec = self.state.history[-1]
-                self.pending_events.append({
-                    "type":   "trick_complete",
-                    "winner": int(rec.winner),
-                    "points": int(sum(card_points(c) for c in rec.cards if c >= 0)),
-                })
+        self.state, _, done, _ = self.env.step(action_id)
+        self.pending_events.append({"type": "human_action", "action": int(action_id)})
         if done:
-            self._append_result()
+            self.pending_events.append({"type": "game_over",
+                                        "scores": self.env.compute_scores(self.state).tolist()})
         else:
             self._advance()
-
         return self.to_dict()
 
     def to_dict(self) -> dict:
-        s = self.state
-        legal = self.env.legal_actions().tolist() if not s.done else [False] * NUM_CARDS
+        from eco_env import (NUM_COLORS, NUM_TYPES, NUM_ACTIONS, PHASE_PLAY,
+                             PHASE_DISCARD, encode_play, encode_discard, _STACK)
+        s    = self.state
+        np_  = self.num_players
+        mask = self.env.legal_actions().tolist() if not s.done else [False] * NUM_ACTIONS
 
-        # Current trick
-        trick = []
-        for i in range(s.current_trick_count):
-            trick.append({
-                "player": int(s.current_trick_players[i]),
-                "card":   card_to_dict(int(s.current_trick_cards[i])),
+        # Hands for all players
+        hands = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                row.append({
+                    "color": COLOR_KEYS[c],
+                    "single": int(s.hands[p, c, 0]),
+                    "double": int(s.hands[p, c, 1]),
+                })
+            hands.append(row)
+
+        # Factories
+        factories = []
+        for c in range(NUM_COLORS):
+            rec_val = int(s.recycling_side[c, 0] * 1 + s.recycling_side[c, 1] * 2)
+            factories.append({
+                "color":           COLOR_KEYS[c],
+                "recycling_single": int(s.recycling_side[c, 0]),
+                "recycling_double": int(s.recycling_side[c, 1]),
+                "recycling_value":  rec_val,
+                "waste":           [
+                    {"color": COLOR_KEYS[cc],
+                     "single": int(s.waste_side[c, cc, 0]),
+                     "double": int(s.waste_side[c, cc, 1])}
+                    for cc in range(NUM_COLORS)
+                    if s.waste_side[c, cc].sum() > 0
+                ],
+                "stack_remaining": len(s.factory_stacks[c]),
+                "stack_top":       s.factory_stacks[c][0] if s.factory_stacks[c] else None,
             })
 
-        # Last completed trick from history
-        last_trick = None
-        if s.history:
-            rec = s.history[-1]
-            last_trick = {
-                "winner": int(rec.winner),
-                "cards": [
-                    {"player": int(rec.players[i]), "card": card_to_dict(int(rec.cards[i]))}
-                    for i in range(NUM_PLAYERS)
-                ]
-            }
+        # Collected factory cards per player per color
+        collected = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                cards = s.collected[p][c]
+                row.append({
+                    "color":  COLOR_KEYS[c],
+                    "cards":  list(cards),
+                    "total":  sum(cards),
+                    "counts": True if len(cards) > 1 else False,
+                })
+            collected.append(row)
 
-        # Per-seat opponent labels
-        seat_labels = {}
-        for seat in range(NUM_PLAYERS):
-            if seat == self.human_seat:
-                seat_labels[seat] = "human"
+        # Penalty piles
+        penalty = []
+        for p in range(np_):
+            pile = []
+            for c in range(NUM_COLORS):
+                if s.penalty_pile[p, c, 0] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "single",
+                                 "count": int(s.penalty_pile[p, c, 0])})
+                if s.penalty_pile[p, c, 1] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "double",
+                                 "count": int(s.penalty_pile[p, c, 1])})
+            penalty.append(pile)
+
+        # Legal play actions for human
+        legal_plays = []
+        legal_discards = []
+        if not s.done and s.current_player == self.human_seat:
+            from eco_env import NUM_PLAY_ACTIONS, decode_play, decode_discard
+            if s.phase == PHASE_PLAY:
+                for a, legal in enumerate(mask[:NUM_PLAY_ACTIONS]):
+                    if legal:
+                        c, ns, nd = decode_play(a)
+                        legal_plays.append({
+                            "action_id": a,
+                            "color": COLOR_KEYS[c],
+                            "single": ns,
+                            "double": nd,
+                        })
             else:
-                seat_labels[seat] = self.opponent_types.get(seat, "random")
+                for a, legal in enumerate(mask[NUM_PLAY_ACTIONS:], start=NUM_PLAY_ACTIONS):
+                    if legal:
+                        c, t = decode_discard(a)
+                        legal_discards.append({
+                            "action_id": a,
+                            "color": COLOR_KEYS[c],
+                            "type": TYPE_NAMES[t],
+                        })
 
         events = list(self.pending_events)
         self.pending_events = []
 
         return {
-            "human_seat":     self.human_seat,
+            "num_players":   np_,
+            "human_seat":    self.human_seat,
             "current_player": int(s.current_player),
-            "hand":           [card_to_dict(c) for c in np.where(s.hands[self.human_seat])[0]],
-            "scores":         s.scores.tolist(),
-            "round_num":      int(s.round_num),
-            "hearts_broken":  bool(s.hearts_broken),
-            "legal_ids":      [int(c) for c in np.where(legal)[0]],
-            "current_trick":  trick,
-            "last_trick":     last_trick,
+            "phase":          int(s.phase),
             "done":           bool(s.done),
+            "draw_pile_size": len(s.draw_pile),
+            "hands":          hands,
+            "factories":      factories,
+            "collected":      collected,
+            "penalty":        penalty,
+            "legal_plays":    legal_plays,
+            "legal_discards": legal_discards,
+            "scores":         self.env.compute_scores(s).tolist(),
             "events":         events,
-            "seat_labels":    seat_labels,
+            "opponent_type":  self.opponent_type,
         }
 
 
-# ── Flask app ─────────────────────────────────────────────────────────────────
+# ── Flask app ────────────────────────────────────────────────────────────────
 
 app = Flask(__name__, static_folder="static")
 app.json_provider_class = NumpyJSONProvider
 app.json = NumpyJSONProvider(app)
-sessions: dict[str, GameSession] = {}
+eco_sessions: dict[str, EcoGameSession] = {}
 MODEL_DIR = "model"
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    return send_from_directory("static", "eco_index.html")
 
-@app.route("/api/new_game", methods=["POST"])
-def new_game():
-    data       = request.json or {}
-    # opponents: dict of seat(str) -> type, e.g. {"1":"random","2":"safe","3":"trained"}
-    # Falls back to a single "opponent" key for backwards compat
-    raw = data.get("opponents", {})
-    default = data.get("opponent", "random")
-    opponent_types = {
-        seat: raw.get(str(seat), default)
-        for seat in [1, 2, 3]
-    }
-    session_id = str(int(time.time() * 1000))
-    sess = GameSession(
-        human_seat=0,
-        opponent_types=opponent_types,
-        model_dir=MODEL_DIR,
-    )
-    sessions[session_id] = sess
+@app.route("/api/eco/new_game", methods=["POST"])
+def eco_new_game():
+    data         = request.json or {}
+    num_players  = int(data.get("num_players", 2))
+    opponent     = data.get("opponent", "random")
+    model_file   = data.get("model_file", "latest")
+    session_id   = str(int(time.time() * 1000))
+    sess         = EcoGameSession(num_players=num_players, opponent_type=opponent,
+                                  model_dir=MODEL_DIR, model_file=model_file)
+    eco_sessions[session_id] = sess
     return jsonify({"session_id": session_id, **sess.to_dict()})
 
-@app.route("/api/play", methods=["POST"])
-def play():
+@app.route("/api/eco/play", methods=["POST"])
+def eco_play():
     data       = request.json or {}
     session_id = data.get("session_id")
-    card_id    = data.get("card_id")
-    sess = sessions.get(session_id)
+    action_id  = data.get("action_id")
+    sess = eco_sessions.get(session_id)
     if sess is None:
         return jsonify({"error": "Session not found"}), 404
-    result = sess.human_play(int(card_id))
+    result = sess.human_action(int(action_id))
     return jsonify({"session_id": session_id, **result})
 
-@app.route("/api/model_status")
-def model_status():
-    path = _newest_model(MODEL_DIR)
-    if path is None:
-        return jsonify({"available": False})
-    mtime = os.path.getmtime(path)
-    return jsonify({
-        "available": True,
-        "path": os.path.basename(path),
-        "mtime": int(mtime),
-    })
+@app.route("/api/eco/model_status")
+def eco_model_status():
+    files = glob.glob(os.path.join(MODEL_DIR, "eco_*.pkt"))
+    if not files:
+        return jsonify({"available": False, "models": []})
+    # List all models sorted by step number (newest first)
+    models = []
+    for f in files:
+        base = os.path.basename(f)
+        name = base.replace("eco_", "").replace(".pkt", "")
+        models.append({"file": base, "name": name})
+    # Sort: "latest" first, then by step descending
+    def sort_key(m):
+        if m["name"] == "latest":
+            return float('inf')
+        try:
+            return int(m["name"])
+        except ValueError:
+            return -1
+    models.sort(key=sort_key, reverse=True)
+    path  = max(files, key=os.path.getmtime)
+    return jsonify({"available": True, "path": os.path.basename(path),
+                    "models": models})
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -381,4 +397,4 @@ if __name__ == "__main__":
     os.makedirs("static", exist_ok=True)
     print(f"[server] Starting on http://{args.host}:{args.port}")
     print(f"[server] Model dir: {os.path.abspath(MODEL_DIR)}")
-    app.run(host=args.host, port=args.port, debug=False)
+    app.run(host=args.host, port=args.port, debug=True)
