@@ -1,12 +1,12 @@
 ---
-title: Hearts
-emoji: ♥
-colorFrom: red
-colorTo: pink
+title: R-oko
+emoji: ♻
+colorFrom: green
+colorTo: yellow
 sdk: docker
 pinned: false
 ---
 
-# Hearts Card Game
+# R-oko Card Game
 
-Play Hearts against AI opponents in your browser.
+Play R-oko against trained AI opponents in your browser.

@@ -1,0 +1,9 @@
+__pycache__
+runs/
+wandb/
+*.md
+eco_tests.py
+.git
+.gitignore
+model/eco_*.pkt
+!model/eco_latest.pkt
