@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hearts</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --felt:       #1a3a2a;
+  --felt-dark:  #122a1e;
+  --felt-rim:   #0e2018;
+  --gold:       #c9a84c;
+  --gold-dim:   #7a6230;
+  --red:        #c0392b;
+  --red-bright: #e74c3c;
+  --text:       #e8dcc8;
+  --text-dim:   #8a7a60;
+  --card-bg:    #faf6ee;
+  --card-shadow:rgba(0,0,0,0.55);
+  --highlight:  #f0c040;
+  --legal-glow: rgba(240,192,64,0.35);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--felt-rim);
+  font-family: 'Courier Prime', monospace;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+header {
+  width: 100%; padding: 14px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--gold-dim);
+  background: var(--felt-dark);
+}
+.logo { font-family:'Playfair Display',serif; font-size:1.5rem; letter-spacing:0.08em; color:var(--gold); }
+.logo span { color:var(--red-bright); font-style:italic; }
+.header-right { display:flex; align-items:center; gap:12px; }
+.model-badge { font-size:0.65rem; color:var(--text-dim); letter-spacing:0.04em; }
+.model-badge.live { color:#5ec45e; }
+button.primary {
+  font-family:'Courier Prime',monospace; font-size:0.78rem; letter-spacing:0.06em;
+  text-transform:uppercase; font-weight:700;
+  border:1px solid var(--gold); background:transparent; color:var(--gold);
+  padding:7px 18px; cursor:pointer; border-radius:2px;
+  transition:background 0.15s, color 0.15s;
+}
+button.primary:hover { background:var(--gold); color:#111; }
+
+/* config bar */
+.config-bar {
+  width:100%; max-width:920px;
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:8px; padding:10px 16px;
+  background:var(--felt-dark); border-bottom:1px solid var(--gold-dim);
+}
+.config-seat { display:flex; flex-direction:column; gap:4px; }
+.config-seat label { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-dim); }
+.config-seat select {
+  font-family:'Courier Prime',monospace; font-size:0.72rem;
+  background:var(--felt-dark); color:var(--text);
+  border:1px solid var(--gold-dim); padding:5px 8px; border-radius:2px; cursor:pointer;
+}
+.config-seat select:focus { outline:none; border-color:var(--gold); }
+
+/* score bar */
+.score-bar {
+  width:100%; max-width:920px;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:8px; padding:10px 20px;
+  background:var(--felt-dark); border-bottom:1px solid var(--gold-dim);
+}
+.score-cell { display:flex; flex-direction:column; align-items:center; gap:1px; }
+.score-cell .s-label { font-size:0.6rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); }
+.score-cell .s-type  { font-size:0.55rem; color:var(--gold-dim); letter-spacing:0.04em; }
+.score-cell .s-value { font-size:1.05rem; font-weight:700; color:var(--text); }
+.score-cell.human .s-label { color:var(--gold); }
+.score-cell.human .s-value { color:var(--gold); }
+.score-cell.active-turn .s-value { color:#5ec45e; }
+
+/* table */
+.table-wrap { width:100%; max-width:920px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+
+.table {
+  position:relative;
+  background:var(--felt); border-radius:110px;
+  border:5px solid var(--gold-dim);
+  box-shadow:inset 0 0 60px rgba(0,0,0,0.4), 0 0 0 9px var(--felt-rim), 0 6px 32px rgba(0,0,0,0.6);
+  padding:26px 34px;
+  display:grid; grid-template-rows:auto 1fr auto; grid-template-columns:auto 1fr auto;
+  gap:10px; min-height:380px;
+}
+.table::before {
+  content:''; position:absolute; inset:0; border-radius:105px;
+  background-image:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(255,255,255,0.012) 2px,rgba(255,255,255,0.012) 4px);
+  pointer-events:none;
+}
+
+/* player zones */
+.player-zone { display:flex; flex-direction:column; align-items:center; gap:4px; }
+.player-zone.top    { grid-column:2; grid-row:1; }
+.player-zone.left   { grid-column:1; grid-row:2; flex-direction:row; align-items:center; gap:8px; }
+.player-zone.right  { grid-column:3; grid-row:2; flex-direction:row-reverse; align-items:center; gap:8px; }
+.player-zone.bottom { grid-column:2; grid-row:3; }
+
+.player-name { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-dim); white-space:nowrap; }
+.player-name.active { color:var(--gold); }
+.player-type { font-size:0.55rem; color:var(--gold-dim); letter-spacing:0.04em; text-transform:uppercase; }
+
+.ai-hand { display:flex; }
+.ai-card-back {
+  width:20px; height:32px;
+  background:linear-gradient(135deg,#1a4a8a 0%,#0d2d5e 100%);
+  border-radius:3px; border:1px solid rgba(255,255,255,0.15);
+  margin-left:-7px; box-shadow:1px 1px 4px rgba(0,0,0,0.5);
+}
+.ai-card-back:first-child { margin-left:0; }
+
+/* trick area */
+.trick-area {
+  grid-column:2; grid-row:2;
+  display:flex; align-items:center; justify-content:center;
+  min-height:120px;
+}
+.trick-center { display:flex; flex-direction:column; align-items:center; gap:6px; }
+.trick-cards  { position:relative; width:200px; height:160px; }
+
+/* Cards placed in a compass: N/S centered, E/W vertically centered */
+.trick-card-wrap { position:absolute; }
+.trick-card-wrap[data-seat="0"] { bottom:4px;  left:50%; transform:translateX(-50%); }  /* you — south */
+.trick-card-wrap[data-seat="1"] { left:4px;    top:50%;  transform:translateY(-50%); }  /* CPU1 — west */
+.trick-card-wrap[data-seat="2"] { top:4px;     left:50%; transform:translateX(-50%); }  /* CPU2 — north */
+.trick-card-wrap[data-seat="3"] { right:4px;   top:50%;  transform:translateY(-50%); } /* CPU3 — east */
+
+.trick-status {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:0.66rem; color:var(--text-dim); letter-spacing:0.08em;
+  text-transform:uppercase; text-align:center; white-space:nowrap;
+}
+
+.round-info { font-size:0.66rem; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
+.hearts-broken { font-size:0.64rem; color:var(--red-bright); letter-spacing:0.06em; text-transform:uppercase; opacity:0; transition:opacity 0.4s; }
+.hearts-broken.visible { opacity:1; }
+
+/* trick winner banner */
+.trick-banner {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  background:rgba(10,28,18,0.94); border:1px solid var(--gold); border-radius:4px;
+  padding:9px 20px; text-align:center; pointer-events:none;
+  opacity:0; z-index:10; transition:opacity 0.25s; white-space:nowrap;
+  min-width:160px;
+}
+.trick-banner.show { opacity:1; }
+.b-winner { font-size:0.9rem; color:var(--gold); font-weight:700; letter-spacing:0.06em; }
+.b-takes  { font-size:0.68rem; color:var(--text-dim); margin-top:2px; }
+.b-pts    { color:var(--red-bright); font-weight:700; }
+
+/* card */
+.card {
+  width:50px; height:72px; background:var(--card-bg);
+  border-radius:5px; border:1px solid rgba(0,0,0,0.15);
+  box-shadow:2px 3px 8px var(--card-shadow);
+  display:flex; flex-direction:column; padding:3px 4px;
+  position:relative; flex-shrink:0; user-select:none;
+}
+.card.small { width:36px; height:52px; padding:2px 3px; border-radius:4px; }
+.card .rank     { font-family:'Playfair Display',serif; font-size:0.95rem; font-weight:700; line-height:1; color:#111; }
+.card .suit-sym { font-size:0.8rem; line-height:1; color:#111; }
+.card.small .rank     { font-size:0.72rem; }
+.card.small .suit-sym { font-size:0.6rem; }
+.card.red .rank, .card.red .suit-sym { color:var(--red); }
+.card .center-suit { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.3rem; opacity:0.1; }
+
+/* hand */
+.hand-area {
+  background:var(--felt-dark); border-top:1px solid var(--gold-dim);
+  padding:14px 20px 18px; display:flex; flex-direction:column; align-items:center; gap:10px;
+}
+.hand-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-dim); }
+.hand-cards { display:flex; flex-wrap:wrap; gap:7px; justify-content:center; }
+.hand-card { transition:transform 0.15s, box-shadow 0.15s; cursor:not-allowed; opacity:0.5; }
+.hand-card.legal { cursor:pointer; opacity:1; }
+.hand-card.legal:hover {
+  transform:translateY(-12px);
+  box-shadow:0 12px 22px rgba(0,0,0,0.55), 0 0 0 2px var(--highlight), 0 0 14px var(--legal-glow);
+}
+
+/* log */
+.log-area {
+  background:var(--felt-dark); border-top:1px solid var(--gold-dim);
+  padding:8px 20px; max-height:80px; overflow-y:auto;
+  font-size:0.68rem; color:var(--text-dim); line-height:1.8; letter-spacing:0.03em;
+}
+.log-area::-webkit-scrollbar { width:3px; }
+.log-area::-webkit-scrollbar-thumb { background:var(--gold-dim); }
+.log-entry.winner { color:var(--gold); }
+.log-entry.pts    { color:var(--red-bright); }
+
+/* overlay */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,0.72); display:flex; align-items:center; justify-content:center; z-index:200; backdrop-filter:blur(4px); }
+.overlay.hidden { display:none; }
+.modal { background:var(--felt-dark); border:1px solid var(--gold); border-radius:4px; padding:32px 40px; text-align:center; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,0.7); }
+.modal h2 { font-family:'Playfair Display',serif; font-size:1.7rem; color:var(--gold); margin-bottom:6px; }
+.result-scores { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin:18px 0; }
+.result-player { display:flex; flex-direction:column; align-items:center; gap:3px; }
+.result-player .rp-name  { font-size:0.62rem; text-transform:uppercase; letter-spacing:0.07em; color:var(--text-dim); }
+.result-player .rp-type  { font-size:0.55rem; color:var(--gold-dim); }
+.result-player .rp-score { font-size:1.35rem; font-weight:700; color:var(--text); }
+.result-player.winner .rp-score { color:#5ec45e; }
+.result-player.human .rp-name   { color:var(--gold); }
+
+/* animations */
+@keyframes cardIn   { from{opacity:0;transform:translateY(-7px) scale(0.9)} to{opacity:1;transform:translateY(0) scale(1)} }
+@keyframes pulseWin { 0%,100%{box-shadow:2px 3px 8px var(--card-shadow)} 50%{box-shadow:0 0 16px 4px var(--gold)} }
+.card-enter  { animation:cardIn 0.2s ease forwards; }
+.card-winner { animation:pulseWin 0.45s ease 0.1s 2; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">♥ <span>Hearts</span></div>
+  <div class="header-right">
+    <span class="model-badge" id="modelBadge">no model</span>
+    <button class="primary" onclick="newGame()">New Game</button>
+  </div>
+</header>
+
+<div class="config-bar">
+  <div class="config-seat">
+    <label>CPU 1 — Left</label>
+    <select id="opp1">
+      <option value="random">Random</option>
+      <option value="avoid_points">Avoid Points</option>
+      <option value="bleed_hearts">Bleed Hearts</option>
+      <option value="safe">Safe</option>
+      <option value="trained">Trained Agent</option>
+    </select>
+  </div>
+  <div class="config-seat">
+    <label>CPU 2 — Top</label>
+    <select id="opp2">
+      <option value="random">Random</option>
+      <option value="avoid_points">Avoid Points</option>
+      <option value="bleed_hearts">Bleed Hearts</option>
+      <option value="safe">Safe</option>
+      <option value="trained">Trained Agent</option>
+    </select>
+  </div>
+  <div class="config-seat">
+    <label>CPU 3 — Right</label>
+    <select id="opp3">
+      <option value="random">Random</option>
+      <option value="avoid_points">Avoid Points</option>
+      <option value="bleed_hearts">Bleed Hearts</option>
+      <option value="safe">Safe</option>
+      <option value="trained">Trained Agent</option>
+    </select>
+  </div>
+</div>
+
+<div class="score-bar">
+  <div class="score-cell human" id="sc0">
+    <div class="s-label">You</div><div class="s-type" id="stype0">Human</div><div class="s-value" id="sv0">0</div>
+  </div>
+  <div class="score-cell" id="sc1">
+    <div class="s-label">CPU 1</div><div class="s-type" id="stype1">—</div><div class="s-value" id="sv1">0</div>
+  </div>
+  <div class="score-cell" id="sc2">
+    <div class="s-label">CPU 2</div><div class="s-type" id="stype2">—</div><div class="s-value" id="sv2">0</div>
+  </div>
+  <div class="score-cell" id="sc3">
+    <div class="s-label">CPU 3</div><div class="s-type" id="stype3">—</div><div class="s-value" id="sv3">0</div>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <div class="table">
+    <!-- Top: CPU 2 -->
+    <div class="player-zone top">
+      <div class="player-name" id="pname2">CPU 2</div>
+      <div class="player-type" id="ptype2"></div>
+      <div class="ai-hand" id="hand2"></div>
+    </div>
+
+    <!-- Left: CPU 1 -->
+    <div class="player-zone left">
+      <div class="ai-hand" id="hand1"></div>
+      <div>
+        <div class="player-name" id="pname1">CPU 1</div>
+        <div class="player-type" id="ptype1"></div>
+      </div>
+    </div>
+
+    <!-- Center -->
+    <div class="trick-area">
+      <div class="trick-center">
+        <div class="round-info" id="roundInfo">Trick 1 of 13</div>
+        <div style="position:relative">
+          <div class="trick-cards" id="trickCards">
+            <div class="trick-status" id="trickStatus">Waiting…</div>
+          </div>
+          <div class="trick-banner" id="trickBanner">
+            <div class="b-winner" id="bannerWinner"></div>
+            <div class="b-takes"  id="bannerTakes"></div>
+          </div>
+        </div>
+        <div class="hearts-broken" id="heartsBroken">♥ Hearts Broken</div>
+      </div>
+    </div>
+
+    <!-- Right: CPU 3 -->
+    <div class="player-zone right">
+      <div style="text-align:right">
+        <div class="player-name" id="pname3">CPU 3</div>
+        <div class="player-type" id="ptype3"></div>
+      </div>
+      <div class="ai-hand" id="hand3"></div>
+    </div>
+  </div>
+
+  <div class="hand-area">
+    <div class="hand-label" id="handLabel">Your Hand</div>
+    <div class="hand-cards" id="playerHand"></div>
+  </div>
+
+  <div class="log-area" id="logArea"></div>
+</div>
+
+<div class="overlay hidden" id="overlay">
+  <div class="modal">
+    <h2 id="resultTitle">Game Over</h2>
+    <p id="resultSub" style="color:var(--text-dim);font-size:0.75rem;margin-bottom:4px;"></p>
+    <div class="result-scores" id="resultScores"></div>
+    <button class="primary" onclick="newGame()" style="margin-top:6px;width:100%">Play Again</button>
+  </div>
+</div>
+
+<script>
+const SUIT_SYM   = {clubs:'♣', diamonds:'♦', hearts:'♥', spades:'♠'};
+const SUIT_COLOR = {clubs:'', diamonds:' red', hearts:' red', spades:''};
+const TYPE_LABEL = {
+  human:'Human', random:'Random', avoid_points:'Avoid Pts',
+  bleed_hearts:'Bleed ♥', safe:'Safe', trained:'Trained AI'
+};
+const SEAT_NAMES = ['You', 'CPU 1', 'CPU 2', 'CPU 3'];
+
+// Timing constants (ms)
+const CARD_DELAY  = 500;   // pause between each card appearing
+const BANNER_HOLD = 1600;  // how long the winner banner stays
+const CLEAR_DELAY = 300;   // pause after banner before clearing trick
+
+let sessionId    = null;
+let busy         = false;
+let lastKnownTrick = [];  // trick cards visible before the current API call
+
+// ── Model polling ─────────────────────────────────────────────────────────────
+async function pollModel() {
+  try {
+    const d = await fetch('/api/model_status').then(r=>r.json());
+    const el = document.getElementById('modelBadge');
+    el.textContent = d.available ? '● '+d.path : 'no model';
+    el.className = 'model-badge'+(d.available?' live':'');
+  } catch(e) {}
+}
+pollModel();
+setInterval(pollModel, 10000);
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+function makeCard(card, small=false) {
+  const div = document.createElement('div');
+  div.className = 'card'+(small?' small':'')+SUIT_COLOR[card.suit];
+  div.innerHTML =
+    `<span class="rank">${card.rank}</span>`+
+    `<span class="suit-sym">${SUIT_SYM[card.suit]}</span>`+
+    `<span class="center-suit">${SUIT_SYM[card.suit]}</span>`;
+  return div;
+}
+
+function addLog(text, cls='') {
+  const el = document.getElementById('logArea');
+  const d = document.createElement('div');
+  d.className = 'log-entry'+(cls?' '+cls:'');
+  d.innerHTML = text;
+  el.appendChild(d);
+  // Keep last 80 entries
+  while (el.children.length > 80) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+
+// ── New game ──────────────────────────────────────────────────────────────────
+async function newGame() {
+  if (busy) return;
+  document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('logArea').innerHTML = '';
+
+  const opponents = {
+    1: document.getElementById('opp1').value,
+    2: document.getElementById('opp2').value,
+    3: document.getElementById('opp3').value,
+  };
+  const d = await fetch('/api/new_game', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({opponents})
+  }).then(r=>r.json());
+
+  sessionId = d.session_id;
+  lastKnownTrick = d.current_trick || [];
+  // Show initial state immediately, no events on new game
+  renderStatic(d);
+  // If AI went first (rare edge case), replay those events
+  if (d.events && d.events.length > 0) {
+    busy = true;
+    await animateEvents(d.events, d);
+    renderStatic(d);
+    lastKnownTrick = d.current_trick || [];
+    busy = false;
+  }
+}
+
+// ── Play card ─────────────────────────────────────────────────────────────────
+async function playCard(cardId) {
+  if (busy || !sessionId) return;
+  busy = true;
+  // Immediately remove the played card and disable all others
+  document.querySelectorAll('.hand-card').forEach(c => {
+    if (c.dataset.cardId == cardId) c.remove();
+    else c.classList.remove('legal');
+  });
+
+  const d = await fetch('/api/play', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({session_id: sessionId, card_id: cardId})
+  }).then(r=>r.json());
+
+  if (d.error) { busy = false; return; }
+
+  await animateEvents(d.events, d, lastKnownTrick);
+  renderStatic(d);
+  lastKnownTrick = d.current_trick || [];
+  busy = false;
+}
+
+// ── Animate events ────────────────────────────────────────────────────────────
+async function animateEvents(events, finalState, preTrick = []) {
+  // Seed from cards already on the table before this batch of plays.
+  // This prevents wiping existing trick cards when the human plays first.
+  let animTrick = [...preTrick];
+  // Don't re-render at start — DOM already shows preTrick correctly.
+
+  for (let i = 0; i < events.length; i++) {
+    const ev = events[i];
+
+    if (ev.type === 'play') {
+      animTrick.push({player: ev.player, card: ev.card});
+      renderTrick(animTrick, null);
+      const name = ev.player === finalState.human_seat ? 'You' : SEAT_NAMES[ev.player];
+      const sym  = SUIT_SYM[ev.card.suit];
+      const pts  = ev.card.points > 0 ? ` <span style="color:var(--red-bright)">(+${ev.card.points})</span>` : '';
+      addLog(`${name} plays ${ev.card.rank}${sym}${pts}`);
+      await sleep(CARD_DELAY);
+
+    } else if (ev.type === 'trick_complete') {
+      // Highlight winner's card
+      document.querySelectorAll('#trickCards .trick-card-wrap').forEach(wrap => {
+        if (parseInt(wrap.dataset.seat) === ev.winner) {
+          wrap.querySelector('.card').classList.add('card-winner');
+        }
+      });
+      await sleep(350);
+
+      // Show banner
+      const banner    = document.getElementById('trickBanner');
+      const winnerName = ev.winner === finalState.human_seat ? 'You' : SEAT_NAMES[ev.winner];
+      document.getElementById('bannerWinner').textContent = winnerName + ' wins the trick';
+      document.getElementById('bannerTakes').innerHTML = ev.points > 0
+        ? `takes <span class="b-pts">${ev.points} point${ev.points>1?'s':''}</span>`
+        : 'no points taken';
+      banner.classList.add('show');
+
+      const logClass = ev.winner === finalState.human_seat ? 'winner' : (ev.points > 0 ? 'pts' : '');
+      addLog(`→ ${winnerName} takes the trick` + (ev.points ? ` (+${ev.points} pts)` : ''), logClass);
+
+      await sleep(BANNER_HOLD);
+      banner.classList.remove('show');
+      await sleep(200);
+
+      // Clear trick
+      animTrick = [];
+      renderTrick(animTrick, null);
+      await sleep(CLEAR_DELAY);
+
+    } else if (ev.type === 'game_over') {
+      // Handled by renderStatic
+    }
+  }
+}
+
+// ── Trick rendering ───────────────────────────────────────────────────────────
+function renderTrick(trick, humanSeat) {
+  const el     = document.getElementById('trickCards');
+  const status = document.getElementById('trickStatus');
+
+  if (!trick || trick.length === 0) {
+    // Clear all cards
+    el.querySelectorAll('.trick-card-wrap').forEach(e => e.remove());
+    status.style.display = 'block';
+    return;
+  }
+
+  status.style.display = 'none';
+
+  // Find which seats already have a card rendered
+  const renderedSeats = new Set(
+    Array.from(el.querySelectorAll('.trick-card-wrap')).map(w => parseInt(w.dataset.seat))
+  );
+
+  // Only add cards for seats not yet rendered
+  trick.forEach(({player, card}) => {
+    if (renderedSeats.has(player)) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'trick-card-wrap card-enter';
+    wrap.dataset.seat = player;
+    wrap.appendChild(makeCard(card, true));
+    el.appendChild(wrap);
+  });
+}
+
+// ── Static render (end state) ─────────────────────────────────────────────────
+function renderStatic(state) {
+  // Scores + active turn indicator
+  for (let p = 0; p < 4; p++) {
+    document.getElementById(`sv${p}`).textContent = state.scores[p];
+    const typeKey = state.seat_labels ? state.seat_labels[p] : (p===0?'human':'random');
+    document.getElementById(`stype${p}`).textContent = TYPE_LABEL[typeKey] || typeKey;
+    document.getElementById(`sc${p}`).classList.toggle('active-turn', !state.done && state.current_player===p);
+  }
+
+  // Table name labels + per-seat type
+  for (let p = 1; p <= 3; p++) {
+    const nm = document.getElementById(`pname${p}`);
+    nm.className = 'player-name'+(!state.done && state.current_player===p ? ' active' : '');
+    const typeKey = state.seat_labels ? state.seat_labels[p] : 'random';
+    document.getElementById(`ptype${p}`).textContent = TYPE_LABEL[typeKey] || typeKey;
+  }
+
+  // AI card backs (approximate remaining cards)
+  for (let p = 1; p <= 3; p++) {
+    const container = document.getElementById(`hand${p}`);
+    container.innerHTML = '';
+    const remaining = Math.max(0, 13 - state.round_num - (state.current_trick || []).filter(c => c.player === p).length);
+    for (let i = 0; i < remaining; i++) {
+      const b = document.createElement('div');
+      b.className = 'ai-card-back';
+      container.appendChild(b);
+    }
+  }
+
+  // Round indicator
+  document.getElementById('roundInfo').textContent = `Trick ${state.round_num+1} of 13`;
+  document.getElementById('heartsBroken').className =
+    'hearts-broken'+(state.hearts_broken ? ' visible' : '');
+
+  // Trick area — full clear+rebuild for static state (after animation)
+  const trickEl = document.getElementById('trickCards');
+  trickEl.querySelectorAll('.trick-card-wrap').forEach(e => e.remove());
+  renderTrick(state.current_trick || [], state.human_seat);
+  const statusEl = document.getElementById('trickStatus');
+  if (!state.done && (!state.current_trick || state.current_trick.length === 0)) {
+    const cp = state.current_player;
+    statusEl.textContent = cp === state.human_seat ? 'Your lead' : `${SEAT_NAMES[cp]}'s lead`;
+  }
+
+  // Human hand
+  const handEl   = document.getElementById('playerHand');
+  const handLabel = document.getElementById('handLabel');
+  handEl.innerHTML = '';
+
+  const isMyTurn = !state.done && state.current_player === state.human_seat;
+  handLabel.textContent = state.done ? 'Game Over' :
+    isMyTurn ? 'Your turn — choose a card' :
+    `${SEAT_NAMES[state.current_player]}'s turn…`;
+
+  const legalSet = new Set(state.legal_ids || []);
+  const suitOrder = {clubs:0, diamonds:1, hearts:2, spades:3};
+  const sorted = [...(state.hand||[])].sort((a,b) =>
+    (suitOrder[a.suit]-suitOrder[b.suit]) || (a.id-b.id));
+
+  sorted.forEach(card => {
+    const legal = isMyTurn && legalSet.has(card.id);
+    const c = makeCard(card, false);
+    c.classList.add('hand-card');
+    c.dataset.cardId = card.id;
+    if (legal) {
+      c.classList.add('legal');
+      c.addEventListener('click', () => playCard(card.id));
+    }
+    handEl.appendChild(c);
+  });
+
+  if (state.done) showResult(state);
+}
+
+// ── Result overlay ────────────────────────────────────────────────────────────
+function showResult(state) {
+  document.getElementById('overlay').classList.remove('hidden');
+  const minScore   = Math.min(...state.scores);
+  const humanScore = state.scores[state.human_seat];
+  const humanWon   = humanScore === minScore;
+  document.getElementById('resultTitle').textContent = humanWon ? '🏆 You Win!' : 'Game Over';
+  document.getElementById('resultSub').textContent   = humanWon
+    ? 'Lowest score at the table!'
+    : `You scored ${humanScore}. Better luck next time.`;
+
+  const el = document.getElementById('resultScores');
+  el.innerHTML = '';
+  state.scores.forEach((score, p) => {
+    const isWinner = score === minScore;
+    const isHuman  = p === state.human_seat;
+    const typeKey  = state.seat_labels ? state.seat_labels[p] : '';
+    const div = document.createElement('div');
+    div.className = 'result-player'+(isWinner?' winner':'')+(isHuman?' human':'');
+    div.innerHTML =
+      `<span class="rp-name">${isHuman?'You':SEAT_NAMES[p]}</span>`+
+      `<span class="rp-score">${score}</span>`+
+      `<span class="rp-type">${TYPE_LABEL[typeKey]||''}</span>`;
+    el.appendChild(div);
+  });
+}
+
+// Start
+newGame();
+</script>
+</body>
+</html>
