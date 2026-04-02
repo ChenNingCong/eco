@@ -52,18 +52,20 @@ def get_eco_agent(model_dir: str, num_players: int = 2, model_file: str = "lates
     if (_eco_agent_cache["path"] == path and _eco_agent_cache["mtime"] == mtime
             and _eco_agent_cache["num_players"] == num_players):
         return _eco_agent_cache["agent"]
-    try:
-        device = torch.device("cpu")
-        agent  = EcoAgent(num_players=num_players).to(device)
-        agent.load_state_dict(torch.load(path, map_location=device))
-        agent.eval()
-        _eco_agent_cache.update({"path": path, "agent": agent, "mtime": mtime,
-                                 "num_players": num_players})
-        print(f"[server] Loaded eco model: {path}")
-        return agent
-    except Exception as e:
-        print(f"[server] Failed to load eco model {path}: {e}")
-        return None
+    device = torch.device("cpu")
+    for sc in [False, True]:
+        try:
+            agent  = EcoAgent(num_players=num_players, score_shortcut=sc).to(device)
+            agent.load_state_dict(torch.load(path, map_location=device))
+            agent.eval()
+            _eco_agent_cache.update({"path": path, "agent": agent, "mtime": mtime,
+                                     "num_players": num_players})
+            print(f"[server] Loaded eco model: {path} (score_shortcut={sc})")
+            return agent
+        except Exception:
+            continue
+    print(f"[server] Failed to load eco model {path}")
+    return None
 
 
 COLOR_NAMES = ["Glass", "Paper", "Plastic", "Tin"]
@@ -78,7 +80,7 @@ class EcoGameSession:
     """Manages a multi-player R-öko game between a human and AI opponents."""
 
     def __init__(self, num_players: int, opponent_type: str, model_dir: str,
-                 model_file: str = "latest"):
+                 model_file: str = "latest", human_seat: int = 0):
         from eco_env import EcoEnv
         self.num_players    = num_players
         self.model_dir      = model_dir
@@ -86,7 +88,7 @@ class EcoGameSession:
         self.opponent_type  = opponent_type
         self.env            = EcoEnv(num_players=num_players, seed=int(time.time()))
         self.state          = self.env.reset()
-        self.human_seat     = 0
+        self.human_seat     = human_seat
         self.pending_events = []
         self._advance()
 
@@ -100,9 +102,10 @@ class EcoGameSession:
                     from eco_obs_encoder import SinglePlayerEcoEnv, EcoPyTreeObs
                     from eco_ppo import obs_to_tensor
                     wrapper = SinglePlayerEcoEnv.__new__(SinglePlayerEcoEnv)
-                    wrapper.env          = self.env
-                    wrapper._num_players = self.num_players
-                    wrapper._seat        = self.state.current_player
+                    wrapper.env            = self.env
+                    wrapper._num_players   = self.num_players
+                    wrapper._seat          = self.state.current_player
+                    wrapper._relative_seat = True
                     obs   = wrapper._encode_for(self.state.current_player)
                     obs_t = obs_to_tensor(
                         EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
@@ -346,9 +349,12 @@ def eco_new_game():
     num_players  = int(data.get("num_players", 2))
     opponent     = data.get("opponent", "random")
     model_file   = data.get("model_file", "latest")
+    human_seat   = int(data.get("human_seat", 0))
+    human_seat   = max(0, min(human_seat, num_players - 1))
     session_id   = str(int(time.time() * 1000))
     sess         = EcoGameSession(num_players=num_players, opponent_type=opponent,
-                                  model_dir=MODEL_DIR, model_file=model_file)
+                                  model_dir=MODEL_DIR, model_file=model_file,
+                                  human_seat=human_seat)
     eco_sessions[session_id] = sess
     return jsonify({"session_id": session_id, **sess.to_dict()})
 
@@ -386,6 +392,160 @@ def eco_model_status():
     path  = max(files, key=os.path.getmtime)
     return jsonify({"available": True, "path": os.path.basename(path),
                     "models": models})
+
+# ── Spectator session (all-AI) ─────────────────────────────────────────────
+
+class SpectatorSession:
+    """All-AI game session for watching different models play each other."""
+
+    def __init__(self, num_players: int, model_files: list, model_dir: str):
+        from eco_env import EcoEnv
+        self.num_players = num_players
+        self.model_dir = model_dir
+        self.model_files = model_files  # one per seat
+        self.env = EcoEnv(num_players=num_players, seed=int(time.time()))
+        self.state = self.env.reset()
+
+    def _act(self, seat: int) -> int:
+        mask = self.env.legal_actions()
+        model_file = self.model_files[seat]
+        if model_file and model_file != "random":
+            agent = get_eco_agent(self.model_dir, self.num_players, model_file)
+            if agent is not None:
+                try:
+                    import torch
+                    from eco_obs_encoder import SinglePlayerEcoEnv, EcoPyTreeObs
+                    from eco_ppo import obs_to_tensor
+                    wrapper = SinglePlayerEcoEnv.__new__(SinglePlayerEcoEnv)
+                    wrapper.env = self.env
+                    wrapper._num_players = self.num_players
+                    wrapper._seat = seat
+                    obs = wrapper._encode_for(seat)
+                    obs_t = obs_to_tensor(
+                        EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
+                        torch.device("cpu"))
+                    mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
+                    with torch.no_grad():
+                        action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
+                    return int(action.item())
+                except Exception:
+                    pass
+        return int(np.random.choice(np.where(mask)[0]))
+
+    def _snapshot(self) -> dict:
+        from eco_env import NUM_COLORS
+        s = self.state
+        np_ = self.num_players
+        hands = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                row.append({"color": COLOR_KEYS[c],
+                            "single": int(s.hands[p, c, 0]),
+                            "double": int(s.hands[p, c, 1])})
+            hands.append(row)
+        factories = []
+        for c in range(NUM_COLORS):
+            rec_val = int(s.recycling_side[c, 0] * 1 + s.recycling_side[c, 1] * 2)
+            factories.append({
+                "color": COLOR_KEYS[c],
+                "recycling_single": int(s.recycling_side[c, 0]),
+                "recycling_double": int(s.recycling_side[c, 1]),
+                "recycling_value": rec_val,
+                "waste": [
+                    {"color": COLOR_KEYS[cc],
+                     "single": int(s.waste_side[c, cc, 0]),
+                     "double": int(s.waste_side[c, cc, 1])}
+                    for cc in range(NUM_COLORS)
+                    if s.waste_side[c, cc].sum() > 0
+                ],
+                "stack_remaining": len(s.factory_stacks[c]),
+                "stack_top": s.factory_stacks[c][0] if s.factory_stacks[c] else None,
+            })
+        collected = []
+        for p in range(np_):
+            row = []
+            for c in range(NUM_COLORS):
+                cards = s.collected[p][c]
+                row.append({"color": COLOR_KEYS[c], "cards": list(cards),
+                            "total": sum(cards),
+                            "counts": True if len(cards) > 1 else False})
+            collected.append(row)
+        penalty = []
+        for p in range(np_):
+            pile = []
+            for c in range(NUM_COLORS):
+                if s.penalty_pile[p, c, 0] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "single",
+                                 "count": int(s.penalty_pile[p, c, 0])})
+                if s.penalty_pile[p, c, 1] > 0:
+                    pile.append({"color": COLOR_KEYS[c], "type": "double",
+                                 "count": int(s.penalty_pile[p, c, 1])})
+            penalty.append(pile)
+        return {
+            "current_player": int(s.current_player),
+            "phase": int(s.phase),
+            "done": bool(s.done),
+            "draw_pile_size": len(s.draw_pile),
+            "hands": hands,
+            "factories": factories,
+            "collected": collected,
+            "penalty": penalty,
+            "scores": self.env.compute_scores(s).tolist(),
+        }
+
+    def step(self) -> dict:
+        """Execute one player's action. Returns action info + snapshot."""
+        if self.state.done:
+            return {"done": True, "snapshot": self._snapshot(),
+                    "scores": self.env.compute_scores(self.state).tolist()}
+        seat = int(self.state.current_player)
+        pre_snap = self._snapshot()
+        action = self._act(seat)
+        self.state, _, done, _ = self.env.step(action)
+        post_snap = self._snapshot()
+        result = {
+            "done": bool(self.state.done),
+            "action": int(action),
+            "player": seat,
+            "pre_snapshot": pre_snap,
+            "snapshot": post_snap,
+        }
+        if self.state.done:
+            result["scores"] = self.env.compute_scores(self.state).tolist()
+        return result
+
+
+spectator_sessions: dict[str, SpectatorSession] = {}
+
+
+@app.route("/api/eco/spectate/new_game", methods=["POST"])
+def eco_spectate_new():
+    data = request.json or {}
+    num_players = int(data.get("num_players", 3))
+    model_files = data.get("model_files", ["latest"] * num_players)
+    # Pad or trim to num_players
+    while len(model_files) < num_players:
+        model_files.append("random")
+    model_files = model_files[:num_players]
+    session_id = "spec_" + str(int(time.time() * 1000))
+    sess = SpectatorSession(num_players=num_players, model_files=model_files,
+                            model_dir=MODEL_DIR)
+    spectator_sessions[session_id] = sess
+    return jsonify({"session_id": session_id, "num_players": num_players,
+                    "model_files": model_files, "snapshot": sess._snapshot()})
+
+
+@app.route("/api/eco/spectate/step", methods=["POST"])
+def eco_spectate_step():
+    data = request.json or {}
+    session_id = data.get("session_id")
+    sess = spectator_sessions.get(session_id)
+    if sess is None:
+        return jsonify({"error": "Session not found"}), 404
+    result = sess.step()
+    return jsonify({"session_id": session_id, **result})
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

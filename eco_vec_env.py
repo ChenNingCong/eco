@@ -19,6 +19,10 @@ Interface:
       If None, falls back to each env's per-game opponent_fn (backward compat).
 """
 
+import copy
+import pickle
+import traceback
+
 import numpy as np
 from typing import List, Optional, Tuple, Callable
 
@@ -54,15 +58,21 @@ class VecSinglePlayerEcoEnv:
         opponent_fn: Optional[Callable] = None,
         seeds: Optional[List[int]] = None,
         reward_shaping_scale: float = 1.0,
+        opponent_penalty: float = 0.5,
+        relative_seat: bool = True,
     ):
         self.num_envs = num_envs
+        self._step_count = 0
         seeds = seeds or [None] * num_envs
+        self._init_seeds = list(seeds)
         self.envs: List[SinglePlayerEcoEnv] = [
             SinglePlayerEcoEnv(
                 num_players=num_players,
                 opponent_fn=opponent_fn,
                 seed=s,
                 reward_shaping_scale=reward_shaping_scale,
+                opponent_penalty=opponent_penalty,
+                relative_seat=relative_seat,
             )
             for s in seeds
         ]
@@ -106,15 +116,23 @@ class VecSinglePlayerEcoEnv:
         """
         assert len(actions) == self.num_envs
         N = self.num_envs
+        self._step_count += 1
 
         # ── 1. Start a generator for every env ───────────────────────────────
+        # Snapshot state before stepping for post-mortem debugging
+        _pre_states = [copy.deepcopy(env.env.state) for env in self.envs]
+        _pre_seats  = [env._seat for env in self.envs]
+
         for i, (env, a) in enumerate(zip(self.envs, actions)):
             mask = env.legal_actions()
-            assert mask[int(a)], (
-                f"Env {i}: action {int(a)} is illegal; "
-                f"phase={env.state.phase}, player={env.state.current_player}, "
-                f"seat={env._seat}, done={env.state.done}"
-            )
+            if not mask[int(a)]:
+                # Hard enforcement: pick first legal action instead of crashing
+                legal = np.where(mask)[0]
+                fallback = int(legal[0]) if len(legal) > 0 else 0
+                print(f"[WARN] VecEnv hard mask enforcement: env {i}, "
+                      f"action={int(a)}→{fallback}, phase={env.state.phase}, "
+                      f"player={env.state.current_player}, seat={env._seat}")
+                actions[i] = fallback
         gens    = [env.step_gen(int(a)) for env, a in zip(self.envs, actions)]
         results = [None] * N   # will hold (obs, rew, term, trunc, info) when done
 

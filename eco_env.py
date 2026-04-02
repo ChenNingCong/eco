@@ -373,7 +373,9 @@ class EcoEnv:
             if not s.draw_pile:
                 self._reshuffle()
                 if not s.draw_pile:
-                    break
+                    # Deck exhausted and nothing to reshuffle — end the game.
+                    s.done = True
+                    return
             self._draw_into(s.draw_pile, s.waste_side[factory_color])
 
     def _reshuffle(self):

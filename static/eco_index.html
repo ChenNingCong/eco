@@ -283,10 +283,28 @@ button.primary.danger:hover { background: #c62828; color: #fff; }
     <option value="random">Random</option>
     <option value="trained" selected>Trained AI</option>
   </select>
+  <label>Seat:</label>
+  <select id="seatSel">
+    <option value="0">0 (first)</option>
+    <option value="1">1</option>
+    <option value="2">2 (last)</option>
+  </select>
   <label>Model:</label>
   <select id="modelSel">
     <option value="latest">Latest</option>
   </select>
+  <label style="margin-left:12px">
+    <input type="checkbox" id="spectateCheck" onchange="toggleSpectateUI()"> Watch AI
+  </label>
+</div>
+
+<div class="config-bar" id="spectateBar" style="display:none; border-top:1px solid var(--gold-dim);">
+  <label>Self-play:</label>
+  <select id="selfPlaySel" onchange="applySelfPlay()">
+    <option value="">Custom</option>
+    <option value="latest">Latest</option>
+  </select>
+  <span id="seatSelectors"></span>
 </div>
 
 <div class="game-area">
@@ -424,22 +442,7 @@ async function api(path, body) {
   return r.json();
 }
 
-async function newGame() {
-  document.getElementById("overlay").classList.remove("show");
-  numPlayers = parseInt(document.getElementById("numPlayersSel").value);
-  const opponent = document.getElementById("opponentSel").value;
-  const modelFile = document.getElementById("modelSel").value;
-  const data = await api("/api/eco/new_game", { num_players: numPlayers, opponent, model_file: modelFile });
-  sessionId = data.session_id;
-  document.getElementById("rulesHint").style.display = "none";
-  document.getElementById("statusBar").style.display = "flex";
-  document.getElementById("actionPanel").style.display = "block";
-  document.getElementById("log").innerHTML = "<p class='ok'>New game started!</p>";
-  buildPlayerPanels(data.num_players, data.human_seat);
-  buildScoreDisplay(data.num_players, data.human_seat);
-  await replayAndRender(data);
-  checkModel();
-}
+// newGame defined below in spectator section
 
 let replayBusy = false;  // true while animating opponent turns
 
@@ -1028,6 +1031,210 @@ function showGameOver(data) {
 document.getElementById("overlay").addEventListener("click", function(e) {
   if (e.target === this) this.classList.remove("show");
 });
+
+// ── Spectator mode ─────────────────────────────────────────────────────────
+let spectateSessionId = null;
+let spectateRunning = false;
+
+function toggleSpectateUI() {
+  const on = document.getElementById("spectateCheck").checked;
+  document.getElementById("spectateBar").style.display = on ? "flex" : "none";
+  if (on) buildSeatSelectors();
+}
+
+function buildSeatSelectors() {
+  const np = parseInt(document.getElementById("numPlayersSel").value);
+  const container = document.getElementById("seatSelectors");
+  container.innerHTML = "";
+  for (let i = 0; i < np; i++) {
+    const lbl = document.createElement("label");
+    lbl.style.cssText = "margin-left:8px; font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;";
+    lbl.textContent = "P" + i + ": ";
+    const sel = document.createElement("select");
+    sel.id = "seatModel" + i;
+    sel.className = "seat-model-sel";
+    sel.style.cssText = "font-family:inherit;font-size:0.75rem;background:var(--bg-dark);color:var(--text);border:1px solid var(--gold-dim);padding:4px 8px;border-radius:2px;";
+    sel.innerHTML = '<option value="random">Random</option><option value="latest" selected>Latest</option>';
+    // Copy model options from main selector
+    const mainSel = document.getElementById("modelSel");
+    for (const opt of mainSel.options) {
+      if (opt.value === "latest") continue;
+      const o = document.createElement("option");
+      o.value = opt.value; o.textContent = opt.textContent;
+      sel.appendChild(o);
+    }
+    container.appendChild(lbl);
+    container.appendChild(sel);
+  }
+  // Also populate self-play dropdown
+  const spSel = document.getElementById("selfPlaySel");
+  spSel.innerHTML = '<option value="">Custom</option><option value="random">Random</option><option value="latest">Latest</option>';
+  const mainSel = document.getElementById("modelSel");
+  for (const opt of mainSel.options) {
+    if (opt.value === "latest") continue;
+    const o = document.createElement("option");
+    o.value = opt.value; o.textContent = opt.textContent;
+    spSel.appendChild(o);
+  }
+}
+
+function applySelfPlay() {
+  const val = document.getElementById("selfPlaySel").value;
+  if (!val) return;
+  document.querySelectorAll(".seat-model-sel").forEach(sel => sel.value = val);
+}
+
+// Update seat selectors when player count changes
+document.getElementById("numPlayersSel").addEventListener("change", () => {
+  if (document.getElementById("spectateCheck").checked) buildSeatSelectors();
+  updateSeatOptions();
+});
+
+function updateSeatOptions() {
+  const np = parseInt(document.getElementById("numPlayersSel").value);
+  const sel = document.getElementById("seatSel");
+  const cur = parseInt(sel.value);
+  sel.innerHTML = "";
+  for (let i = 0; i < np; i++) {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = i === 0 ? "0 (first)" : i === np - 1 ? i + " (last)" : "" + i;
+    sel.appendChild(opt);
+  }
+  sel.value = Math.min(cur, np - 1);
+}
+updateSeatOptions();
+
+async function newGame() {
+  document.getElementById("overlay").classList.remove("show");
+  spectateRunning = false;
+
+  const isSpectate = document.getElementById("spectateCheck").checked;
+  numPlayers = parseInt(document.getElementById("numPlayersSel").value);
+
+  if (isSpectate) {
+    // Gather per-seat model files
+    const modelFiles = [];
+    for (let i = 0; i < numPlayers; i++) {
+      const sel = document.getElementById("seatModel" + i);
+      modelFiles.push(sel ? sel.value : "random");
+    }
+    const data = await api("/api/eco/spectate/new_game", {
+      num_players: numPlayers, model_files: modelFiles
+    });
+    spectateSessionId = data.session_id;
+    sessionId = null;
+
+    document.getElementById("rulesHint").style.display = "none";
+    document.getElementById("statusBar").style.display = "flex";
+    document.getElementById("actionPanel").style.display = "block";
+
+    // Build panels — no human seat
+    buildPlayerPanelsSpectate(numPlayers, modelFiles);
+    buildScoreDisplay(numPlayers, -1);
+
+    const initSnap = { ...data.snapshot, num_players: numPlayers, human_seat: -1,
+                       legal_plays: [], legal_discards: [], events: [] };
+    render(initSnap);
+
+    document.getElementById("log").innerHTML = "<p class='ok'>Spectator game started!</p>";
+    document.getElementById("actionTitle").textContent = "Watching AI play...";
+    document.getElementById("actionGrid").innerHTML =
+      '<button class="primary" onclick="stopSpectate()">Stop</button>';
+
+    // Start auto-play loop
+    spectateRunning = true;
+    runSpectateLoop();
+    return;
+  }
+
+  // Normal human game
+  const opponent = document.getElementById("opponentSel").value;
+  const modelFile = document.getElementById("modelSel").value;
+  const humanSeat = parseInt(document.getElementById("seatSel").value);
+  const data = await api("/api/eco/new_game", { num_players: numPlayers, opponent, model_file: modelFile, human_seat: humanSeat });
+  sessionId = data.session_id;
+  spectateSessionId = null;
+  document.getElementById("rulesHint").style.display = "none";
+  document.getElementById("statusBar").style.display = "flex";
+  document.getElementById("actionPanel").style.display = "block";
+  document.getElementById("log").innerHTML = "<p class='ok'>New game started!</p>";
+  buildPlayerPanels(data.num_players, data.human_seat);
+  buildScoreDisplay(data.num_players, data.human_seat);
+  await replayAndRender(data);
+}
+
+function buildPlayerPanelsSpectate(np, modelFiles) {
+  const row = document.getElementById("playersRow");
+  row.innerHTML = "";
+  for (let p = 0; p < np; p++) {
+    const mf = modelFiles[p] || "random";
+    const label = mf === "random" ? "Random" : mf === "latest" ? "Latest" : mf.replace("eco_","").replace(".pkt","");
+    const div = document.createElement("div");
+    div.className = "player-panel"; div.id = "panel" + p;
+    div.innerHTML = `
+      <div class="player-title">Player ${p} (${label})</div>
+      <div class="sub-label">Hand</div>
+      <div class="hand-row" id="hand${p}"></div>
+      <div class="sub-label">Collected tokens</div>
+      <div class="collected-row" id="coll${p}"></div>
+      <div class="penalty-line" id="pen${p}"></div>
+    `;
+    row.appendChild(div);
+  }
+}
+
+function stopSpectate() {
+  spectateRunning = false;
+  document.getElementById("actionTitle").textContent = "Stopped.";
+  document.getElementById("actionGrid").innerHTML = "";
+}
+
+async function runSpectateLoop() {
+  while (spectateRunning) {
+    const data = await api("/api/eco/spectate/step", { session_id: spectateSessionId });
+    if (data.error) { spectateRunning = false; addLog(data.error, "warn"); return; }
+    if (data.done && !data.action && data.action !== 0) {
+      // Game was already over
+      spectateRunning = false;
+      break;
+    }
+
+    // Animate this action
+    const ev = {
+      type: "opponent_action",
+      action: data.action,
+      player: data.player,
+      pre_snapshot: data.pre_snapshot,
+      snapshot: data.snapshot,
+    };
+    const meta = { num_players: numPlayers, human_seat: -1 };
+    await animateOpponentAction(ev, meta);
+
+    if (data.done) {
+      spectateRunning = false;
+      addLog("Game over! Scores: " + data.scores.map((s,i) => "P"+i+":"+s.toFixed(1)).join(" / "), "ok");
+      // Show overlay
+      const mockData = { ...data.snapshot, num_players: numPlayers, human_seat: -1, scores: data.scores, done: true };
+      render(mockData);
+      showGameOverSpectate(data.scores);
+      break;
+    }
+  }
+}
+
+function showGameOverSpectate(scores) {
+  document.getElementById("overlay").classList.add("show");
+  const fs = document.getElementById("finalScores");
+  let html = "";
+  for (let p = 0; p < scores.length; p++) {
+    html += `<p>Player ${p}: <strong>${scores[p].toFixed(1)}</strong></p>`;
+  }
+  fs.innerHTML = html;
+  const maxScore = Math.max(...scores);
+  const winners = scores.map((s,i) => s >= maxScore ? i : -1).filter(i => i >= 0);
+  document.getElementById("winnerLine").textContent = "Winner: Player " + winners.join(", ");
+}
 
 checkModel();
 </script>

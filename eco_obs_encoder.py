@@ -6,7 +6,7 @@ The environment runs opponents internally until the agent's seat must act
 action decision.  Rewards from turns where opponents act are accumulated
 and delivered when the agent next acts.
 
-EcoPyTreeObs fields (10 total)
+EcoPyTreeObs fields (11 total)
 -------------------------------
   current_player   : (1,)                         int32  agent seat token (1-indexed)
   phase            : (1,)                         int32  0=play, 1=discard
@@ -19,9 +19,10 @@ EcoPyTreeObs fields (10 total)
   penalty_pile     : (num_players*NUM_COLORS*NUM_TYPES,) float32  penalty pile composition
   scores           : (num_players,)                float32  current scores / MAX_ECO_SCORE (rotated)
   draw_pile_size   : (1,)                         float32  normalised deck size
+  draw_pile_comp   : (NUM_COLORS*NUM_TYPES,)       float32  remaining cards by (color,type), normalised
 
-Float dim for 2-player games (stack_size=6): 16+8+32+24+16+16+2+1 = 115
-(hands=16, recycling=8, waste=32, factory=24, collected=16, penalty_pile=16, scores=2, draw=1)
+Float dim for 2-player games (stack_size=6): 16+8+32+24+16+16+2+1+8 = 123
+(hands=16, recycling=8, waste=32, factory=24, collected=16, penalty_pile=16, scores=2, draw=1, draw_comp=8)
 """
 
 import numpy as np
@@ -53,6 +54,7 @@ class EcoPyTreeObs(NamedTuple):
     penalty_pile     : np.ndarray   # (num_players * NUM_COLORS * NUM_TYPES,)
     scores           : np.ndarray   # (num_players,)  current scores / MAX_ECO_SCORE
     draw_pile_size   : np.ndarray   # (1,)
+    draw_pile_comp   : np.ndarray   # (NUM_COLORS * NUM_TYPES,)  remaining cards by (color, type)
 
 
 # ── Float dimension helper (used by ppo to size network inputs) ───────────────
@@ -68,6 +70,7 @@ def eco_float_dim(num_players: int = 2) -> int:
         + num_players * NUM_COLORS * NUM_TYPES # penalty_pile
         + num_players                          # scores
         + 1                                    # draw_pile_size
+        + NUM_COLORS * NUM_TYPES              # draw_pile_comp
     )
 
 
@@ -100,11 +103,15 @@ class SinglePlayerEcoEnv:
         opponent_fn: Optional[Callable] = None,
         seed: Optional[int] = None,
         reward_shaping_scale: float = 1.0,
+        opponent_penalty: float = 0.5,
+        relative_seat: bool = True,
     ):
         self.env                   = EcoEnv(num_players=num_players, seed=seed)
         self._num_players          = num_players
         self._opponent_fn_arg      = opponent_fn
         self._reward_shaping_scale = float(reward_shaping_scale)
+        self._opponent_penalty     = float(opponent_penalty)
+        self._relative_seat        = bool(relative_seat)
         self._seat: int            = 0
         self._shaped_reward: float = 0.0
 
@@ -131,6 +138,10 @@ class SinglePlayerEcoEnv:
             opp_action = self.opponent_fn(opp_obs, opp_mask)
             state, rewards, terminated, _ = self.env.step(opp_action)
             self._accumulate(rewards)
+
+        # If opponents ended the game before agent's first turn, re-reset
+        if state.done:
+            return self.reset()
 
         return self._encode(), {}
 
@@ -221,7 +232,11 @@ class SinglePlayerEcoEnv:
 
     def _accumulate(self, rewards: np.ndarray):
         if self._reward_shaping_scale > 0.0:
-            self._shaped_reward += float(rewards[self._seat]) * self._reward_shaping_scale
+            my_r = float(rewards[self._seat])
+            # Penalise when opponents score — use best opponent reward as signal.
+            opp_mask = [i for i in range(self._num_players) if i != self._seat]
+            opp_best = max(float(rewards[i]) for i in opp_mask)
+            self._shaped_reward += (my_r - self._opponent_penalty * opp_best) * self._reward_shaping_scale
 
     # ── Encoding ─────────────────────────────────────────────────────────────
 
@@ -279,8 +294,17 @@ class SinglePlayerEcoEnv:
         # Draw pile size normalised
         draw_norm = np.array([len(s.draw_pile) / max(_TOTAL_DECK, 1)], dtype=np.float32)
 
+        # Draw pile composition: count of each (color, type) remaining
+        draw_comp = np.zeros((NUM_COLORS, NUM_TYPES), dtype=np.float32)
+        for color, typ in s.draw_pile:
+            draw_comp[color, typ] += 1
+        # Normalise by max possible count per type
+        draw_comp[:, 0] /= max(SINGLES_PER_COLOR, 1)
+        draw_comp[:, 1] /= max(DOUBLES_PER_COLOR, 1)
+        draw_comp_flat = draw_comp.flatten()
+
         return EcoPyTreeObs(
-            current_player   = np.array([player + 1], dtype=np.int32),
+            current_player   = np.array([0 if self._relative_seat else player + 1], dtype=np.int32),
             phase            = np.array([s.phase],    dtype=np.int32),
             hands            = hands_flat,
             recycling_side   = rec_flat,
@@ -290,4 +314,5 @@ class SinglePlayerEcoEnv:
             penalty_pile     = pen_norm,
             scores           = scores_rot,
             draw_pile_size   = draw_norm,
+            draw_pile_comp   = draw_comp_flat,
         )

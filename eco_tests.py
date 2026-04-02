@@ -373,11 +373,13 @@ class TestSinglePlayerEcoEnv:
         assert obs.penalty_pile.shape    == (num_p * NUM_COLORS * NUM_TYPES,)
         assert obs.scores.shape          == (num_p,)
         assert obs.draw_pile_size.shape  == (1,)
+        assert obs.draw_pile_comp.shape == (NUM_COLORS * NUM_TYPES,)
 
     def test_float_fields_in_range(self):
         obs, _ = self.env.reset()
         for field in ('hands', 'recycling_side', 'waste_side',
-                      'collected', 'penalty_pile', 'draw_pile_size'):
+                      'collected', 'penalty_pile', 'draw_pile_size',
+                      'draw_pile_comp'):
             arr = getattr(obs, field)
             assert arr.dtype == np.float32
             assert np.all(arr >= 0.0), f"{field} has negative values"
@@ -422,6 +424,7 @@ class TestSinglePlayerEcoEnv:
             + 2 * NUM_COLORS * NUM_TYPES            # penalty_pile
             + 2                                     # scores
             + 1                                     # draw_pile_size
+            + NUM_COLORS * NUM_TYPES                # draw_pile_comp
         )
 
 
@@ -524,3 +527,51 @@ class TestEcoAgent:
             obs_np, masks_np, _, terminated, _, _ = vec.step(actions.cpu().numpy())
             obs_t  = obs_to_tensor(obs_np, torch.device("cpu"))
             mask_t = torch.as_tensor(masks_np, dtype=torch.bool)
+
+
+class TestResetNeverDone:
+    """reset() must never return a done state (opponents may end the game
+    before the agent's first turn — reset should re-roll in that case)."""
+
+    def test_single_env_reset_not_done(self):
+        """SinglePlayerEcoEnv.reset() should always return a live game."""
+        for np_ in [2, 3, 4, 5]:
+            for _ in range(200):
+                env = SinglePlayerEcoEnv(num_players=np_)
+                env.reset()
+                assert not env.state.done, (
+                    f"reset() returned done=True for {np_}-player game"
+                )
+                mask = env.legal_actions()
+                assert mask.any(), (
+                    f"reset() returned all-False mask for {np_}-player game"
+                )
+
+    def test_vec_env_reset_not_done(self):
+        """VecSinglePlayerEcoEnv.reset() masks must all have legal actions."""
+        for np_ in [2, 3, 4, 5]:
+            vec = VecSinglePlayerEcoEnv(num_envs=64, num_players=np_)
+            obs, masks = vec.reset()
+            for i in range(64):
+                assert masks[i].any(), (
+                    f"Vec env {i}: reset() returned all-False mask "
+                    f"for {np_}-player game"
+                )
+            vec.close()
+
+    def test_vec_env_auto_reset_not_done(self):
+        """After auto-reset on termination, masks must have legal actions."""
+        vec = VecSinglePlayerEcoEnv(num_envs=32, num_players=3)
+        obs, masks = vec.reset()
+        for step in range(500):
+            actions = np.array([
+                np.random.choice(np.where(masks[i])[0])
+                for i in range(32)
+            ], dtype=np.int32)
+            obs, masks, rewards, terminated, truncated, infos = vec.step(actions)
+            for i in range(32):
+                assert masks[i].any(), (
+                    f"Step {step}, env {i}: all-False mask after "
+                    f"{'auto-reset' if terminated[i] else 'step'}"
+                )
+        vec.close()

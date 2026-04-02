@@ -55,7 +55,6 @@ class Args:
     cuda: bool = True
     """if toggled, cuda will be enabled by default"""
     track: bool = False
-    wandb: bool = True
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "ppo-eco"
     """the wandb's project name"""
@@ -83,6 +82,14 @@ class Args:
     """the discount factor gamma"""
     reward_shaping_scale: float = 1.0
     """scaling factor for per-action intermediate rewards (0 = disabled)."""
+    opponent_penalty: float = 0.5
+    """penalty for opponent scoring in shaping reward: r = my_r - penalty * max(opp_r)."""
+    relative_seat: bool = True
+    """use relative seat encoding (constant 0) instead of absolute seat index."""
+    score_shortcut: bool = False
+    """add a shallow score-to-value shortcut in the critic (bypasses deep trunk)."""
+    model_dir: str = "model"
+    """directory to save/load model checkpoints."""
     opponent_mode: Literal["self_play", "random", "mixed"] = "self_play"
     """opponent policy used during training:
       self_play  — opponent uses the current agent weights (default)
@@ -105,6 +112,10 @@ class Args:
     """Toggles whether or not to use a clipped loss for the value function, as per the paper."""
     ent_coef: float = 0.01
     """coefficient of the entropy"""
+    ent_coef_end: float = 0.0
+    """final entropy coefficient (for annealing). 0 = no annealing (use ent_coef throughout)."""
+    ent_anneal_steps: int = 0
+    """number of steps over which to anneal entropy from ent_coef to ent_coef_end. 0 = no annealing."""
     vf_coef: float = 0.5
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
@@ -119,10 +130,10 @@ class Args:
     """the mini-batch size (computed in runtime)"""
     num_iterations: int = 0
     """the number of iterations (computed in runtime)"""
-    log_interval: int = 10_000
-    """the interval (in steps) at which to log training progress"""
-    save_interval: int = 20_000
-    """the interval (in steps) at which to save the model"""
+    log_interval: int = 81_920
+    """the interval (in samples) at which to run benchmark (~20 iterations)"""
+    save_interval: int = 81_920
+    """the interval (in samples) at which to save the model (~20 iterations)"""
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)
     torch.nn.init.constant_(layer.bias, bias_const)
@@ -138,7 +149,7 @@ class CategoricalMasked(Categorical):
             _masks = masks.to(probs.device if probs is not None else logits.device)
             self.masks = _masks
             assert logits is not None
-            logits = torch.where(_masks, logits, -1e8)
+            logits = torch.where(_masks, logits, torch.tensor(-1e8))
             super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
     def entropy(self):
@@ -159,32 +170,54 @@ class EcoAgent(nn.Module):
 
     Continuous fields (float32):
       hands, recycling_side, waste_side, factory_stacks, collected,
-      penalty_pile, draw_pile_size
+      penalty_pile, draw_pile_size, draw_pile_comp
+
+    score_shortcut: if True, the critic gets a shallow linear path from
+      scores directly to the value head, bypassing the deep trunk.
     """
     EMB_DIM = 32
-    HIDDEN  = 128
+    HIDDEN  = 256
 
-    def __init__(self, num_players: int = 2):
+    def __init__(self, num_players: int = 2, score_shortcut: bool = False):
         super().__init__()
         E, H = self.EMB_DIM, self.HIDDEN
         self.num_players = num_players
+        self.score_shortcut = score_shortcut
         float_dim = eco_float_dim(num_players)
 
         self.player_emb = nn.Embedding(num_players + 1, E)   # tokens 1..num_players
         self.phase_emb  = nn.Embedding(2, E)                 # 0=play, 1=discard
 
+        # Shared encoder: float features → H
         self.flat_enc = nn.Sequential(
             layer_init(nn.Linear(float_dim, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
         )
         fusion_in = H + 2 * E
-        self.fusion = nn.Sequential(
-            layer_init(nn.Linear(fusion_in, H * 2)), nn.LayerNorm(H * 2), nn.ReLU(),
-            layer_init(nn.Linear(H * 2, H)),         nn.LayerNorm(H),     nn.ReLU(),
+
+        # Separate actor and critic trunks after shared encoding
+        self.actor_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.critic_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
         )
         self.actor_head  = layer_init(nn.Linear(H, NUM_ACTIONS), std=0.01)
-        self.critic_head = layer_init(nn.Linear(H, 1),           std=1.0)
 
-    def _encode(self, obs: EcoPyTreeObs) -> torch.Tensor:
+        if score_shortcut:
+            # Shallow path: scores → small hidden → 1 scalar
+            self.score_branch = nn.Sequential(
+                layer_init(nn.Linear(num_players, 32)), nn.ReLU(),
+                layer_init(nn.Linear(32, 1), std=1.0),
+            )
+            # Deep path output + shallow path output → final value
+            self.critic_head = layer_init(nn.Linear(H + 1, 1), std=1.0)
+        else:
+            self.critic_head = layer_init(nn.Linear(H, 1), std=1.0)
+
+    def _shared_encode(self, obs: EcoPyTreeObs) -> torch.Tensor:
         # Embed discrete tokens
         player_repr = self.player_emb(obs.current_player.squeeze(-1))   # (B, E)
         phase_repr  = self.phase_emb(obs.phase.squeeze(-1))             # (B, E)
@@ -194,21 +227,40 @@ class EcoAgent(nn.Module):
             obs.hands, obs.recycling_side, obs.waste_side,
             obs.factory_stacks, obs.collected,
             obs.penalty_pile, obs.scores, obs.draw_pile_size,
+            obs.draw_pile_comp,
         ], dim=-1)
         flat_repr = self.flat_enc(flat)                                  # (B, H)
 
-        return self.fusion(torch.cat([flat_repr, player_repr, phase_repr], dim=-1))
+        return torch.cat([flat_repr, player_repr, phase_repr], dim=-1)   # (B, fusion_in)
+
+    def _critic_value(self, obs: EcoPyTreeObs, critic_h: torch.Tensor) -> torch.Tensor:
+        if self.score_shortcut:
+            score_val = self.score_branch(obs.scores)   # (B, 1)
+            return self.critic_head(torch.cat([critic_h, score_val], dim=-1))
+        return self.critic_head(critic_h)
 
     def get_value(self, obs: EcoPyTreeObs):
-        return self.critic_head(self._encode(obs))
+        shared = self._shared_encode(obs)
+        critic_h = self.critic_trunk(shared)
+        return self._critic_value(obs, critic_h)
 
     def get_action_and_value(self, obs: EcoPyTreeObs, action_mask, action=None):
-        hidden = self._encode(obs)
-        logits = self.actor_head(hidden)
+        shared = self._shared_encode(obs)
+        actor_h = self.actor_trunk(shared)
+        logits = self.actor_head(actor_h)
         probs  = CategoricalMasked(logits=logits, masks=action_mask)
         if action is None:
             action = probs.sample()
-        return action, probs.log_prob(action), probs.entropy(), self.critic_head(hidden)
+            # Safety: force legal if sampling produced illegal action
+            illegal = ~action_mask.gather(1, action.unsqueeze(1)).squeeze(1)
+            if illegal.any():
+                n = illegal.sum().item()
+                print(f"[WARN] Hard mask enforcement triggered for {n}/{len(action)} actions")
+                masked_logits = torch.where(action_mask, logits, torch.tensor(-1e8, device=logits.device))
+                fallback = masked_logits.argmax(dim=1)
+                action = torch.where(illegal, fallback, action)
+        critic_h = self.critic_trunk(shared)
+        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h)
 
 # ── Random agent ─────────────────────────────────────────────────────────────
 
@@ -289,7 +341,7 @@ def _select_checkpoint_paths(model_dir: str, exclude_latest: bool = True) -> lis
 
 
 def benchmark(_agent, num_players: int = 2, num_games: int = 200,
-              device="cuda", model_dir: str = "model") -> dict:
+              device="cuda", model_dir: str = "model", tournament: bool = True) -> dict:
     """
     Benchmark the trained agent against random opponents and past checkpoints.
 
@@ -306,7 +358,13 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
             mask_t = torch.as_tensor(masks_np, dtype=torch.bool, device=device)
             with torch.no_grad():
                 actions, _, _, _ = _agent.get_action_and_value(obs_t, mask_t)
-            return actions.cpu().numpy()
+            # Hard enforce legal actions (same safety net as training loop)
+            acts_np = actions.cpu().numpy()
+            for j in range(len(acts_np)):
+                if not masks_np[j, acts_np[j]]:
+                    legal = np.where(masks_np[j])[0]
+                    acts_np[j] = legal[0] if len(legal) > 0 else 0
+            return acts_np
     else:
         def _select(obs_np, masks_np):
             return _agent.select_actions(masks_np)
@@ -341,15 +399,22 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
     }
 
     # Add tournament vs past checkpoints (exponential spacing)
-    ckpts = _select_checkpoint_paths(model_dir)
-    for label, path in ckpts:
-        try:
-            old_agent = EcoAgent(num_players=num_players).to(device)
-            old_agent.load_state_dict(torch.load(path, map_location=device))
-            old_agent.eval()
-            scenarios[label] = _as_opponent_fn(old_agent, device)
-        except Exception as e:
-            print(f"[benchmark] Skipping {path}: {e}")
+    if tournament:
+        ckpts = _select_checkpoint_paths(model_dir)
+        for label, path in ckpts:
+            loaded = False
+            for sc in [False, True]:
+                try:
+                    old_agent = EcoAgent(num_players=num_players, score_shortcut=sc).to(device)
+                    old_agent.load_state_dict(torch.load(path, map_location=device))
+                    old_agent.eval()
+                    scenarios[label] = _as_opponent_fn(old_agent, device)
+                    loaded = True
+                    break
+                except Exception:
+                    continue
+            if not loaded:
+                print(f"[benchmark] Skipping {path}: incompatible checkpoint")
 
     # Pre-collect so we can pair (rewards, all_scores) correctly
     out = {}
@@ -364,10 +429,9 @@ _SCENARIO_NOTES = {
 }
 
 
-def log_benchmark(results: dict, writer, global_step: int) -> None:
+def log_benchmark(results: dict, global_step: int) -> None:
     """
-    Write benchmark results to tensorboard and print a summary table.
-    Also logs a wandb.Table if wandb is active (dynamic rows for checkpoint scenarios).
+    Log benchmark results to wandb and print a summary table.
 
     results : dict[scenario -> {"rewards": (N,) float32, "scores": (N,) float32}]
     Win = highest score at the table (ties count as win for all tied players).
@@ -376,8 +440,7 @@ def log_benchmark(results: dict, writer, global_step: int) -> None:
     print(hdr)
     print("  " + "-" * (len(hdr) - 2))
 
-    # Collect rows for wandb table
-    table_rows = []
+    log_dict = {"global_step": global_step}
 
     for name, data in results.items():
         rewards    = data["rewards"]
@@ -392,75 +455,46 @@ def log_benchmark(results: dict, writer, global_step: int) -> None:
         std_reward   = float(rewards.std())
         note = _SCENARIO_NOTES.get(name, "vs past checkpoint" if name.startswith("vs_ckpt_") else "")
         print(f"  {name:<18}  {win_rate:>5.1f}%  {mean_score:>10.2f}  {std_score:>10.2f}  {mean_reward:>+11.4f}  {std_reward:>11.4f}  {note}")
-        writer.add_scalar(f"benchmark/{name}/win_rate",    win_rate,    global_step)
-        writer.add_scalar(f"benchmark/{name}/mean_score",  mean_score,  global_step)
-        writer.add_scalar(f"benchmark/{name}/std_score",   std_score,   global_step)
-        writer.add_scalar(f"benchmark/{name}/mean_reward", mean_reward, global_step)
-        writer.add_scalar(f"benchmark/{name}/std_reward",  std_reward,  global_step)
-        table_rows.append([name, win_rate, mean_score, std_score, mean_reward, note])
+        log_dict[f"benchmark/{name}/win_rate"]    = win_rate
+        log_dict[f"benchmark/{name}/mean_score"]  = mean_score
+        log_dict[f"benchmark/{name}/std_score"]   = std_score
+        log_dict[f"benchmark/{name}/mean_reward"] = mean_reward
+        log_dict[f"benchmark/{name}/std_reward"]  = std_reward
 
-    # Log wandb table for tournament results (handles dynamic checkpoint rows)
-    try:
-        import wandb
-        if wandb.run is not None:
-            table = wandb.Table(
-                columns=["scenario", "win%", "avg_score", "score_std", "avg_reward", "note"],
-                data=table_rows,
-            )
-            wandb.log({"benchmark/tournament": table, "global_step": global_step})
-    except ImportError:
-        pass
+    if wandb.run is not None:
+        wandb.log(log_dict)
 
     print()
 
 if __name__ == "__main__":
     args = tyro.cli(Args)
-    # patch tensorboard if not installed
-    # class DummyWriter:
-    #     def __init__(self, *args, **kwargs): pass
-    #     def add_scalar(self, *args, **kwargs): pass
-    #     def add_text(self, *args, **kwargs): pass
-    #     def close(self): pass
-    # try:
-    #     if args.track:
-    #         from torch.utils.tensorboard import SummaryWriter
-    #     else:
-    #         SummaryWriter = DummyWriter
-    # except ImportError:
-    #     SummaryWriter = DummyWriter
-    from torch.utils.tensorboard import SummaryWriter
+    import wandb
     args.batch_size = int(args.num_envs * args.num_steps)
     args.minibatch_size = int(args.batch_size // args.num_minibatches)
     args.num_iterations = args.total_timesteps // args.batch_size
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
-    if args.track and args.wandb:
-        import wandb
-
+    if args.track:
         wandb.init(
             project=args.wandb_project_name,
             entity=args.wandb_entity,
-            sync_tensorboard=True,
             config=vars(args),
             name=run_name,
-            monitor_gym=True,
             save_code=True,
         )
-    writer = SummaryWriter(f"runs/{run_name}")
-    writer.add_text(
-        "hyperparameters",
-        "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
-    )
 
     # TRY NOT TO MODIFY: seeding
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.backends.cudnn.deterministic = args.torch_deterministic
+    torch.use_deterministic_algorithms(args.torch_deterministic)
+    if args.torch_deterministic:
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     # Agent first — self-play opponent_fn closes over it and tracks weights live
-    agent = EcoAgent(num_players=args.num_players).to(device)
+    agent = EcoAgent(num_players=args.num_players, score_shortcut=args.score_shortcut).to(device)
 
     def _self_play_fn(obs, mask):
         """Opponent uses the current training agent weights."""
@@ -510,10 +544,14 @@ if __name__ == "__main__":
     if args.opponent_mode == "mixed":
         self_envs = VecSinglePlayerEcoEnv(num_envs=n_self, num_players=args.num_players,
                                        opponent_fn=_self_play_fn,
-                                       reward_shaping_scale=args.reward_shaping_scale)
+                                       reward_shaping_scale=args.reward_shaping_scale,
+                                       opponent_penalty=args.opponent_penalty,
+                                       relative_seat=args.relative_seat)
         rand_envs = VecSinglePlayerEcoEnv(num_envs=n_rand, num_players=args.num_players,
                                        opponent_fn=_random_fn,
-                                       reward_shaping_scale=args.reward_shaping_scale)
+                                       reward_shaping_scale=args.reward_shaping_scale,
+                                       opponent_penalty=args.opponent_penalty,
+                                       relative_seat=args.relative_seat)
 
         class _MixedVecEnv:
             """Thin combiner: concatenates self-play and random envs along the batch axis."""
@@ -542,7 +580,9 @@ if __name__ == "__main__":
     else:
         envs = VecSinglePlayerEcoEnv(num_envs=args.num_envs, num_players=args.num_players,
                                   opponent_fn=opponent_fn,
-                                  reward_shaping_scale=args.reward_shaping_scale)
+                                  reward_shaping_scale=args.reward_shaping_scale,
+                                  opponent_penalty=args.opponent_penalty,
+                                  relative_seat=args.relative_seat)
     # [PYTREE] No single_observation_space needed; agent is shape-agnostic
 
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
@@ -568,12 +608,7 @@ if __name__ == "__main__":
     start_time = time.time()
     alpha = args.learning_rate
 
-    # Baseline benchmark: random agent and untrained agent before any optimization
-    print("=== Baseline benchmark (before training) ===")
-    random_results = benchmark(RandomAgent(), args.num_players, device=device, model_dir="model")
-    log_benchmark(random_results, writer, global_step=0)
-    untrained_results = benchmark(agent, args.num_players, device=device, model_dir="model")
-    log_benchmark(untrained_results, writer, global_step=0)
+    # Baseline benchmark skipped — too slow for untrained agents
 
     for iteration in range(1, args.num_iterations + 1):
         # Annealing the rate if instructed to do so.
@@ -584,6 +619,15 @@ if __name__ == "__main__":
             optimizer.param_groups[0]["lr"] = lrnow
         if args.target_kl is not None:
             optimizer.param_groups[0]["lr"] = alpha
+
+        # Entropy coefficient annealing: linear decay from ent_coef → ent_coef_end
+        # over the first ent_anneal_steps, then hold at ent_coef_end
+        if args.ent_coef_end > 0 and args.ent_anneal_steps > 0:
+            steps_so_far = (iteration - 1) * args.batch_size
+            frac = min(steps_so_far / args.ent_anneal_steps, 1.0)
+            ent_coef_now = args.ent_coef + frac * (args.ent_coef_end - args.ent_coef)
+        else:
+            ent_coef_now = args.ent_coef
 
         for step in range(0, args.num_steps):
             global_step += args.num_envs
@@ -612,7 +656,8 @@ if __name__ == "__main__":
             for i in range(len(infos)):
                 if infos[i].get("final_scores") is not None:
                     ep_return = float(reward[i])
-                    writer.add_scalar("charts/episodic_return", ep_return, global_step)
+                    if wandb.run is not None:
+                        wandb.log({"charts/episodic_return": ep_return, "global_step": global_step})
 
         # bootstrap value if not done
         with torch.no_grad():
@@ -686,7 +731,7 @@ if __name__ == "__main__":
                     v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
                 entropy_loss = entropy.mean()
-                loss = pg_loss - args.ent_coef * entropy_loss + v_loss * args.vf_coef
+                loss = pg_loss - ent_coef_now * entropy_loss + v_loss * args.vf_coef
 
                 optimizer.zero_grad()
                 loss.backward()
@@ -710,29 +755,35 @@ if __name__ == "__main__":
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
-        writer.add_scalar("charts/learning_rate", optimizer.param_groups[0]["lr"], global_step)
-        writer.add_scalar("losses/value_loss", v_loss.item(), global_step)
-        writer.add_scalar("losses/policy_loss", pg_loss.item(), global_step)
-        writer.add_scalar("losses/entropy", entropy_loss.item(), global_step)
-        writer.add_scalar("losses/old_approx_kl", old_approx_kl.item(), global_step)
-        writer.add_scalar("losses/approx_kl", approx_kl.item(), global_step)
-        writer.add_scalar("losses/clipfrac", np.mean(clipfracs), global_step)
-        writer.add_scalar("losses/explained_variance", explained_var, global_step)
+        if wandb.run is not None:
+            wandb.log({
+                "charts/learning_rate": optimizer.param_groups[0]["lr"],
+                "losses/value_loss": v_loss.item(),
+                "losses/policy_loss": pg_loss.item(),
+                "losses/entropy": entropy_loss.item(),
+                "losses/old_approx_kl": old_approx_kl.item(),
+                "losses/approx_kl": approx_kl.item(),
+                "losses/clipfrac": np.mean(clipfracs),
+                "losses/explained_variance": explained_var,
+                "global_step": global_step,
+            })
 
 
         # Inside the training loop:
         if global_step >= last_log_step + args.log_interval and global_step > 0:
-            bench_results = benchmark(agent, args.num_players, device=device, model_dir="model")
-            log_benchmark(bench_results, writer, global_step)
+            bench_results = benchmark(agent, args.num_players, device=device, model_dir=args.model_dir, tournament=False)
+            log_benchmark(bench_results, global_step)
             last_log_step = global_step
 
         if global_step >= last_save_step + args.save_interval and global_step > 0:
-            os.makedirs("model", exist_ok=True)
-            torch.save(agent.state_dict(), f"model/eco_{global_step}.pkt")
-            torch.save(agent.state_dict(), "model/eco_latest.pkt")
+            os.makedirs(args.model_dir, exist_ok=True)
+            torch.save(agent.state_dict(), os.path.join(args.model_dir, f"eco_{global_step}.pkt"))
+            torch.save(agent.state_dict(), os.path.join(args.model_dir, "eco_latest.pkt"))
             last_save_step = global_step
         print(f"Step: {global_step} SPS:", int(global_step / (time.time() - start_time)))
-        writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
+        if wandb.run is not None:
+            wandb.log({"charts/SPS": int(global_step / (time.time() - start_time)), "global_step": global_step})
 
     envs.close()
-    writer.close()
+    if wandb.run is not None:
+        wandb.finish()
