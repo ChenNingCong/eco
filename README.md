@@ -29,10 +29,10 @@ pip install torch numpy tyro flask wandb
 
 ```bash
 # Train with best config (entropy annealing + GAE=0.85, 50M samples, ~6 hours on 1 GPU)
-bash train_ent_gae_50m.sh
+bash scripts/train_ent_gae_50m.sh
 
 # Or a quick 10M run (~1 hour)
-bash train_ent_gae_10m.sh
+bash scripts/train_ent_gae_10m.sh
 ```
 
 Training logs to [Weights & Biases](https://wandb.ai). Remove `--track` from the script to disable.
@@ -63,5 +63,5 @@ eco_vec_env.py      # Vectorized env with generator-based batched opponent infer
 eco_ppo.py          # PPO training loop + agent network
 server.py           # Flask web server for human vs AI play
 static/             # Web UI
-train_*.sh          # Training scripts for different configs
+scripts/            # Training and deployment shell scripts
 ```
