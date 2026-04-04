@@ -1,16 +1,16 @@
-# eco_ppo.py — PPO training for R-öko.
-# Derived from ppo.py with minimal changes:
-#   - Imports eco_vec_env / eco_obs_encoder instead of vec_env / obs_encoder
-#   - EcoAgent replaces Agent (flat-obs architecture, 108 actions)
-#   - Hearts-specific heuristic agents removed (no equivalent in R-öko)
-#   - Benchmark simplified to vs_random only
-#   - Batch opponent functions added for async vec env stepping
+# eco_ppo_lstm.py — PPO+LSTM training for R-öko.
+# Based on eco_ppo.py, adds LSTM recurrence (following CleanRL ppo_atari_lstm.py):
+#   - LSTMState pytree for multi-layer LSTM hidden states (h, c)
+#   - EcoAgent: LSTM between encoder and actor/critic (pure — state passed in/out)
+#   - BatchedPlayer/SlicedPlayer: clean OOP for stateful LSTM opponents
+#   - Training loop: carries LSTM state, resets on done, sequential minibatch indexing
 import glob
 import os
 import random
 import time
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal, Optional, NamedTuple
+from abc import ABC, abstractmethod
 
 import numpy as np
 import torch
@@ -18,17 +18,15 @@ import torch.nn as nn
 import torch.optim as optim
 import tyro
 from torch.distributions.categorical import Categorical
+from torch.utils._pytree import tree_map
 from eco_vec_env import VecSinglePlayerEcoEnv
-from eco_obs_encoder import EcoPyTreeObs, SinglePlayerEcoEnv, eco_float_dim
-from eco_env import NUM_ACTIONS, NUM_COLORS, MAX_ECO_SCORE
+from eco_obs_encoder import EcoPyTreeObs, eco_float_dim
+from eco_env import NUM_ACTIONS, MAX_ECO_SCORE
 
 # ── PyTree helpers (only 6 lines in the training loop touch obs) ─────────────
-import torch
-from torch.utils._pytree import tree_map
 
-def _obs_dtype(x: "np.ndarray"):
+def _obs_dtype(x: np.ndarray):
     """Return the torch dtype matching a PyTreeObs leaf by inspecting its numpy dtype."""
-    import numpy as np
     return torch.long if np.issubdtype(x.dtype, np.integer) else torch.float32
 
 def obs_to_tensor(obs: EcoPyTreeObs, device) -> EcoPyTreeObs:
@@ -42,6 +40,18 @@ def alloc_obs_buffer(prototype: EcoPyTreeObs, T: int, N: int, device) -> EcoPyTr
     return tree_map(
         lambda x: torch.zeros((T, N, *x.shape[1:]), dtype=_obs_dtype(x), device=device),
         prototype,
+    )
+# ── LSTMState: pytree for multi-layer LSTM hidden states ────────────────────
+
+class LSTMState(NamedTuple):
+    """Multi-layer LSTM hidden state: h and c each (num_layers, batch, hidden)."""
+    h: torch.Tensor
+    c: torch.Tensor
+
+def make_lstm_state(num_layers: int, batch_size: int, hidden_size: int, device) -> LSTMState:
+    return LSTMState(
+        h=torch.zeros(num_layers, batch_size, hidden_size, device=device),
+        c=torch.zeros(num_layers, batch_size, hidden_size, device=device),
     )
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass
@@ -58,7 +68,7 @@ class Args:
     """if toggled, this experiment will be tracked with Weights and Biases"""
     wandb_project_name: str = "ppo-eco"
     """the wandb's project name"""
-    wandb_entity: str = None
+    wandb_entity: Optional[str] = None
     """the entity (team) of wandb's project"""
     capture_video: bool = False
     """whether to capture videos of the agent performances (check out `videos` folder)"""
@@ -90,11 +100,10 @@ class Args:
     """add a shallow score-to-value shortcut in the critic (bypasses deep trunk)."""
     model_dir: str = "model"
     """directory to save/load model checkpoints."""
-    opponent_mode: Literal["self_play", "random", "mixed"] = "self_play"
+    opponent_mode: Literal["self_play", "random"] = "self_play"
     """opponent policy used during training:
       self_play  — opponent uses the current agent weights (default)
-      random     — opponent plays uniformly at random
-      mixed      — half the envs use self-play, half use random opponents"""
+      random     — opponent plays uniformly at random"""
     gae_lambda: float = 1.0
     """the lambda for the general advantage estimation.
     Must be 1.0 when gamma=1.0: GAE(lambda<1) produces biased returns for
@@ -139,7 +148,6 @@ def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.constant_(layer.bias, bias_const)
     return layer
 
-from typing import *
 class CategoricalMasked(Categorical):
     def __init__(self, probs=None, logits=None, validate_args=None, masks : Optional[torch.BoolTensor] = None):
         self.masks = masks
@@ -159,30 +167,28 @@ class CategoricalMasked(Categorical):
         p_log_p = torch.where(self.masks, p_log_p, 0)
         return -p_log_p.sum(-1)
 
-# ── EcoAgent (replaces Hearts Agent — different obs structure) ───────────────
+# ── EcoAgent: R-öko actor-critic with LSTM ──────────────────────────────────
 
 class EcoAgent(nn.Module):
     """
-    R-öko actor-critic. Accepts an EcoPyTreeObs of tensors.
+    R-öko actor-critic with LSTM. Pure/stateless: hidden state passed in/out.
 
-    Embedding index fields (long):
-      current_player, phase
-
-    Continuous fields (float32):
-      hands, recycling_side, waste_side, factory_stacks, collected,
-      penalty_pile, draw_pile_size, draw_pile_comp
-
-    score_shortcut: if True, the critic gets a shallow linear path from
-      scores directly to the value head, bypassing the deep trunk.
+    Architecture: shared_encode → pre_lstm → LSTM → separate actor/critic heads.
     """
     EMB_DIM = 32
     HIDDEN  = 256
 
-    def __init__(self, num_players: int = 2, score_shortcut: bool = False):
+    LSTM_HIDDEN = 128
+    LSTM_LAYERS = 1
+
+    def __init__(self, num_players: int = 2, score_shortcut: bool = False,
+                 lstm_hidden: int = 128, lstm_layers: int = 1):
         super().__init__()
         E, H = self.EMB_DIM, self.HIDDEN
         self.num_players = num_players
         self.score_shortcut = score_shortcut
+        self.lstm_hidden = lstm_hidden
+        self.lstm_layers = lstm_layers
         float_dim = eco_float_dim(num_players)
 
         self.player_emb = nn.Embedding(num_players + 1, E)   # tokens 1..num_players
@@ -195,14 +201,25 @@ class EcoAgent(nn.Module):
         )
         fusion_in = H + 2 * E
 
-        # Separate actor and critic trunks after shared encoding
-        self.actor_trunk = nn.Sequential(
+        # Pre-LSTM projection
+        self.pre_lstm = nn.Sequential(
             layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
-            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+
+        # LSTM (shared between actor and critic)
+        self.lstm = nn.LSTM(H, lstm_hidden, num_layers=lstm_layers)
+        for name, param in self.lstm.named_parameters():
+            if "bias" in name:
+                nn.init.constant_(param, 0)
+            elif "weight" in name:
+                nn.init.orthogonal_(param, 1.0)
+
+        # Separate actor and critic trunks after LSTM
+        self.actor_trunk = nn.Sequential(
+            layer_init(nn.Linear(lstm_hidden, H)), nn.LayerNorm(H), nn.ReLU(),
         )
         self.critic_trunk = nn.Sequential(
-            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
-            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(lstm_hidden, H)), nn.LayerNorm(H), nn.ReLU(),
         )
         self.actor_head  = layer_init(nn.Linear(H, NUM_ACTIONS), std=0.01)
 
@@ -233,20 +250,45 @@ class EcoAgent(nn.Module):
 
         return torch.cat([flat_repr, player_repr, phase_repr], dim=-1)   # (B, fusion_in)
 
+    def get_states(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        """
+        Encode obs through shared encoder + LSTM, resetting hidden on done.
+        obs shape: (T*B, ...) or (B, ...); lstm_state batch dim = B; done: (T*B,) or (B,).
+        Returns (hidden (T*B, lstm_hidden), new_lstm_state).
+        """
+        shared = self._shared_encode(obs)
+        hidden = self.pre_lstm(shared)
+
+        # LSTM: process sequentially, resetting state on episode boundaries
+        batch_size = lstm_state.h.shape[1]
+        hidden = hidden.reshape((-1, batch_size, self.lstm.input_size))
+        done = done.reshape((-1, batch_size))
+        new_hidden = []
+        h, c = lstm_state.h, lstm_state.c
+        for t_h, t_d in zip(hidden, done):
+            h = (1.0 - t_d).view(1, -1, 1) * h
+            c = (1.0 - t_d).view(1, -1, 1) * c
+            t_h, (h, c) = self.lstm(t_h.unsqueeze(0), (h, c))
+            new_hidden.append(t_h)
+        new_hidden = torch.flatten(torch.cat(new_hidden), 0, 1)
+        return new_hidden, LSTMState(h=h, c=c)
+
     def _critic_value(self, obs: EcoPyTreeObs, critic_h: torch.Tensor) -> torch.Tensor:
         if self.score_shortcut:
             score_val = self.score_branch(obs.scores)   # (B, 1)
             return self.critic_head(torch.cat([critic_h, score_val], dim=-1))
         return self.critic_head(critic_h)
 
-    def get_value(self, obs: EcoPyTreeObs):
-        shared = self._shared_encode(obs)
-        critic_h = self.critic_trunk(shared)
+    def get_value(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        hidden, _ = self.get_states(obs, lstm_state, done)
+        critic_h = self.critic_trunk(hidden)
         return self._critic_value(obs, critic_h)
 
-    def get_action_and_value(self, obs: EcoPyTreeObs, action_mask, action=None):
-        shared = self._shared_encode(obs)
-        actor_h = self.actor_trunk(shared)
+    def get_action_and_value(self, obs: EcoPyTreeObs, action_mask,
+                             lstm_state: LSTMState, done: torch.Tensor,
+                             action=None):
+        hidden, new_lstm_state = self.get_states(obs, lstm_state, done)
+        actor_h = self.actor_trunk(hidden)
         logits = self.actor_head(actor_h)
         probs  = CategoricalMasked(logits=logits, masks=action_mask)
         if action is None:
@@ -259,58 +301,132 @@ class EcoAgent(nn.Module):
                 masked_logits = torch.where(action_mask, logits, torch.tensor(-1e8, device=logits.device))
                 fallback = masked_logits.argmax(dim=1)
                 action = torch.where(illegal, fallback, action)
-        critic_h = self.critic_trunk(shared)
-        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h)
+        critic_h = self.critic_trunk(hidden)
+        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), new_lstm_state
 
-# ── Random agent ─────────────────────────────────────────────────────────────
+# ── Player interface: abstract base for batched opponent players ─────────────
 
-class RandomAgent:
+class BasePlayer(ABC):
     """
-    Selects a uniformly random legal action each step.
-    Stateless — acts only from the action mask, needs no observation.
+    Abstract interface for opponent players used by VecSinglePlayerEcoEnv.
+
+    - batch_action(obs, mask, idxs): batched inference for a subset of envs
+    - reset(env_indices): reset internal state for given envs (or all)
+    - slice(i): returns an object with action(obs, mask) -> int for per-env use
     """
-    def select_actions(self, masks: np.ndarray) -> np.ndarray:
-        """
-        Parameters
-        ----------
-        masks : (N, 108) bool  legal-action masks
+    @abstractmethod
+    def batch_action(self, obs_batch, mask_batch, idxs: list) -> np.ndarray:
+        ...
 
-        Returns
-        -------
-        actions : (N,) int
-        """
-        actions = np.empty(len(masks), dtype=np.int32)
-        for i, m in enumerate(masks):
-            actions[i] = np.random.choice(np.where(m)[0])
-        return actions
+    @abstractmethod
+    def reset(self, env_indices=None) -> None:
+        ...
+
+    @abstractmethod
+    def slice(self, env_idx: int) -> Any:
+        """Return an object with action(obs, mask) -> int."""
+        ...
 
 
-# (No heuristic agents for R-öko — only RandomAgent as baseline)
+class RandomBatchedPlayer(BasePlayer):
+    """Random opponent. Stateless."""
+
+    def batch_action(self, obs_batch, mask_batch, idxs=None) -> np.ndarray:
+        return np.array([
+            int(np.random.choice(np.where(m)[0])) for m in mask_batch
+        ], dtype=np.int32)
+
+    def reset(self, env_indices=None) -> None:
+        pass
+
+    def slice(self, env_idx: int) -> "RandomBatchedPlayer":
+        return self
+
+    def action(self, obs, mask) -> int:
+        return int(np.random.choice(np.where(mask)[0]))
+
+
+# ── BatchedPlayer / SlicedPlayer: LSTM opponent ─────────────────────────────
+
+class BatchedPlayer(BasePlayer):
+    """
+    Manages batched LSTM hidden states for N envs.
+    The NN agent is stateless (pure); this class holds the recurrent state.
+    """
+    def __init__(self, agent: EcoAgent, device, num_envs: int):
+        self.agent = agent
+        self.device = device
+        self.num_envs = num_envs
+        self.lstm_state = make_lstm_state(
+            agent.lstm_layers, num_envs, agent.lstm_hidden, device
+        )
+
+    def reset(self, env_indices=None):
+        """Reset LSTM state for given env indices (or all if None)."""
+        if env_indices is None:
+            self.lstm_state = make_lstm_state(
+                self.agent.lstm_layers, self.num_envs, self.agent.lstm_hidden, self.device
+            )
+        else:
+            for idx in env_indices:
+                self.lstm_state.h[:, idx] = 0
+                self.lstm_state.c[:, idx] = 0
+
+    def batch_action(self, obs_batch: EcoPyTreeObs, mask_batch: np.ndarray,
+                     idxs: list) -> np.ndarray:
+        """Batched action for a subset of envs identified by idxs."""
+        obs_t = obs_to_tensor(obs_batch, self.device)
+        mask_t = torch.as_tensor(mask_batch, dtype=torch.bool, device=self.device)
+        done_t = torch.zeros(len(idxs), device=self.device)
+        # Slice LSTM state to only the active env indices
+        idx_t = torch.tensor(idxs, dtype=torch.long, device=self.device)
+        sub_state = LSTMState(
+            h=self.lstm_state.h[:, idx_t].contiguous(),
+            c=self.lstm_state.c[:, idx_t].contiguous(),
+        )
+        with torch.no_grad():
+            acts, _, _, _, new_state = self.agent.get_action_and_value(
+                obs_t, mask_t, sub_state, done_t
+            )
+        # Write updated LSTM state back to the correct indices
+        self.lstm_state.h[:, idx_t] = new_state.h
+        self.lstm_state.c[:, idx_t] = new_state.c
+        return acts.cpu().numpy()
+
+    def slice(self, env_idx: int) -> "SlicedPlayer":
+        return SlicedPlayer(self, env_idx)
+
+
+class SlicedPlayer:
+    """
+    Per-env proxy into a BatchedPlayer. Passed to SinglePlayerEcoEnv as opponent_fn.
+    action() is sync: slices the batched LSTM state, runs one forward pass, writes back.
+    Used during reset() and any per-env fallback path.
+    """
+    def __init__(self, batched: BatchedPlayer, env_idx: int):
+        self.batched = batched
+        self.env_idx = env_idx
+
+    def action(self, obs, mask) -> int:
+        i = self.env_idx
+        player = self.batched
+        obs_t = obs_to_tensor(EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]), player.device)
+        mask_t = torch.as_tensor(mask, dtype=torch.bool, device=player.device).unsqueeze(0)
+        done_t = torch.zeros(1, device=player.device)
+        single_state = LSTMState(
+            h=player.lstm_state.h[:, i:i+1].contiguous(),
+            c=player.lstm_state.c[:, i:i+1].contiguous(),
+        )
+        with torch.no_grad():
+            action, _, _, _, new_state = player.agent.get_action_and_value(
+                obs_t, mask_t, single_state, done_t
+            )
+        player.lstm_state.h[:, i] = new_state.h[:, 0]
+        player.lstm_state.c[:, i] = new_state.c[:, 0]
+        return int(action.item())
 
 
 # ── Benchmark helpers ─────────────────────────────────────────────────────────
-
-def _as_opponent_fn(agent, device) -> callable:
-    """
-    Unified adapter: converts any agent type into a SinglePlayerEnv opponent_fn.
-
-    Supports:
-      - EcoAgent (nn.Module with get_action_and_value)
-      - RandomAgent (anything with select_actions(masks) -> int array)
-    """
-    if hasattr(agent, 'select_actions'):
-        def fn(obs, mask):
-            return int(agent.select_actions(mask[np.newaxis])[0])
-        return fn
-    # nn.Module agent
-    def fn(obs, mask):
-        obs_t  = obs_to_tensor(EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]), device)
-        mask_t = torch.as_tensor(mask, dtype=torch.bool, device=device).unsqueeze(0)
-        with torch.no_grad():
-            action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
-        return int(action.item())
-    return fn
-
 
 def _select_checkpoint_paths(model_dir: str, exclude_latest: bool = True) -> list:
     """Select checkpoints with exponential spacing: most recent 1, 2, 4, 8, ... back.
@@ -344,6 +460,7 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
               device="cuda", model_dir: str = "model", tournament: bool = True) -> dict:
     """
     Benchmark the trained agent against random opponents and past checkpoints.
+    All agents (including random) use the unified BatchedPlayer interface.
 
     Returns
     -------
@@ -351,36 +468,27 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
     """
     num_envs = min(num_games, 128)
 
-    # Batched action selector for the agent under test
-    if hasattr(_agent, 'get_action_and_value'):
-        def _select(obs_np, masks_np):
-            obs_t  = obs_to_tensor(obs_np, device)
-            mask_t = torch.as_tensor(masks_np, dtype=torch.bool, device=device)
-            with torch.no_grad():
-                actions, _, _, _ = _agent.get_action_and_value(obs_t, mask_t)
-            # Hard enforce legal actions (same safety net as training loop)
-            acts_np = actions.cpu().numpy()
-            for j in range(len(acts_np)):
-                if not masks_np[j, acts_np[j]]:
-                    legal = np.where(masks_np[j])[0]
-                    acts_np[j] = legal[0] if len(legal) > 0 else 0
-            return acts_np
-    else:
-        def _select(obs_np, masks_np):
-            return _agent.select_actions(masks_np)
+    # Agent under test — BatchedPlayer for batched inference + state tracking
+    agent_player = BatchedPlayer(_agent, device, num_envs=num_envs)
 
-    def _run(opponent_fn):
-        """Run num_games with _agent vs opponent_fn, collect agent seat rewards."""
+    def _run(opp_player):
+        """Run num_games with agent_player vs opp_player, collect agent seat rewards."""
+        agent_player.reset()
         vec = VecSinglePlayerEcoEnv(num_envs=num_envs, num_players=num_players,
-                                     opponent_fn=opponent_fn)
+                                     opponent=opp_player)
         obs_np, masks_np = vec.reset()
         rewards_list = []
         scores_list  = []
         seats_list   = []
+        all_idxs = list(range(num_envs))
         while len(rewards_list) < num_games:
-            actions = _select(obs_np, masks_np)
+            actions = agent_player.batch_action(obs_np, masks_np, all_idxs)
             obs_np, masks_np, _, terminated, truncated, infos = vec.step(actions)
-            for i in np.where(np.logical_or(terminated, truncated))[0]:
+            done_mask = np.logical_or(terminated, truncated)
+            done_idxs = list(np.where(done_mask)[0])
+            if done_idxs:
+                agent_player.reset(done_idxs)
+            for i in done_idxs:
                 if len(rewards_list) >= num_games:
                     break
                 scores = infos[i]["final_scores"]
@@ -394,8 +502,8 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
         agent_scores = np.array([s[seats_list[j]] for j, s in enumerate(scores_list)], dtype=np.float32)
         return rewards, all_scores, agent_scores
 
-    scenarios = {
-        "vs_random": _as_opponent_fn(RandomAgent(), device),
+    scenarios: dict[str, BasePlayer] = {
+        "vs_random": RandomBatchedPlayer(),
     }
 
     # Add tournament vs past checkpoints (exponential spacing)
@@ -408,7 +516,7 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
                     old_agent = EcoAgent(num_players=num_players, score_shortcut=sc).to(device)
                     old_agent.load_state_dict(torch.load(path, map_location=device))
                     old_agent.eval()
-                    scenarios[label] = _as_opponent_fn(old_agent, device)
+                    scenarios[label] = BatchedPlayer(old_agent, device, num_envs=num_envs)
                     loaded = True
                     break
                 except Exception:
@@ -418,8 +526,8 @@ def benchmark(_agent, num_players: int = 2, num_games: int = 200,
 
     # Pre-collect so we can pair (rewards, all_scores) correctly
     out = {}
-    for name, fn in scenarios.items():
-        rewards, all_scores, agent_scores = _run(fn)
+    for name, player in scenarios.items():
+        rewards, all_scores, agent_scores = _run(player)
         out[name] = {"rewards": rewards, "all_scores": all_scores, "agent_scores": agent_scores}
     return out
 
@@ -440,7 +548,7 @@ def log_benchmark(results: dict, global_step: int) -> None:
     print(hdr)
     print("  " + "-" * (len(hdr) - 2))
 
-    log_dict = {"global_step": global_step}
+    log_dict: dict[str, Any] = {"global_step": global_step}
 
     for name, data in results.items():
         rewards    = data["rewards"]
@@ -493,97 +601,22 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    # Agent first — self-play opponent_fn closes over it and tracks weights live
+    # Agent (pure/stateless — LSTM hidden state managed externally)
     agent = EcoAgent(num_players=args.num_players, score_shortcut=args.score_shortcut).to(device)
 
-    def _self_play_fn(obs, mask):
-        """Opponent uses the current training agent weights."""
-        obs_t  = obs_to_tensor(
-            EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]), device
-        )
-        mask_t = torch.as_tensor(mask, dtype=torch.bool, device=device).unsqueeze(0)
-        with torch.no_grad():
-            action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
-        return int(action.item())
-
-    def _random_fn(obs, mask):
-        """Opponent plays uniformly at random over legal cards."""
-        return int(np.random.choice(np.where(mask)[0]))
-
-    # Batched opponent fns: evaluate ALL pending opponent obs in one call.
-    # Passed to envs.step() so the vec env can batch across games.
-    def _batch_self_play_fn(obs_batch: EcoPyTreeObs, mask_batch: np.ndarray) -> np.ndarray:
-        obs_t  = obs_to_tensor(obs_batch, device)
-        mask_t = torch.as_tensor(mask_batch, dtype=torch.bool, device=device)
-        with torch.no_grad():
-            acts, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
-        return acts.cpu().numpy()
-
-    def _batch_random_fn(obs_batch: EcoPyTreeObs, mask_batch: np.ndarray) -> np.ndarray:
-        return np.array([
-            int(np.random.choice(np.where(m)[0])) for m in mask_batch
-        ], dtype=np.int32)
-
+    # Opponent setup: BatchedPlayer handles both batched and per-env (sliced) inference.
+    # VecSinglePlayerEcoEnv wires it up: batch_action for step(), slice(i).action for reset().
     if args.opponent_mode == "self_play":
-        opponent_fn = _self_play_fn
-        batch_opp_fn = _batch_self_play_fn
-        n_self  = args.num_envs
-        n_rand  = 0
-    elif args.opponent_mode == "random":
-        opponent_fn = _random_fn
-        batch_opp_fn = _batch_random_fn
-        n_self  = 0
-        n_rand  = args.num_envs
-    else:  # mixed
-        n_self  = args.num_envs // 2
-        n_rand  = args.num_envs - n_self
-        opponent_fn = None  # assigned per-env below
-        batch_opp_fn = None  # handled inside _MixedVecEnv
+        opponent = BatchedPlayer(agent, device, num_envs=args.num_envs)
+    else:  # random
+        opponent = RandomBatchedPlayer()
 
     # env setup
-    if args.opponent_mode == "mixed":
-        self_envs = VecSinglePlayerEcoEnv(num_envs=n_self, num_players=args.num_players,
-                                       opponent_fn=_self_play_fn,
-                                       reward_shaping_scale=args.reward_shaping_scale,
-                                       opponent_penalty=args.opponent_penalty,
-                                       relative_seat=args.relative_seat)
-        rand_envs = VecSinglePlayerEcoEnv(num_envs=n_rand, num_players=args.num_players,
-                                       opponent_fn=_random_fn,
-                                       reward_shaping_scale=args.reward_shaping_scale,
-                                       opponent_penalty=args.opponent_penalty,
-                                       relative_seat=args.relative_seat)
-
-        class _MixedVecEnv:
-            """Thin combiner: concatenates self-play and random envs along the batch axis."""
-            def __init__(self, a, b):
-                self._a, self._b = a, b
-                self.num_envs = a.num_envs + b.num_envs
-            def reset(self, seed=None):
-                oa, ma = self._a.reset(seed=seed)
-                ob, mb = self._b.reset(seed=(seed + n_self) if seed is not None else None)
-                return _stack(oa, ob), np.concatenate([ma, mb], axis=0)
-            def step(self, actions, batch_opponent_fn=None):
-                aa, ab = actions[:n_self], actions[n_self:]
-                oa, ma, ra, ta, ua, ia = self._a.step(aa, batch_opponent_fn=_batch_self_play_fn)
-                ob, mb, rb, tb, ub, ib = self._b.step(ab, batch_opponent_fn=_batch_random_fn)
-                return _stack(oa, ob), np.concatenate([ma, mb], axis=0), \
-                       np.concatenate([ra, rb]), np.concatenate([ta, tb]), \
-                       np.concatenate([ua, ub]), ia + ib
-            def close(self):
-                self._a.close(); self._b.close()
-
-        def _stack(a, b):
-            return EcoPyTreeObs(*[np.concatenate([getattr(a, f), getattr(b, f)], axis=0)
-                               for f in EcoPyTreeObs._fields])
-
-        envs = _MixedVecEnv(self_envs, rand_envs)
-    else:
-        envs = VecSinglePlayerEcoEnv(num_envs=args.num_envs, num_players=args.num_players,
-                                  opponent_fn=opponent_fn,
+    envs = VecSinglePlayerEcoEnv(num_envs=args.num_envs, num_players=args.num_players,
+                                  opponent=opponent,
                                   reward_shaping_scale=args.reward_shaping_scale,
                                   opponent_penalty=args.opponent_penalty,
                                   relative_seat=args.relative_seat)
-    # [PYTREE] No single_observation_space needed; agent is shape-agnostic
 
     optimizer = optim.Adam(agent.parameters(), lr=args.learning_rate, eps=1e-5)
 
@@ -601,6 +634,8 @@ if __name__ == "__main__":
     next_obs  = obs_to_tensor(_proto_obs, device)
     next_masks = torch.as_tensor(_proto_masks, dtype=torch.bool, device=device)
     next_done = torch.zeros(args.num_envs).to(device)
+    # LSTM state for the training agent (carried across steps, reset on done inside get_states)
+    next_lstm_state = make_lstm_state(agent.lstm_layers, args.num_envs, agent.lstm_hidden, device)
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     last_log_step = 0
@@ -611,6 +646,11 @@ if __name__ == "__main__":
     # Baseline benchmark skipped — too slow for untrained agents
 
     for iteration in range(1, args.num_iterations + 1):
+        # Save initial LSTM state for training (needed to recompute hidden states)
+        initial_lstm_state = LSTMState(
+            h=next_lstm_state.h.clone(),
+            c=next_lstm_state.c.clone(),
+        )
         # Annealing the rate if instructed to do so.
         if args.anneal_lr:
             assert args.target_kl is None, "Cannot anneal learning rate when target_kl is set."
@@ -638,14 +678,20 @@ if __name__ == "__main__":
 
             # ALGO LOGIC: action logic
             with torch.no_grad():
-                action, logprob, _, value = agent.get_action_and_value(next_obs, action_masks[step])
+                action, logprob, _, value, next_lstm_state = agent.get_action_and_value(
+                    next_obs, action_masks[step], next_lstm_state, next_done
+                )
                 values[step] = value.flatten()
             actions[step] = action
             logprobs[step] = logprob
 
             # TRY NOT TO MODIFY: execute the game and log data.
-            next_obs_np, next_masks_np, reward, terminations, truncations, infos = envs.step(action.cpu().numpy(), batch_opponent_fn=batch_opp_fn)
+            next_obs_np, next_masks_np, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
             next_done = np.logical_or(terminations, truncations)
+            # Reset opponent LSTM state for terminated envs
+            done_indices = list(np.where(next_done)[0])
+            if done_indices:
+                opponent.reset(done_indices)
             # reward is a scalar per env
             rewards[step] = torch.tensor(reward, dtype=torch.float32).to(device).view(-1)
             # [PYTREE] convert numpy pytree obs → tensor pytree obs
@@ -661,7 +707,7 @@ if __name__ == "__main__":
 
         # bootstrap value if not done
         with torch.no_grad():
-            next_value = agent.get_value(next_obs).reshape(1, -1)
+            next_value = agent.get_value(next_obs, next_lstm_state, next_done).reshape(1, -1)
             advantages = torch.zeros_like(rewards).to(device)
             lastgaelam = 0
             for t in reversed(range(args.num_steps)):
@@ -680,23 +726,37 @@ if __name__ == "__main__":
         b_obs = tree_map(lambda x: x.reshape(-1, *x.shape[2:]), obs)
         b_logprobs = logprobs.reshape(-1)
         b_actions = actions.reshape(-1)
+        b_dones = dones.reshape(-1)
         b_advantages = advantages.reshape(-1)
         b_returns = returns.reshape(-1)
         b_values = values.reshape(-1)
         b_action_masks = action_masks.reshape((-1, action_masks.shape[-1]))
 
         # Optimizing the policy and value network
-        b_inds = np.arange(args.batch_size)
+        # LSTM PPO: minibatch by env index (not random), preserving temporal order
+        assert args.num_envs % args.num_minibatches == 0
+        envsperbatch = args.num_envs // args.num_minibatches
+        envinds = np.arange(args.num_envs)
+        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs)
         clipfracs = []
         for epoch in range(args.update_epochs):
-            np.random.shuffle(b_inds)
-            for start in range(0, args.batch_size, args.minibatch_size):
-                end = start + args.minibatch_size
-                mb_inds = b_inds[start:end]
+            np.random.shuffle(envinds)
+            for start in range(0, args.num_envs, envsperbatch):
+                end = start + envsperbatch
+                mbenvinds = envinds[start:end]
+                mb_inds = flatinds[:, mbenvinds].ravel()  # preserves temporal order
 
                 # [PYTREE] index each leaf by minibatch indices
                 mb_obs = tree_map(lambda x: x[mb_inds], b_obs)
-                _, newlogprob, entropy, newvalue = agent.get_action_and_value(mb_obs, b_action_masks[mb_inds], b_actions.long()[mb_inds])
+                _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
+                    mb_obs, b_action_masks[mb_inds],
+                    LSTMState(
+                        h=initial_lstm_state.h[:, mbenvinds],
+                        c=initial_lstm_state.c[:, mbenvinds],
+                    ),
+                    b_dones[mb_inds],
+                    b_actions.long()[mb_inds],
+                )
                 logratio = newlogprob - b_logprobs[mb_inds]
                 ratio = logratio.exp()
 
@@ -771,7 +831,7 @@ if __name__ == "__main__":
 
         # Inside the training loop:
         if global_step >= last_log_step + args.log_interval and global_step > 0:
-            bench_results = benchmark(agent, args.num_players, device=device, model_dir=args.model_dir, tournament=False)
+            bench_results = benchmark(agent, args.num_players, device=str(device), model_dir=args.model_dir, tournament=False)
             log_benchmark(bench_results, global_step)
             last_log_step = global_step
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-# Ablation: entropy annealing 0.1 → 0.01 + GAE=0.85, 10M samples
-python -u eco_ppo.py \
+# LSTM PPO: Entropy annealing 0.1 → 0.01 over 40k steps + GAE lambda=0.85, 10M samples
+python -u eco_ppo_lstm.py \
     --num-players 3 \
     --opponent-mode self_play \
     --opponent-penalty 0 \
@@ -12,6 +12,6 @@ python -u eco_ppo.py \
     --gae-lambda 0.85 \
     --relative-seat \
     --total-timesteps 10000000 \
-    --model-dir model/abl_both \
-    --exp-name abl_both \
+    --model-dir model/lstm_10m \
+    --exp-name lstm_10m \
     --track

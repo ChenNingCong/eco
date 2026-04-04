@@ -35,7 +35,7 @@ def get_eco_agent(model_dir: str, num_players: int = 2, model_file: str = "lates
     """Load (and cache) a trained Eco agent. Returns None if unavailable."""
     try:
         import torch
-        from eco_ppo import EcoAgent, obs_to_tensor
+        from eco_ppo_lstm import EcoAgent, obs_to_tensor
         from eco_obs_encoder import EcoPyTreeObs
     except ImportError:
         return None
@@ -90,6 +90,7 @@ class EcoGameSession:
         self.state          = self.env.reset()
         self.human_seat     = human_seat
         self.pending_events = []
+        self._lstm_states   = {}  # seat -> LSTMState, lazily initialized
         self._advance()
 
     def _opponent_act(self) -> int:
@@ -100,19 +101,27 @@ class EcoGameSession:
                 try:
                     import torch
                     from eco_obs_encoder import SinglePlayerEcoEnv, EcoPyTreeObs
-                    from eco_ppo import obs_to_tensor
+                    from eco_ppo_lstm import obs_to_tensor, make_lstm_state
+                    seat = int(self.state.current_player)
                     wrapper = SinglePlayerEcoEnv.__new__(SinglePlayerEcoEnv)
                     wrapper.env            = self.env
                     wrapper._num_players   = self.num_players
-                    wrapper._seat          = self.state.current_player
+                    wrapper._seat          = seat
                     wrapper._relative_seat = True
-                    obs   = wrapper._encode_for(self.state.current_player)
+                    obs   = wrapper._encode_for(seat)
                     obs_t = obs_to_tensor(
                         EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
                         torch.device("cpu"))
                     mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
+                    # LSTM state: carry across turns, lazily init per seat
+                    if seat not in self._lstm_states:
+                        self._lstm_states[seat] = make_lstm_state(
+                            agent.lstm_layers, 1, agent.lstm_hidden, torch.device("cpu"))
+                    done = torch.zeros(1)
                     with torch.no_grad():
-                        action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
+                        action, _, _, _, new_lstm = agent.get_action_and_value(
+                            obs_t, mask_t, self._lstm_states[seat], done)
+                    self._lstm_states[seat] = new_lstm
                     return int(action.item())
                 except Exception:
                     pass
@@ -405,6 +414,7 @@ class SpectatorSession:
         self.model_files = model_files  # one per seat
         self.env = EcoEnv(num_players=num_players, seed=int(time.time()))
         self.state = self.env.reset()
+        self._lstm_states = {}  # seat -> LSTMState, lazily initialized
 
     def _act(self, seat: int) -> int:
         mask = self.env.legal_actions()
@@ -415,18 +425,25 @@ class SpectatorSession:
                 try:
                     import torch
                     from eco_obs_encoder import SinglePlayerEcoEnv, EcoPyTreeObs
-                    from eco_ppo import obs_to_tensor
+                    from eco_ppo_lstm import obs_to_tensor, make_lstm_state
                     wrapper = SinglePlayerEcoEnv.__new__(SinglePlayerEcoEnv)
                     wrapper.env = self.env
                     wrapper._num_players = self.num_players
                     wrapper._seat = seat
+                    wrapper._relative_seat = True
                     obs = wrapper._encode_for(seat)
                     obs_t = obs_to_tensor(
                         EcoPyTreeObs(*[np.expand_dims(f, 0) for f in obs]),
                         torch.device("cpu"))
                     mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
+                    if seat not in self._lstm_states:
+                        self._lstm_states[seat] = make_lstm_state(
+                            agent.lstm_layers, 1, agent.lstm_hidden, torch.device("cpu"))
+                    done = torch.zeros(1)
                     with torch.no_grad():
-                        action, _, _, _ = agent.get_action_and_value(obs_t, mask_t)
+                        action, _, _, _, new_lstm = agent.get_action_and_value(
+                            obs_t, mask_t, self._lstm_states[seat], done)
+                    self._lstm_states[seat] = new_lstm
                     return int(action.item())
                 except Exception:
                     pass

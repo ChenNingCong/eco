@@ -45,8 +45,11 @@ class VecSinglePlayerEcoEnv:
     ----------
     num_envs             : int
     num_players          : int              (default 2)
-    opponent_fn          : callable(obs, mask) -> int, optional
-        Per-game fallback opponent, used when batch_opponent_fn is not passed to step().
+    opponent             : BatchedPlayer, callable, or None
+        - BatchedPlayer (or compatible with batch_action/slice): each env gets
+          opponent.slice(i).action for reset(), step() uses batch_action().
+        - callable(obs, mask) -> int: used as per-env opponent_fn directly.
+        - None: random opponent (default from SinglePlayerEcoEnv).
     seeds                : list of int, optional
     reward_shaping_scale : float            (default 1.0)
     """
@@ -55,7 +58,7 @@ class VecSinglePlayerEcoEnv:
         self,
         num_envs: int,
         num_players: int = 2,
-        opponent_fn: Optional[Callable] = None,
+        opponent = None,
         seeds: Optional[List[int]] = None,
         reward_shaping_scale: float = 1.0,
         opponent_penalty: float = 0.5,
@@ -63,18 +66,22 @@ class VecSinglePlayerEcoEnv:
     ):
         self.num_envs = num_envs
         self._step_count = 0
+        assert opponent is not None and hasattr(opponent, 'batch_action'), \
+            "opponent must be a BasePlayer with batch_action/slice interface"
+        self._batched_opponent = opponent
+        _get_fn = lambda i: opponent.slice(i).action
         seeds = seeds or [None] * num_envs
         self._init_seeds = list(seeds)
         self.envs: List[SinglePlayerEcoEnv] = [
             SinglePlayerEcoEnv(
                 num_players=num_players,
-                opponent_fn=opponent_fn,
+                opponent_fn=_get_fn(i),
                 seed=s,
                 reward_shaping_scale=reward_shaping_scale,
                 opponent_penalty=opponent_penalty,
                 relative_seat=relative_seat,
             )
-            for s in seeds
+            for i, s in enumerate(seeds)
         ]
 
     def reset(self, seed: Optional[int] = None) -> Tuple[EcoPyTreeObs, np.ndarray]:
@@ -92,18 +99,17 @@ class VecSinglePlayerEcoEnv:
     def step(
         self,
         actions: np.ndarray,
-        batch_opponent_fn: Optional[Callable] = None,
     ) -> Tuple[EcoPyTreeObs, np.ndarray, np.ndarray, np.ndarray, np.ndarray, List[dict]]:
         """
         Vectorised step using generator-based batched opponent evaluation.
 
+        If self._batched_opponent is set, pending opponent observations are collected
+        and evaluated in a single batch_action() call per round.
+        Otherwise, each env's per-game opponent_fn is used (one call per game).
+
         Parameters
         ----------
-        actions           : (N,) int  agent actions for each env
-        batch_opponent_fn : callable(EcoPyTreeObs, masks (N,108)) -> (N,) int, optional
-            When provided, all pending opponent observations from every active game
-            are stacked and evaluated in a single NN forward pass per "round".
-            When None, each env's per-game opponent_fn is used (one call per game).
+        actions : (N,) int  agent actions for each env
 
         Returns
         -------
@@ -154,16 +160,9 @@ class VecSinglePlayerEcoEnv:
             mask_list = [pending[i][1] for i in idxs]
 
             # Batched opponent evaluation
-            if batch_opponent_fn is not None:
-                obs_batch  = _stack_obs(obs_list)
-                mask_batch = np.stack(mask_list, axis=0)
-                opp_actions = batch_opponent_fn(obs_batch, mask_batch)
-            else:
-                # Per-game fallback: call each env's opponent_fn individually
-                opp_actions = np.array([
-                    self.envs[idxs[j]].opponent_fn(obs_list[j], mask_list[j])
-                    for j in range(len(idxs))
-                ], dtype=np.int32)
+            obs_batch  = _stack_obs(obs_list)
+            mask_batch = np.stack(mask_list, axis=0)
+            opp_actions = self._batched_opponent.batch_action(obs_batch, mask_batch, idxs)
 
             # Send actions back; collect next yield or final result
             new_pending: dict[int, tuple] = {}
