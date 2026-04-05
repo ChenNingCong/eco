@@ -48,10 +48,18 @@ class LSTMState(NamedTuple):
     h: torch.Tensor
     c: torch.Tensor
 
-def make_lstm_state(num_layers: int, batch_size: int, hidden_size: int, device) -> LSTMState:
+def make_lstm_state(num_layers: int, batch_size: int, hidden_size: int, device,
+                    c_size: int = 0) -> LSTMState:
+    """Create zero-init state. c_size overrides hidden_size for the c tensor (used by sLSTM)."""
+    if c_size == 0:
+        c_size = hidden_size
+    c = torch.zeros(num_layers, batch_size, c_size, device=device)
+    # For sLSTM: n (normalizer) lives in c[:, :, d:2d] and should be 1
+    if c_size == 3 * hidden_size:
+        c[:, :, hidden_size : 2 * hidden_size] = 1.0
     return LSTMState(
         h=torch.zeros(num_layers, batch_size, hidden_size, device=device),
-        c=torch.zeros(num_layers, batch_size, hidden_size, device=device),
+        c=c,
     )
 # ─────────────────────────────────────────────────────────────────────────────
 @dataclass
@@ -139,9 +147,15 @@ class Args:
     """effective forget gate bias (split equally across bias_ih and bias_hh). 0=default, 1.0=recommended by Jozefowicz 2015."""
     network_cell_clip: float = 0.0
     """clip LSTM cell state to [-val, val] each step. 0=disabled, 5.0=OpenAI Five style."""
-    network_arch: Literal["lstm", "ff"] = "lstm"
+    network_arch: Literal["lstm", "ff", "ff_lstm", "ff_slstm"] = "lstm"
     """network architecture: 'lstm' = LSTM between encoder and heads (default),
-    'ff' = old feedforward architecture (2-layer trunks, no LSTM)."""
+    'ff' = old feedforward architecture (2-layer trunks, no LSTM),
+    'ff_lstm' = old FF arch + LSTM concat (recurrence without capacity loss),
+    'ff_slstm' = old FF arch + sLSTM residual block (modern recurrence)."""
+    sequential_mb: bool = False
+    """force sequential (temporal-order) minibatching even for FF arch.
+    Default: auto (sequential for lstm/ff_lstm/ff_slstm, random for ff).
+    Set to true to isolate network effect from minibatch strategy."""
 
     # to be filled in runtime
     batch_size: int = 0
@@ -428,6 +442,286 @@ class EcoAgentFF(nn.Module):
         return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), lstm_state
 
 
+# ── EcoAgentFFLSTM: old FF arch + LSTM (recurrence without capacity loss) ──
+
+class EcoAgentFFLSTM(nn.Module):
+    """
+    Old FF architecture + LSTM. The LSTM output is concatenated with the
+    encoder output, so trunks get both the FF representation and recurrent
+    memory. No bottleneck — trunks stay 2 layers at full width.
+
+    Architecture: shared_encode → fusion(320)
+                                    → LSTM(320→lstm_hidden)
+                                    → concat(fusion, lstm_out) = 320 + lstm_hidden
+                                      ├→ actor_trunk(2 layers) → head
+                                      └→ critic_trunk(2 layers) → head
+    """
+    EMB_DIM = 32
+    HIDDEN  = 256
+
+    def __init__(self, num_players: int = 2, score_shortcut: bool = False,
+                 lstm_hidden: int = 128, lstm_layers: int = 1,
+                 forget_gate_bias: float = 0.0, cell_clip: float = 0.0):
+        super().__init__()
+        E, H = self.EMB_DIM, self.HIDDEN
+        self.num_players = num_players
+        self.score_shortcut = score_shortcut
+        self.lstm_hidden = lstm_hidden
+        self.lstm_layers = lstm_layers
+        self.cell_clip = cell_clip
+        float_dim = eco_float_dim(num_players)
+
+        self.player_emb = nn.Embedding(num_players + 1, E)
+        self.phase_emb  = nn.Embedding(2, E)
+
+        self.flat_enc = nn.Sequential(
+            layer_init(nn.Linear(float_dim, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        fusion_in = H + 2 * E
+
+        # LSTM takes encoder output, produces additional recurrent features
+        self.lstm = nn.LSTM(fusion_in, lstm_hidden, num_layers=lstm_layers)
+        for name, param in self.lstm.named_parameters():
+            if "bias" in name:
+                nn.init.constant_(param, 0)
+            elif "weight" in name:
+                nn.init.orthogonal_(param, 1.0)
+        if forget_gate_bias != 0.0:
+            half = forget_gate_bias / 2.0
+            for layer_idx in range(lstm_layers):
+                for suffix in ["ih", "hh"]:
+                    bias = getattr(self.lstm, f"bias_{suffix}_l{layer_idx}")
+                    bias.data[lstm_hidden:2*lstm_hidden] = half
+
+        # Trunks take concat(fusion, lstm_out) — full width, 2 layers
+        trunk_in = fusion_in + lstm_hidden
+        self.actor_trunk = nn.Sequential(
+            layer_init(nn.Linear(trunk_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),        nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.critic_trunk = nn.Sequential(
+            layer_init(nn.Linear(trunk_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),        nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.actor_head  = layer_init(nn.Linear(H, NUM_ACTIONS), std=0.01)
+
+        if score_shortcut:
+            self.score_branch = nn.Sequential(
+                layer_init(nn.Linear(num_players, 32)), nn.ReLU(),
+                layer_init(nn.Linear(32, 1), std=1.0),
+            )
+            self.critic_head = layer_init(nn.Linear(H + 1, 1), std=1.0)
+        else:
+            self.critic_head = layer_init(nn.Linear(H, 1), std=1.0)
+
+    def _shared_encode(self, obs: EcoPyTreeObs) -> torch.Tensor:
+        player_repr = self.player_emb(obs.current_player.squeeze(-1))
+        phase_repr  = self.phase_emb(obs.phase.squeeze(-1))
+        flat = torch.cat([
+            obs.hands, obs.recycling_side, obs.waste_side,
+            obs.factory_stacks, obs.collected,
+            obs.penalty_pile, obs.scores, obs.draw_pile_size,
+            obs.draw_pile_comp,
+        ], dim=-1)
+        flat_repr = self.flat_enc(flat)
+        return torch.cat([flat_repr, player_repr, phase_repr], dim=-1)
+
+    def get_states(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        shared = self._shared_encode(obs)
+
+        batch_size = lstm_state.h.shape[1]
+        lstm_in = shared.reshape((-1, batch_size, shared.shape[-1]))
+        done_r = done.reshape((-1, batch_size))
+        new_hidden = []
+        h, c = lstm_state.h, lstm_state.c
+        for t_h, t_d in zip(lstm_in, done_r):
+            h = (1.0 - t_d).view(1, -1, 1) * h
+            c = (1.0 - t_d).view(1, -1, 1) * c
+            t_h, (h, c) = self.lstm(t_h.unsqueeze(0), (h, c))
+            if self.cell_clip > 0:
+                c = c.clamp(-self.cell_clip, self.cell_clip)
+            new_hidden.append(t_h)
+        lstm_out = torch.flatten(torch.cat(new_hidden), 0, 1)
+
+        # Concat FF features + LSTM features — trunks see both
+        combined = torch.cat([shared, lstm_out], dim=-1)
+        return combined, LSTMState(h=h, c=c)
+
+    def _critic_value(self, obs: EcoPyTreeObs, critic_h: torch.Tensor) -> torch.Tensor:
+        if self.score_shortcut:
+            score_val = self.score_branch(obs.scores)
+            return self.critic_head(torch.cat([critic_h, score_val], dim=-1))
+        return self.critic_head(critic_h)
+
+    def get_value(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        combined, _ = self.get_states(obs, lstm_state, done)
+        critic_h = self.critic_trunk(combined)
+        return self._critic_value(obs, critic_h)
+
+    def get_action_and_value(self, obs: EcoPyTreeObs, action_mask,
+                             lstm_state: LSTMState, done: torch.Tensor,
+                             action=None):
+        combined, new_lstm_state = self.get_states(obs, lstm_state, done)
+        actor_h = self.actor_trunk(combined)
+        logits = self.actor_head(actor_h)
+        probs  = CategoricalMasked(logits=logits, masks=action_mask)
+        if action is None:
+            action = probs.sample()
+            illegal = ~action_mask.gather(1, action.unsqueeze(1)).squeeze(1)
+            if illegal.any():
+                n = illegal.sum().item()
+                print(f"[WARN] Hard mask enforcement triggered for {n}/{len(action)} actions")
+                masked_logits = torch.where(action_mask, logits, torch.tensor(-1e8, device=logits.device))
+                fallback = masked_logits.argmax(dim=1)
+                action = torch.where(illegal, fallback, action)
+        critic_h = self.critic_trunk(combined)
+        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), new_lstm_state
+
+
+# ── EcoAgentFFSLSTM: old FF arch + sLSTM residual block ───────────────────
+
+class EcoAgentFFSLSTM(nn.Module):
+    """
+    Old FF architecture + sLSTM residual block. The sLSTM block sits between
+    the shared encoder and the trunks, preserving dimensionality via residual.
+
+    Architecture: shared_encode → fusion(320)
+                    → SLSTMBlock(320→320, hidden=lstm_hidden)   # residual, pre-norm
+                      ├→ actor_trunk(2 layers) → head
+                      └→ critic_trunk(2 layers) → head
+
+    State: (h, extra) where h is (1, batch, lstm_hidden),
+           extra is (1, batch, 3*lstm_hidden) packing (c, n, m).
+    Mapped to LSTMState(h, c) with c = extra.
+    """
+    EMB_DIM = 32
+    HIDDEN  = 256
+
+    def __init__(self, num_players: int = 2, score_shortcut: bool = False,
+                 lstm_hidden: int = 128, lstm_layers: int = 1):
+        super().__init__()
+        from slstm import SLSTMBlock
+        E, H = self.EMB_DIM, self.HIDDEN
+        self.num_players = num_players
+        self.score_shortcut = score_shortcut
+        self.lstm_hidden = lstm_hidden
+        self.lstm_layers = lstm_layers
+        self.c_size = 3 * lstm_hidden  # sLSTM packs (c, n, m)
+        float_dim = eco_float_dim(num_players)
+
+        self.player_emb = nn.Embedding(num_players + 1, E)
+        self.phase_emb  = nn.Embedding(2, E)
+
+        self.flat_enc = nn.Sequential(
+            layer_init(nn.Linear(float_dim, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        fusion_in = H + 2 * E
+
+        # sLSTM residual block: fusion_in → fusion_in (preserves dim)
+        self.slstm_block = SLSTMBlock(
+            input_size=fusion_in, hidden_size=lstm_hidden, num_layers=lstm_layers
+        )
+
+        # 2-layer trunks at full width (same as old FF arch)
+        self.actor_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.critic_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.actor_head  = layer_init(nn.Linear(H, NUM_ACTIONS), std=0.01)
+
+        if score_shortcut:
+            self.score_branch = nn.Sequential(
+                layer_init(nn.Linear(num_players, 32)), nn.ReLU(),
+                layer_init(nn.Linear(32, 1), std=1.0),
+            )
+            self.critic_head = layer_init(nn.Linear(H + 1, 1), std=1.0)
+        else:
+            self.critic_head = layer_init(nn.Linear(H, 1), std=1.0)
+
+    def _shared_encode(self, obs: EcoPyTreeObs) -> torch.Tensor:
+        player_repr = self.player_emb(obs.current_player.squeeze(-1))
+        phase_repr  = self.phase_emb(obs.phase.squeeze(-1))
+        flat = torch.cat([
+            obs.hands, obs.recycling_side, obs.waste_side,
+            obs.factory_stacks, obs.collected,
+            obs.penalty_pile, obs.scores, obs.draw_pile_size,
+            obs.draw_pile_comp,
+        ], dim=-1)
+        flat_repr = self.flat_enc(flat)
+        return torch.cat([flat_repr, player_repr, phase_repr], dim=-1)
+
+    def get_states(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        shared = self._shared_encode(obs)
+
+        # Unpack LSTMState — h is (layers, batch, lstm_hidden), c is (layers, batch, 3*lstm_hidden)
+        h_state = lstm_state.h
+        extra = lstm_state.c
+        batch_size = h_state.shape[1]
+
+        shared_seq = shared.reshape((-1, batch_size, shared.shape[-1]))  # (T, B, fusion_in)
+        done_seq = done.reshape((-1, batch_size))  # (T, B)
+
+        # Process step by step (reset state on done)
+        outputs = []
+        for t in range(shared_seq.shape[0]):
+            # Reset state for done envs
+            done_mask = done_seq[t]  # (B,)
+            if done_mask.any():
+                keep = (1.0 - done_mask).unsqueeze(0).unsqueeze(-1)  # (1, B, 1)
+                h_state = h_state * keep
+                extra = extra * keep
+                # Restore n=1 for reset envs
+                d = self.lstm_hidden
+                n_slice = extra[:, :, d:2*d]
+                n_slice = n_slice + done_mask.unsqueeze(0).unsqueeze(-1)
+                extra = torch.cat([extra[:, :, :d], n_slice, extra[:, :, 2*d:]], dim=-1)
+
+            # sLSTM block: (1, B, fusion_in) → (1, B, fusion_in)
+            out, (h_state, extra) = self.slstm_block(
+                shared_seq[t:t+1], (h_state, extra)
+            )
+            outputs.append(out.squeeze(0))
+
+        result = torch.cat(outputs, dim=0)  # (T*B, fusion_in)
+        return result, LSTMState(h=h_state, c=extra)
+
+    def _critic_value(self, obs: EcoPyTreeObs, critic_h: torch.Tensor) -> torch.Tensor:
+        if self.score_shortcut:
+            score_val = self.score_branch(obs.scores)
+            return self.critic_head(torch.cat([critic_h, score_val], dim=-1))
+        return self.critic_head(critic_h)
+
+    def get_value(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        combined, _ = self.get_states(obs, lstm_state, done)
+        critic_h = self.critic_trunk(combined)
+        return self._critic_value(obs, critic_h)
+
+    def get_action_and_value(self, obs: EcoPyTreeObs, action_mask,
+                             lstm_state: LSTMState, done: torch.Tensor,
+                             action=None):
+        combined, new_state = self.get_states(obs, lstm_state, done)
+        actor_h = self.actor_trunk(combined)
+        logits = self.actor_head(actor_h)
+        probs  = CategoricalMasked(logits=logits, masks=action_mask)
+        if action is None:
+            action = probs.sample()
+            illegal = ~action_mask.gather(1, action.unsqueeze(1)).squeeze(1)
+            if illegal.any():
+                n = illegal.sum().item()
+                print(f"[WARN] Hard mask enforcement triggered for {n}/{len(action)} actions")
+                masked_logits = torch.where(action_mask, logits, torch.tensor(-1e8, device=logits.device))
+                fallback = masked_logits.argmax(dim=1)
+                action = torch.where(illegal, fallback, action)
+        critic_h = self.critic_trunk(combined)
+        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), new_state
+
+
 # ── Player interface: abstract base for batched opponent players ─────────────
 
 class BasePlayer(ABC):
@@ -481,20 +775,27 @@ class BatchedPlayer(BasePlayer):
         self.agent = agent
         self.device = device
         self.num_envs = num_envs
+        self._c_size = getattr(agent, 'c_size', agent.lstm_hidden)
         self.lstm_state = make_lstm_state(
-            agent.lstm_layers, num_envs, agent.lstm_hidden, device
+            agent.lstm_layers, num_envs, agent.lstm_hidden, device,
+            c_size=self._c_size,
         )
 
     def reset(self, env_indices=None):
         """Reset LSTM state for given env indices (or all if None)."""
         if env_indices is None:
             self.lstm_state = make_lstm_state(
-                self.agent.lstm_layers, self.num_envs, self.agent.lstm_hidden, self.device
+                self.agent.lstm_layers, self.num_envs, self.agent.lstm_hidden, self.device,
+                c_size=self._c_size,
             )
         else:
             for idx in env_indices:
                 self.lstm_state.h[:, idx] = 0
                 self.lstm_state.c[:, idx] = 0
+                # Restore n=1 for sLSTM
+                if self._c_size == 3 * self.agent.lstm_hidden:
+                    d = self.agent.lstm_hidden
+                    self.lstm_state.c[:, idx, d:2*d] = 1.0
 
     def batch_action(self, obs_batch: EcoPyTreeObs, mask_batch: np.ndarray,
                      idxs: list) -> np.ndarray:
@@ -729,6 +1030,16 @@ if __name__ == "__main__":
     if args.network_arch == "ff":
         agent = EcoAgentFF(num_players=args.num_players,
                            score_shortcut=args.score_shortcut).to(device)
+    elif args.network_arch == "ff_lstm":
+        agent = EcoAgentFFLSTM(num_players=args.num_players,
+                               score_shortcut=args.score_shortcut,
+                               lstm_hidden=args.lstm_hidden,
+                               forget_gate_bias=args.network_forget_gate_bias,
+                               cell_clip=args.network_cell_clip).to(device)
+    elif args.network_arch == "ff_slstm":
+        agent = EcoAgentFFSLSTM(num_players=args.num_players,
+                                score_shortcut=args.score_shortcut,
+                                lstm_hidden=args.lstm_hidden).to(device)
     else:
         agent = EcoAgent(num_players=args.num_players, score_shortcut=args.score_shortcut,
                          lstm_hidden=args.lstm_hidden, disable_lstm=args.disable_lstm,
@@ -766,7 +1077,9 @@ if __name__ == "__main__":
     next_masks = torch.as_tensor(_proto_masks, dtype=torch.bool, device=device)
     next_done = torch.zeros(args.num_envs).to(device)
     # LSTM state for the training agent (carried across steps, reset on done inside get_states)
-    next_lstm_state = make_lstm_state(agent.lstm_layers, args.num_envs, agent.lstm_hidden, device)
+    _c_size = getattr(agent, 'c_size', agent.lstm_hidden)
+    next_lstm_state = make_lstm_state(agent.lstm_layers, args.num_envs, agent.lstm_hidden, device,
+                                      c_size=_c_size)
     # TRY NOT TO MODIFY: start the game
     global_step = 0
     last_log_step = 0
@@ -868,7 +1181,7 @@ if __name__ == "__main__":
         b_action_masks = action_masks.reshape((-1, action_masks.shape[-1]))
 
         # Optimizing the policy and value network
-        use_sequential_mb = args.network_arch == "lstm"
+        use_sequential_mb = args.sequential_mb or args.network_arch in ("lstm", "ff_lstm", "ff_slstm")
         clipfracs = []
         if use_sequential_mb:
             # LSTM PPO: minibatch by env index, preserving temporal order
