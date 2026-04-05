@@ -19,3 +19,9 @@ from .vec_env import VecSinglePlayerEnv, EnvFactory
 from .player import SlicedPlayer, BasePlayer, RandomPlayer, OffsetPlayer
 from .key import Key, key_from_seed
 from .mp_vec_env import MultiProcessVecEnv
+from .ppo_lstm import (
+    PPOConfig, BaseAgent, LSTMState, make_lstm_state,
+    LSTMBatchedPlayer, LSTMSlicedPlayer, PPOLSTMTrainer,
+    CategoricalMasked, layer_init,
+    obs_to_tensor, obs_unsqueeze, alloc_obs_buffer,
+)

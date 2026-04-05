@@ -11,3 +11,4 @@ from .engine import (
     encode_play, decode_play, encode_discard, decode_discard,
 )
 from .factory import RÖkoEnvFactory
+from .agent import EcoAgent, EcoArgs

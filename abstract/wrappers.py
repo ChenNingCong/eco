@@ -56,6 +56,9 @@ class GameWrapper(BaseGameEngine[Obs]):
     def num_actions(self) -> int:
         return self.engine.num_actions
 
+    def compute_scores(self) -> np.ndarray:
+        return self.engine.compute_scores()
+
 
 class RewardShaping(GameWrapper[Obs]):
     """

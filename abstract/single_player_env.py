@@ -129,4 +129,13 @@ class SinglePlayerEnv(Generic[Obs]):
         reward = self._accumulated_reward
         self._accumulated_reward = 0.0
         obs = self.engine.encode(self._seat)
-        return obs, reward, True, False, {"agent_seat": self._seat}
+        info: dict = {"agent_seat": self._seat}
+        try:
+            info["final_scores"] = self.engine.compute_scores()
+        except NotImplementedError:
+            pass
+        try:
+            info["game_metrics"] = self.engine.game_metrics(self._seat)
+        except (NotImplementedError, AttributeError):
+            pass
+        return obs, reward, True, False, info

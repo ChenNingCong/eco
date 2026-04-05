@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ticket to Ride</title>
+<style>
+  /* ── Theme variables ─────────────────────────────────────────── */
+  :root {
+    --bg: #f0f0f0; --bg2: #fff; --bg3: #e8e8e8; --fg: #222; --fg2: #555;
+    --accent: #d32f2f; --accent2: #1565c0; --border: #ccc;
+    --map-bg: #f5f0e0; --city-fill: #444; --city-stroke: #222; --city-label: #333;
+    --tooltip-bg: #fff; --tooltip-border: #999; --tooltip-fg: #222;
+    --status-bg: #e0e0e0;
+    --dest-select-bg: #e8f0fe; --dest-select-border: #1565c0;
+  }
+  html.dark {
+    --bg: #1a1a2e; --bg2: #16213e; --bg3: #0f3460; --fg: #e0e0e0; --fg2: #aaa;
+    --accent: #e94560; --accent2: #4fc3f7; --border: #2a2a4a;
+    --map-bg: #16213e; --city-fill: #ccc; --city-stroke: #fff; --city-label: #ddd;
+    --tooltip-bg: #0f3460; --tooltip-border: #4fc3f7; --tooltip-fg: #e0e0e0;
+    --status-bg: #0f3460;
+    --dest-select-bg: #0f3460; --dest-select-border: #4fc3f7;
+  }
+
+  /* ── Base ─────────────────────────────────────────────────────── */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--fg); padding: 12px; transition: background .2s, color .2s; }
+  h1 { color: var(--accent); margin-bottom: 6px; font-size: 22px; }
+  h2 { color: var(--bg2); background: var(--fg); padding: 3px 8px; margin: 6px 0 3px;
+       border-radius: 4px; font-size: 13px; }
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .status { background: var(--status-bg); padding: 6px 10px; border-radius: 6px; font-size: 12px; flex: 1; }
+  .status span { margin-right: 14px; }
+  .btn { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 4px;
+         cursor: pointer; font-size: 12px; margin: 2px; white-space: nowrap; }
+  .btn:hover { opacity: 0.85; }
+  .btn.action { background: var(--bg3); color: var(--fg); font-size: 11px; }
+  .btn.action:hover { opacity: 0.75; }
+  .btn.theme-toggle { background: var(--bg3); color: var(--fg); font-size: 14px; padding: 4px 8px; }
+  .main-layout { display: flex; gap: 10px; }
+  .map-panel { flex: 3; background: var(--map-bg); border-radius: 8px; padding: 8px; position: relative; }
+  .side-panel { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 6px; }
+  .side-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+
+  /* ── Cards ────────────────────────────────────────────────────── */
+  .hand { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+  .card { padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: default;
+          min-width: 50px; text-align: center; box-shadow: 1px 2px 4px rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.15); }
+  .card-WHITE { background: #e0e0e0; color: #333; }
+  .card-BLUE { background: #1565c0; color: white; }
+  .card-GREEN { background: #2e7d32; color: white; }
+  .card-ORANGE { background: #e65100; color: white; }
+  .card-PINK { background: #ad1457; color: white; }
+  .card-RED { background: #c62828; color: white; }
+  .card-YELLOW { background: #f9a825; color: #333; }
+  .card-BLACK { background: #212121; color: white; }
+  .card-WILD { background: linear-gradient(135deg, #e94560, #1565c0); color: white; }
+  .card.clickable { cursor: pointer; outline: 2px solid var(--accent2); }
+  .card.clickable:hover { outline-color: var(--accent); }
+
+  /* ── Destinations ─────────────────────────────────────────────── */
+  .dest-item { font-size: 11px; padding: 2px 0; }
+  .completed { color: #2e7d32; } html.dark .completed { color: #66bb6a; }
+  .uncompleted { color: #e65100; } html.dark .uncompleted { color: #ffa726; }
+  .dest-select { background: var(--dest-select-bg); border: 1px solid var(--dest-select-border);
+                 border-radius: 4px; padding: 4px 8px; margin: 2px 0; cursor: pointer;
+                 font-size: 11px; color: var(--fg); }
+  .dest-select:hover { opacity: 0.8; }
+  #game-over { display: none; background: var(--accent); color: white; padding: 12px;
+               border-radius: 8px; text-align: center; font-size: 16px; margin-bottom: 6px; }
+
+  /* ── SVG map ──────────────────────────────────────────────────── */
+  #map-svg { width: 100%; height: 100%; }
+  .map-panel svg { display: block; }
+  .claimable { cursor: pointer; filter: drop-shadow(0 0 4px #00e5ff) drop-shadow(0 0 8px #00e5ff); }
+  .claimable:hover line { stroke-width: 8 !important; }
+  .city-dot { fill: var(--city-fill); stroke: var(--city-stroke); stroke-width: 1; }
+  .city-label { fill: var(--city-label); font-size: 9px; font-family: sans-serif; pointer-events: none; }
+  .tooltip { position: absolute; background: var(--tooltip-bg); color: var(--tooltip-fg); padding: 4px 8px;
+             border-radius: 4px; font-size: 11px; pointer-events: none; display: none;
+             z-index: 100; white-space: nowrap; border: 1px solid var(--tooltip-border); }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>Ticket to Ride</h1>
+  <button class="btn" onclick="newGame()">New Game</button>
+  <select id="model-select" class="btn" style="background:var(--bg3);color:var(--fg);" onchange="setModel(this.value)">
+    <option value="random">Random</option>
+  </select>
+  <button class="btn theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">&#9790;</button>
+  <div class="status" id="status">Click "New Game" to start</div>
+</div>
+<div id="game-over"></div>
+
+<div class="main-layout">
+  <div class="map-panel">
+    <svg id="map-svg" viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="4" result="blur"/>
+          <feFlood flood-color="#00e5ff" flood-opacity="0.8" result="glowColor"/>
+          <feComposite in="glowColor" in2="blur" operator="in" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <!-- Player 0: diagonal stripes \ -->
+        <pattern id="stripe-0" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        </pattern>
+        <!-- Player 1: diagonal stripes / -->
+        <pattern id="stripe-1" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(-45)">
+          <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        </pattern>
+        <!-- Player 2: horizontal stripes -->
+        <pattern id="stripe-2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(0)">
+          <line x1="0" y1="0" x2="6" y2="0" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+        </pattern>
+        <!-- Player 3: dots -->
+        <pattern id="stripe-3" patternUnits="userSpaceOnUse" width="6" height="6">
+          <circle cx="3" cy="3" r="1.5" fill="rgba(255,255,255,0.4)"/>
+        </pattern>
+        <!-- Player 4: crosshatch -->
+        <pattern id="stripe-4" patternUnits="userSpaceOnUse" width="6" height="6">
+          <line x1="0" y1="0" x2="6" y2="6" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+          <line x1="6" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+        </pattern>
+      </defs>
+      <g id="routes-layer"></g>
+      <g id="cities-layer"></g>
+      <g id="claimed-layer"></g>
+      <g id="highlight-layer"></g>
+    </svg>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="side-panel">
+    <div class="side-section">
+      <h2>Your Hand</h2>
+      <div id="hand" class="hand"></div>
+      <h2>Visible Cards <span id="deck-info" style="font-weight:normal;font-size:11px"></span></h2>
+      <div id="visible" class="hand"></div>
+    </div>
+    <div class="side-section">
+      <h2>Your Destinations</h2>
+      <div id="destinations"></div>
+    </div>
+    <div class="side-section" id="dest-select-panel" style="display:none">
+      <h2>Select Destinations</h2>
+      <div id="dest-select"></div>
+      <div id="dest-select-actions" style="margin-top:4px"></div>
+    </div>
+    <div class="side-section">
+      <h2>Other Actions</h2>
+      <div id="actions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Theme ─────────────────────────────────────────────────────────────── */
+function toggleTheme() {
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('ttr-theme', dark ? 'dark' : 'light');
+  document.getElementById('theme-btn').innerHTML = dark ? '&#9788;' : '&#9790;';
+}
+// Restore saved theme
+if (localStorage.getItem('ttr-theme') === 'dark') {
+  document.documentElement.classList.add('dark');
+  document.getElementById('theme-btn').innerHTML = '&#9788;';
+}
+
+/* ── State ─────────────────────────────────────────────────────────────── */
+let mapData = null;
+let cityXY = {};
+let gameState = null;
+let legalActionSet = new Set();
+
+const ROUTE_COLORS = {
+  WHITE:'#f5f5f5', BLUE:'#2196f3', GREEN:'#4caf50', ORANGE:'#ff9800',
+  PINK:'#e91e91', RED:'#f44336', YELLOW:'#fbc02d', BLACK:'#1a1a1a', WILD:'#9575cd'
+};
+const OWNER_COLORS = ['#1565c0', '#c62828', '#7b1fa2', '#2e7d32', '#e65100'];
+
+/* ── API ───────────────────────────────────────────────────────────────── */
+async function api(path, body) {
+  const opts = body
+    ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}
+    : {};
+  return (await fetch(path, opts)).json();
+}
+
+/* ── Map projection ────────────────────────────────────────────────────── */
+function project(lat, lon) {
+  const lonMin = -125, lonMax = -69, latMin = 24, latMax = 53;
+  const W = 1000, H = 620, pad = 40;
+  return {
+    x: pad + (lon - lonMin) / (lonMax - lonMin) * (W - 2*pad),
+    y: pad + (latMax - lat) / (latMax - latMin) * (H - 2*pad),
+  };
+}
+
+/* ── SVG helper ────────────────────────────────────────────────────────── */
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+/* ── Build static city layer (once) ────────────────────────────────────── */
+function buildMap() {
+  for (const c of mapData.cities) {
+    cityXY[c.id] = project(c.lat, c.lon);
+    cityNameToId[c.name] = c.id;
+  }
+  const g = document.getElementById('cities-layer');
+  for (const c of mapData.cities) {
+    const {x, y} = cityXY[c.id];
+    g.appendChild(svgEl('circle', {cx:x, cy:y, r:4, class:'city-dot'}));
+    const lbl = svgEl('text', {x:x, y:y-7, 'text-anchor':'middle', class:'city-label'});
+    lbl.textContent = c.name.replace(/_/g, ' ');
+    g.appendChild(lbl);
+  }
+}
+
+/* ── Route geometry (double-route offset) ──────────────────────────────── */
+function routeEndpoints(route) {
+  const p1 = cityXY[route.city1], p2 = cityXY[route.city2];
+  if (route.adjacent < 0) return {x1:p1.x, y1:p1.y, x2:p2.x, y2:p2.y};
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.sqrt(dx*dx + dy*dy) || 1;
+  const off = 4;
+  const nx = -dy/len * off, ny = dx/len * off;
+  const sign = route.id < route.adjacent ? 1 : -1;
+  return {x1:p1.x+nx*sign, y1:p1.y+ny*sign, x2:p2.x+nx*sign, y2:p2.y+ny*sign};
+}
+
+/* ── Draw train-car segments along a route ─────────────────────────────── */
+function drawRouteCars(g, route, ep, opts) {
+  const {x1, y1, x2, y2} = ep;
+  const n = route.length;
+  const gap = 0.06;
+  const carFrac = (1 - gap*(n-1)) / n;
+  const sw = (opts && opts.strokeWidth) || 4;
+  const stripeId = opts && opts.stripeId;
+  for (let i = 0; i < n; i++) {
+    const t0 = i * (carFrac + gap), t1 = t0 + carFrac;
+    const lx1 = x1+(x2-x1)*t0, ly1 = y1+(y2-y1)*t0;
+    const lx2 = x1+(x2-x1)*t1, ly2 = y1+(y2-y1)*t1;
+    g.appendChild(svgEl('line', {
+      x1:lx1, y1:ly1, x2:lx2, y2:ly2,
+      'stroke-width': sw, 'stroke-linecap': 'round',
+    }));
+    if (stripeId) {
+      g.appendChild(svgEl('line', {
+        x1:lx1, y1:ly1, x2:lx2, y2:ly2,
+        stroke: `url(#${stripeId})`, 'stroke-width': sw, 'stroke-linecap': 'round',
+      }));
+    }
+  }
+}
+
+/* ── Render routes on map ──────────────────────────────────────────────── */
+function renderRoutes() {
+  const routesG = document.getElementById('routes-layer');
+  const claimedG = document.getElementById('claimed-layer');
+  routesG.innerHTML = '';
+  claimedG.innerHTML = '';
+  const tip = document.getElementById('tooltip');
+
+  for (const route of mapData.routes) {
+    const ep = routeEndpoints(route);
+    const sr = gameState ? gameState.routes[route.id] : null;
+    const owner = sr ? sr.owner : -1;
+    const claimId = 42 + route.id;
+    const canClaim = legalActionSet.has(claimId);
+
+    const g = svgEl('g', {});
+
+    if (owner >= 0) {
+      // Claimed: player-colored fill + thin route-colored border + stripes
+      const ownerColor = OWNER_COLORS[owner] || '#888';
+      const routeColor = ROUTE_COLORS[route.color] || '#888';
+      // Thin route-color border (behind)
+      drawRouteCars(g, route, ep, {strokeWidth: 10});
+      const borderChildren = [...g.children];
+      for (const c of borderChildren) {
+        c.setAttribute('stroke', routeColor);
+        c.setAttribute('opacity', '0.9');
+      }
+      // Wide player-colored fill + stripes (on top)
+      drawRouteCars(g, route, ep, {strokeWidth: 7, stripeId: `stripe-${owner}`});
+      const fillChildren = [...g.children].slice(borderChildren.length);
+      for (const c of fillChildren) {
+        if (!c.getAttribute('stroke')) c.setAttribute('stroke', ownerColor);
+      }
+    } else {
+      // Unclaimed
+      const routeColor = ROUTE_COLORS[route.color] || '#888';
+      drawRouteCars(g, route, ep);
+      const cars = [...g.children];
+      for (const c of cars) {
+        c.setAttribute('stroke', routeColor);
+        if (routeColor === '#f5f5f5' || routeColor === '#fbc02d') {
+          c.setAttribute('stroke-width', '3');
+          const outline = c.cloneNode();
+          outline.setAttribute('stroke', '#333');
+          outline.setAttribute('stroke-width', '5');
+          g.insertBefore(outline, c);
+        }
+      }
+    }
+
+    if (canClaim) {
+      g.style.cursor = 'pointer';
+      g.classList.add('claimable');
+      g.onclick = () => doAction(claimId);
+    }
+
+    // Tooltip
+    const c1 = mapData.cities[route.city1].name.replace(/_/g,' ');
+    const c2 = mapData.cities[route.city2].name.replace(/_/g,' ');
+    const ow = owner===0?' ★YOU':owner===1?' ★AI':'';
+    const txt = `${c1} \u2013 ${c2} | ${route.color} | len ${route.length} | ${route.points}pts${ow}`;
+    g.onmouseenter = () => { tip.textContent = txt; tip.style.display = 'block'; };
+    g.onmousemove = (e) => {
+      const r = document.querySelector('.map-panel').getBoundingClientRect();
+      tip.style.left = (e.clientX - r.left + 10) + 'px';
+      tip.style.top  = (e.clientY - r.top  - 25) + 'px';
+    };
+    g.onmouseleave = () => { tip.style.display = 'none'; };
+    if (owner >= 0) {
+      claimedG.appendChild(g);
+    } else {
+      routesG.appendChild(g);
+    }
+  }
+}
+
+/* ── Destination highlight on map ──────────────────────────────────────── */
+let cityNameToId = {};
+
+function highlightDest(destId) {
+  const hl = document.getElementById('highlight-layer');
+  hl.innerHTML = '';
+  const d = mapData.destinations[destId];
+  if (!d) return;
+  const p1 = cityXY[d.city1], p2 = cityXY[d.city2];
+  if (!p1 || !p2) return;
+
+  // Dashed line between the two cities
+  hl.appendChild(svgEl('line', {
+    x1:p1.x, y1:p1.y, x2:p2.x, y2:p2.y,
+    stroke:'var(--accent)', 'stroke-width':2, 'stroke-dasharray':'6,4', opacity:'0.8',
+  }));
+  // Highlight city dots
+  for (const p of [p1, p2]) {
+    hl.appendChild(svgEl('circle', {
+      cx:p.x, cy:p.y, r:7, fill:'none', stroke:'var(--accent)', 'stroke-width':2,
+    }));
+  }
+}
+
+function clearHighlight() {
+  document.getElementById('highlight-layer').innerHTML = '';
+}
+
+/* ── Main render ───────────────────────────────────────────────────────── */
+function render(s) {
+  if (!s.started) return;
+  gameState = s;
+  legalActionSet.clear();
+  for (const a of s.legal_actions) legalActionSet.add(a.id);
+
+  // Game over
+  const go = document.getElementById('game-over');
+  if (s.done) {
+    go.style.display = 'block';
+    const w = s.scores[0]>s.scores[1] ? 'You win!' : s.scores[0]<s.scores[1] ? 'AI wins!' : 'Tie!';
+    go.innerHTML = `Game Over &mdash; ${w} (You: ${s.scores[0]} pts, AI: ${s.scores[1]} pts)`;
+  } else { go.style.display = 'none'; }
+
+  // Status
+  const myTurn = s.current_player === 0 && !s.done;
+  document.getElementById('status').innerHTML =
+    `<span>${s.game_state} / ${s.turn_state}</span>` +
+    `<span style="color:${myTurn?'var(--accent2)':'var(--accent)'}">${myTurn?'YOUR TURN':'AI TURN'}</span>` +
+    `<span>Trains: ${s.human.trains}</span><span>Pts: ${s.human.points}</span>` +
+    `<span style="color:var(--accent)">AI: ${s.ai.trains}tr / ${s.ai.points}pts</span>`;
+
+  // Hand
+  const hand = document.getElementById('hand');
+  hand.innerHTML = '';
+  for (const [color, count] of Object.entries(s.human.hand))
+    if (count > 0) hand.innerHTML += `<span class="card card-${color}">${color}: ${count}</span>`;
+
+  // Visible cards
+  const vis = document.getElementById('visible');
+  vis.innerHTML = '';
+  const CI = {WHITE:0,BLUE:1,GREEN:2,ORANGE:3,PINK:4,RED:5,YELLOW:6,BLACK:7,WILD:8};
+  for (const [color, count] of Object.entries(s.visible_cards)) {
+    if (count <= 0) continue;
+    const aid = 1 + CI[color];
+    const ok = legalActionSet.has(aid);
+    vis.innerHTML += `<span class="card card-${color}${ok?' clickable':''}"` +
+      (ok ? ` onclick="doAction(${aid})"` : '') + `>${color}: ${count}</span>`;
+  }
+  document.getElementById('deck-info').textContent = `(Deck: ${s.deck_size})`;
+
+  // Destinations (with hover highlight)
+  const dest = document.getElementById('destinations');
+  dest.innerHTML = '';
+  for (const d of s.destinations) {
+    if (d.status === 'unclaimed') continue;
+    const cls = d.status === 'completed' ? 'completed' : 'uncompleted';
+    dest.innerHTML += `<div class="dest-item ${cls}" onmouseenter="highlightDest(${d.id})" onmouseleave="clearHighlight()">${d.city1} &rarr; ${d.city2} (${d.points}pts) [${d.status}]</div>`;
+  }
+
+  // Destination selection (with hover highlight)
+  const dsp = document.getElementById('dest-select-panel');
+  const dsc = document.getElementById('dest-select');
+  const dsa = document.getElementById('dest-select-actions');
+  if (s.avail_dest && s.avail_dest.length > 0) {
+    dsp.style.display = '';
+    dsc.innerHTML = '';
+    for (const d of s.avail_dest) {
+      const aid = 11 + d.id;
+      const hover = `onmouseenter="highlightDest(${d.id})" onmouseleave="clearHighlight()"`;
+      if (legalActionSet.has(aid))
+        dsc.innerHTML += `<div class="dest-select" onclick="doAction(${aid})" ${hover}>${d.city1} &rarr; ${d.city2} (${d.points}pts) [SELECT]</div>`;
+      else
+        dsc.innerHTML += `<div class="dest-item" ${hover}>${d.city1} &rarr; ${d.city2} (${d.points}pts)</div>`;
+    }
+    dsa.innerHTML = legalActionSet.has(41)
+      ? `<button class="btn" onclick="doAction(41)">Finish Selecting</button>` : '';
+  } else { dsp.style.display = 'none'; }
+
+  // Other actions (draw deck, draw destinations)
+  const acts = document.getElementById('actions');
+  acts.innerHTML = '';
+  for (const a of s.legal_actions) {
+    if (a.id >= 1 && a.id <= 9) continue;
+    if (a.id >= 11 && a.id <= 41) continue;
+    if (a.id >= 42) continue;
+    acts.innerHTML += `<button class="btn action" onclick="doAction(${a.id})">${a.desc}</button>`;
+  }
+
+  if (mapData) renderRoutes();
+}
+
+async function doAction(id) {
+  const s = await api('/api/action', {action: id});
+  // Auto-finish destination selection if it's the only legal action
+  if (s.legal_actions.length === 1 && s.legal_actions[0].id === 41) {
+    return doAction(41);
+  }
+  render(s);
+}
+async function newGame() { render(await api('/api/new', {})); }
+
+async function setModel(modelId) {
+  const res = await api('/api/set_model', {model: modelId});
+  document.getElementById('status').textContent =
+    res.status === 'ok' ? `AI model: ${res.model}` : `Error: ${res.msg}`;
+}
+
+/* ── Init ──────────────────────────────────────────────────────────────── */
+(async () => {
+  mapData = await api('/api/map_data');
+  buildMap();
+  // Populate model selector
+  const models = await api('/api/models');
+  const sel = document.getElementById('model-select');
+  sel.innerHTML = '';
+  for (const m of models) {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name;
+    sel.appendChild(opt);
+  }
+  // Default to last model (usually latest.pkt)
+  if (models.length > 1) sel.value = models[models.length - 1].id;
+  render(await api('/api/state'));
+})();
+</script>
+</body>
+</html>

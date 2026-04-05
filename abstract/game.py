@@ -94,3 +94,7 @@ class BaseGameEngine(ABC, Generic[Obs]):
     def num_actions(self) -> int:
         """Size of the action space."""
         ...
+
+    def compute_scores(self) -> np.ndarray:
+        """Compute current scores for all players. Override in subclass."""
+        raise NotImplementedError
