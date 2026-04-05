@@ -12,14 +12,13 @@ Interface:
     obs, masks, rewards, terminated, truncated, infos = vec.step(actions)
 """
 
-import random
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import List
 
 from .game import BaseGameEngine
 from .single_player_env import SinglePlayerEnv
-from .player import BasePlayer, SlicedPlayer
+from .player import BasePlayer
 from .key import Key
 
 
@@ -43,13 +42,13 @@ class EnvFactory(ABC):
     """
 
     @abstractmethod
-    def create(self, rng: random.Random) -> BaseGameEngine:
+    def create(self, rng: np.random.Generator) -> BaseGameEngine:
         """
         Create a game engine with the provided RNG.
 
         Parameters
         ----------
-        rng : random.Random for the engine's randomness
+        rng : np.random.Generator for the engine's randomness
         """
         ...
 
@@ -76,13 +75,11 @@ class VecSinglePlayerEnv:
         self.num_envs = num_envs
         self._opponent = opponent
         self._factory = env_factory
-        # Key used here only: spawn per-env keys, convert to RNGs, discard
+        # Spawn per-env keys, then split each into engine + env RNGs
         child_keys = key.spawn(num_envs)
         self.envs: List[SinglePlayerEnv] = []
         for i in range(num_envs):
-            rng = child_keys[i].make_rng()
-            engine_rng = random.Random(rng.randrange(2**63))
-            env_rng = random.Random(rng.randrange(2**63))
+            engine_rng, env_rng = child_keys[i].spawn(2)
             engine = env_factory.create(engine_rng)
             self.envs.append(SinglePlayerEnv(engine, opponent.slice(i), rng=env_rng))
 

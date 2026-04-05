@@ -4,7 +4,6 @@ Tests for R-Öko game engine (BaseGameEngine implementation).
 Run with:  python -m pytest test/game/r_eco/test_engine.py -v
 """
 
-import random
 import numpy as np
 import pytest
 
@@ -19,7 +18,7 @@ from game.r_eco import (
 
 
 def _make_engine(seed=42, num_players=2) -> RÖkoEngine:
-    engine = RÖkoEngine(rng=random.Random(seed), num_players=num_players)
+    engine = RÖkoEngine(rng=np.random.default_rng(seed), num_players=num_players)
     engine.reset()
     return engine
 
@@ -396,7 +395,7 @@ class TestFullGame:
 
     @pytest.mark.parametrize("num_players", [2, 3, 4, 5])
     def test_all_player_counts(self, num_players):
-        engine = RÖkoEngine(rng=random.Random(42), num_players=num_players)
+        engine = RÖkoEngine(rng=np.random.default_rng(42), num_players=num_players)
         engine.reset()
         for _ in range(5000):
             if engine.done:

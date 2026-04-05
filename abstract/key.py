@@ -1,34 +1,17 @@
 """
-RNG key utilities — JAX-style deterministic seed management.
+RNG key utilities.
 
-A Key wraps an integer seed. Use `key_from_seed` to create one from an int,
-and `key.spawn(n)` to split into independent children.
+Key is just np.random.Generator (backed by PCG64 + SeedSequence).
+Use key_from_seed(int) to create one, and key.spawn(n) to split into
+independent children. Generator.spawn() (NumPy ≥1.25) produces
+statistically independent streams via SeedSequence splitting.
 """
 
-import random as _random
+import numpy as np
 
-
-class Key:
-    """Deterministic splittable key for RNG derivation."""
-
-    __slots__ = ("seed",)
-
-    def __init__(self, seed: int):
-        self.seed = seed
-
-    def spawn(self, n: int) -> list["Key"]:
-        """Derive n independent child keys deterministically."""
-        rng = _random.Random(self.seed)
-        return [Key(rng.randrange(2**63)) for _ in range(n)]
-
-    def make_rng(self) -> _random.Random:
-        """Create a random.Random instance seeded from this key."""
-        return _random.Random(self.seed)
-
-    def __repr__(self) -> str:
-        return f"Key({self.seed})"
+Key = np.random.Generator
 
 
 def key_from_seed(seed: int) -> Key:
-    """Create a Key from an integer seed."""
-    return Key(seed)
+    """Create a Key (numpy Generator) from an integer seed."""
+    return np.random.default_rng(seed)

@@ -13,7 +13,6 @@ The observation type (Obs) is game-specific — typically a NamedTuple of numpy
 arrays (a pytree). The framework is agnostic to its structure.
 """
 
-import random
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 import numpy as np
@@ -27,16 +26,22 @@ class BaseGameEngine(ABC, Generic[Obs]):
     Abstract multi-player turn-based game engine.
 
     Subclasses must implement the game logic. The engine is stateful:
-    it holds the current game state internally. RNG is a mutable
-    random.Random instance passed at construction time.
+    it holds the current game state internally. RNG is a numpy Generator
+    passed at construction time.
     """
 
-    def __init__(self, rng: random.Random):
-        self.rng: random.Random = rng
+    def __init__(self, rng: np.random.Generator):
+        self.rng: np.random.Generator = rng
+
+    def reset(self, *, rng: np.random.Generator | None = None) -> None:
+        """Reset to a new game. If rng is given, replace self.rng first."""
+        if rng is not None:
+            self.rng = rng
+        self._reset()
 
     @abstractmethod
-    def reset(self) -> None:
-        """Reset to a new game. Uses self.rng for randomness."""
+    def _reset(self) -> None:
+        """Subclass implements game-specific reset logic using self.rng."""
         ...
 
     @abstractmethod

@@ -8,7 +8,6 @@ Opponents act internally between agent turns.
 This is NOT customizable — it's a fixed wrapper over any BaseGameEngine.
 """
 
-import random
 from typing import Generic
 import numpy as np
 from .game import BaseGameEngine, Obs
@@ -23,26 +22,31 @@ class SinglePlayerEnv(Generic[Obs]):
     ----------
     engine   : the game engine (with its own RNG)
     opponent : SlicedPlayer for opponent turns
-    rng      : random.Random for env-level randomness (seat selection)
+    rng      : np.random.Generator for env-level randomness (seat selection)
     """
 
     def __init__(self, engine: BaseGameEngine[Obs],
                  opponent: SlicedPlayer,
-                 rng: random.Random):
+                 rng: np.random.Generator):
         self.engine: BaseGameEngine[Obs] = engine
         self.opponent: SlicedPlayer = opponent
-        self._rng: random.Random = rng
+        self._rng: np.random.Generator = rng
 
     # ── Public API (gym 0.26 style) ──────────────────────────────────────
 
-    def reset(self, _retries: int = 0) -> tuple[Obs, dict]:
+    def reset(self, *, rng: np.random.Generator | None = None, _retries: int = 0) -> tuple[Obs, dict]:
         if _retries > 100:
             raise RuntimeError(
                 "SinglePlayerEnv.reset(): game ended before agent's turn "
                 "100 times in a row — likely a bug in the game engine")
-        self.engine.reset()
+        if rng is not None:
+            engine_rng, env_rng = rng.spawn(2)
+            self.engine.reset(rng=engine_rng)
+            self._rng = env_rng
+        else:
+            self.engine.reset()
         # Randomly assign agent to any seat for training symmetry
-        self._seat = self._rng.randrange(self.engine.num_players)
+        self._seat = int(self._rng.integers(self.engine.num_players))
         self._accumulated_reward = 0.0
 
         # If agent is not first to move, run opponents until agent's turn

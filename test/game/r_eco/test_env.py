@@ -4,7 +4,6 @@ Tests for R-Öko with abstract SinglePlayerEnv and VecSinglePlayerEnv.
 Run with:  python -m pytest test/game/r_eco/test_env.py -v
 """
 
-import random
 import numpy as np
 import pytest
 
@@ -20,9 +19,7 @@ from game.r_eco import (
 
 def _make_single_env(seed=42, num_players=2) -> SinglePlayerEnv:
     """Create a SinglePlayerEnv with a random opponent."""
-    rng = random.Random(seed)
-    engine_rng = random.Random(rng.randrange(2**63))
-    env_rng = random.Random(rng.randrange(2**63))
+    engine_rng, env_rng = key_from_seed(seed).spawn(2)
     engine = RÖkoEngine(rng=engine_rng, num_players=num_players)
     opponent = RandomPlayer()
     return SinglePlayerEnv(engine, opponent.slice(0), rng=env_rng)

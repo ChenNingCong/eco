@@ -15,7 +15,6 @@ Action space (108 total, phase-dependent masking):
   Discard actions 100..107: 100 + color*2 + card_type
 """
 
-import random
 import numpy as np
 from typing import List, Tuple, NamedTuple
 from dataclasses import dataclass
@@ -145,7 +144,7 @@ class RÖkoEngine(BaseGameEngine[RÖkoObs]):
     num_players  : 2-5
     """
 
-    def __init__(self, rng: random.Random, num_players: int = 2):
+    def __init__(self, rng: np.random.Generator, num_players: int = 2):
         super().__init__(rng)
         assert 2 <= num_players <= 5, "num_players must be 2-5"
         self._num_players = num_players
@@ -154,7 +153,7 @@ class RÖkoEngine(BaseGameEngine[RÖkoObs]):
 
     # ── BaseGameEngine interface ─────────────────────────────────────────
 
-    def reset(self) -> None:
+    def _reset(self) -> None:
         draw_pile = self._build_deck(self.rng)
 
         n = self._num_players
@@ -431,11 +430,12 @@ class RÖkoEngine(BaseGameEngine[RÖkoObs]):
     # ── Deck / draw helpers ──────────────────────────────────────────────
 
     @staticmethod
-    def _build_deck(rng: random.Random) -> List[Tuple[int, int]]:
+    def _build_deck(rng: np.random.Generator) -> List[Tuple[int, int]]:
         deck = []
         for c in range(NUM_COLORS):
             deck.extend([(c, 0)] * SINGLES_PER_COLOR)
             deck.extend([(c, 1)] * DOUBLES_PER_COLOR)
+        # np.random.Generator.shuffle works on mutable sequences (lists)
         rng.shuffle(deck)
         return deck
 

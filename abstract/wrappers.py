@@ -8,7 +8,6 @@ The wrapper delegates key/RNG to the inner engine — no separate key needed.
 
 import numpy as np
 from .game import BaseGameEngine, Obs
-from .key import Key
 
 
 class GameWrapper(BaseGameEngine[Obs]):
@@ -18,19 +17,19 @@ class GameWrapper(BaseGameEngine[Obs]):
     """
 
     def __init__(self, engine: BaseGameEngine[Obs]):
-        # Don't call super().__init__ — we delegate key to the inner engine
+        # Don't call super().__init__ — we delegate rng to the inner engine
         self.engine = engine
 
     @property
-    def key(self) -> Key:
-        return self.engine.key
+    def rng(self) -> np.random.Generator:
+        return self.engine.rng
 
-    @key.setter
-    def key(self, value: Key):
-        self.engine.key = value
+    @rng.setter
+    def rng(self, value: np.random.Generator):
+        self.engine.rng = value
 
-    def reset(self) -> None:
-        self.engine.reset()
+    def _reset(self) -> None:
+        self.engine._reset()
 
     def step(self, action: int) -> tuple[float, ...]:
         return self.engine.step(action)
