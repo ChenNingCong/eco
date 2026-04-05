@@ -131,6 +131,17 @@ class Args:
     """the maximum norm for the gradient clipping"""
     target_kl: float = 0.01
     """the target KL divergence threshold"""
+    lstm_hidden: int = 128
+    """LSTM hidden size. Default 128; try 256 to remove bottleneck."""
+    disable_lstm: bool = False
+    """bypass the LSTM (zero out hidden state each step) for ablation."""
+    network_forget_gate_bias: float = 0.0
+    """effective forget gate bias (split equally across bias_ih and bias_hh). 0=default, 1.0=recommended by Jozefowicz 2015."""
+    network_cell_clip: float = 0.0
+    """clip LSTM cell state to [-val, val] each step. 0=disabled, 5.0=OpenAI Five style."""
+    network_arch: Literal["lstm", "ff"] = "lstm"
+    """network architecture: 'lstm' = LSTM between encoder and heads (default),
+    'ff' = old feedforward architecture (2-layer trunks, no LSTM)."""
 
     # to be filled in runtime
     batch_size: int = 0
@@ -182,13 +193,17 @@ class EcoAgent(nn.Module):
     LSTM_LAYERS = 1
 
     def __init__(self, num_players: int = 2, score_shortcut: bool = False,
-                 lstm_hidden: int = 128, lstm_layers: int = 1):
+                 lstm_hidden: int = 128, lstm_layers: int = 1,
+                 disable_lstm: bool = False,
+                 forget_gate_bias: float = 0.0, cell_clip: float = 0.0):
         super().__init__()
         E, H = self.EMB_DIM, self.HIDDEN
         self.num_players = num_players
         self.score_shortcut = score_shortcut
         self.lstm_hidden = lstm_hidden
         self.lstm_layers = lstm_layers
+        self.disable_lstm = disable_lstm
+        self.cell_clip = cell_clip
         float_dim = eco_float_dim(num_players)
 
         self.player_emb = nn.Embedding(num_players + 1, E)   # tokens 1..num_players
@@ -213,6 +228,13 @@ class EcoAgent(nn.Module):
                 nn.init.constant_(param, 0)
             elif "weight" in name:
                 nn.init.orthogonal_(param, 1.0)
+        # Forget gate bias (Jozefowicz 2015): split evenly across bias_ih + bias_hh
+        if forget_gate_bias != 0.0:
+            half = forget_gate_bias / 2.0
+            for layer_idx in range(lstm_layers):
+                for suffix in ["ih", "hh"]:
+                    bias = getattr(self.lstm, f"bias_{suffix}_l{layer_idx}")
+                    bias.data[lstm_hidden:2*lstm_hidden] = half
 
         # Separate actor and critic trunks after LSTM
         self.actor_trunk = nn.Sequential(
@@ -266,9 +288,15 @@ class EcoAgent(nn.Module):
         new_hidden = []
         h, c = lstm_state.h, lstm_state.c
         for t_h, t_d in zip(hidden, done):
-            h = (1.0 - t_d).view(1, -1, 1) * h
-            c = (1.0 - t_d).view(1, -1, 1) * c
+            if not self.disable_lstm:
+                h = (1.0 - t_d).view(1, -1, 1) * h
+                c = (1.0 - t_d).view(1, -1, 1) * c
+            else:
+                h = torch.zeros_like(h)
+                c = torch.zeros_like(c)
             t_h, (h, c) = self.lstm(t_h.unsqueeze(0), (h, c))
+            if self.cell_clip > 0:
+                c = c.clamp(-self.cell_clip, self.cell_clip)
             new_hidden.append(t_h)
         new_hidden = torch.flatten(torch.cat(new_hidden), 0, 1)
         return new_hidden, LSTMState(h=h, c=c)
@@ -303,6 +331,102 @@ class EcoAgent(nn.Module):
                 action = torch.where(illegal, fallback, action)
         critic_h = self.critic_trunk(hidden)
         return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), new_lstm_state
+
+# ── EcoAgentFF: old feedforward architecture (no LSTM) ─────────────────────
+
+class EcoAgentFF(nn.Module):
+    """
+    Old feedforward actor-critic (no LSTM). Same interface as EcoAgent so the
+    training loop works unchanged — lstm_state/done args are accepted but ignored.
+    """
+    EMB_DIM = 32
+    HIDDEN  = 256
+
+    # Dummy LSTM attributes so BatchedPlayer/training loop work unchanged
+    lstm_hidden = 1
+    lstm_layers = 1
+
+    def __init__(self, num_players: int = 2, score_shortcut: bool = False):
+        super().__init__()
+        E, H = self.EMB_DIM, self.HIDDEN
+        self.num_players = num_players
+        self.score_shortcut = score_shortcut
+        float_dim = eco_float_dim(num_players)
+
+        self.player_emb = nn.Embedding(num_players + 1, E)
+        self.phase_emb  = nn.Embedding(2, E)
+
+        self.flat_enc = nn.Sequential(
+            layer_init(nn.Linear(float_dim, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        fusion_in = H + 2 * E
+
+        self.actor_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.critic_trunk = nn.Sequential(
+            layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
+            layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
+        )
+        self.actor_head  = layer_init(nn.Linear(H, NUM_ACTIONS), std=0.01)
+
+        if score_shortcut:
+            self.score_branch = nn.Sequential(
+                layer_init(nn.Linear(num_players, 32)), nn.ReLU(),
+                layer_init(nn.Linear(32, 1), std=1.0),
+            )
+            self.critic_head = layer_init(nn.Linear(H + 1, 1), std=1.0)
+        else:
+            self.critic_head = layer_init(nn.Linear(H, 1), std=1.0)
+
+    def _shared_encode(self, obs: EcoPyTreeObs) -> torch.Tensor:
+        player_repr = self.player_emb(obs.current_player.squeeze(-1))
+        phase_repr  = self.phase_emb(obs.phase.squeeze(-1))
+        flat = torch.cat([
+            obs.hands, obs.recycling_side, obs.waste_side,
+            obs.factory_stacks, obs.collected,
+            obs.penalty_pile, obs.scores, obs.draw_pile_size,
+            obs.draw_pile_comp,
+        ], dim=-1)
+        flat_repr = self.flat_enc(flat)
+        return torch.cat([flat_repr, player_repr, phase_repr], dim=-1)
+
+    def _critic_value(self, obs: EcoPyTreeObs, critic_h: torch.Tensor) -> torch.Tensor:
+        if self.score_shortcut:
+            score_val = self.score_branch(obs.scores)
+            return self.critic_head(torch.cat([critic_h, score_val], dim=-1))
+        return self.critic_head(critic_h)
+
+    def get_states(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        shared = self._shared_encode(obs)
+        return shared, lstm_state  # pass-through, no LSTM
+
+    def get_value(self, obs: EcoPyTreeObs, lstm_state: LSTMState, done: torch.Tensor):
+        shared, _ = self.get_states(obs, lstm_state, done)
+        critic_h = self.critic_trunk(shared)
+        return self._critic_value(obs, critic_h)
+
+    def get_action_and_value(self, obs: EcoPyTreeObs, action_mask,
+                             lstm_state: LSTMState, done: torch.Tensor,
+                             action=None):
+        shared, _ = self.get_states(obs, lstm_state, done)
+        actor_h = self.actor_trunk(shared)
+        logits = self.actor_head(actor_h)
+        probs  = CategoricalMasked(logits=logits, masks=action_mask)
+        if action is None:
+            action = probs.sample()
+            illegal = ~action_mask.gather(1, action.unsqueeze(1)).squeeze(1)
+            if illegal.any():
+                n = illegal.sum().item()
+                print(f"[WARN] Hard mask enforcement triggered for {n}/{len(action)} actions")
+                masked_logits = torch.where(action_mask, logits, torch.tensor(-1e8, device=logits.device))
+                fallback = masked_logits.argmax(dim=1)
+                action = torch.where(illegal, fallback, action)
+        critic_h = self.critic_trunk(shared)
+        return action, probs.log_prob(action), probs.entropy(), self._critic_value(obs, critic_h), lstm_state
+
 
 # ── Player interface: abstract base for batched opponent players ─────────────
 
@@ -601,8 +725,15 @@ if __name__ == "__main__":
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
-    # Agent (pure/stateless — LSTM hidden state managed externally)
-    agent = EcoAgent(num_players=args.num_players, score_shortcut=args.score_shortcut).to(device)
+    # Agent setup
+    if args.network_arch == "ff":
+        agent = EcoAgentFF(num_players=args.num_players,
+                           score_shortcut=args.score_shortcut).to(device)
+    else:
+        agent = EcoAgent(num_players=args.num_players, score_shortcut=args.score_shortcut,
+                         lstm_hidden=args.lstm_hidden, disable_lstm=args.disable_lstm,
+                         forget_gate_bias=args.network_forget_gate_bias,
+                         cell_clip=args.network_cell_clip).to(device)
 
     # Opponent setup: BatchedPlayer handles both batched and per-env (sliced) inference.
     # VecSinglePlayerEcoEnv wires it up: batch_action for step(), slice(i).action for reset().
@@ -705,6 +836,10 @@ if __name__ == "__main__":
                     if wandb.run is not None:
                         wandb.log({"charts/episodic_return": ep_return, "global_step": global_step})
 
+        # LSTM hidden state diagnostics (end of rollout)
+        lstm_h_norm = next_lstm_state.h.norm().item() / (args.num_envs ** 0.5)
+        lstm_c_norm = next_lstm_state.c.norm().item() / (args.num_envs ** 0.5)
+
         # bootstrap value if not done
         with torch.no_grad():
             next_value = agent.get_value(next_obs, next_lstm_state, next_done).reshape(1, -1)
@@ -733,27 +868,49 @@ if __name__ == "__main__":
         b_action_masks = action_masks.reshape((-1, action_masks.shape[-1]))
 
         # Optimizing the policy and value network
-        # LSTM PPO: minibatch by env index (not random), preserving temporal order
-        assert args.num_envs % args.num_minibatches == 0
-        envsperbatch = args.num_envs // args.num_minibatches
-        envinds = np.arange(args.num_envs)
-        flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs)
+        use_sequential_mb = args.network_arch == "lstm"
         clipfracs = []
-        for epoch in range(args.update_epochs):
-            np.random.shuffle(envinds)
-            for start in range(0, args.num_envs, envsperbatch):
-                end = start + envsperbatch
-                mbenvinds = envinds[start:end]
-                mb_inds = flatinds[:, mbenvinds].ravel()  # preserves temporal order
+        if use_sequential_mb:
+            # LSTM PPO: minibatch by env index, preserving temporal order
+            assert args.num_envs % args.num_minibatches == 0
+            envsperbatch = args.num_envs // args.num_minibatches
+            envinds = np.arange(args.num_envs)
+            flatinds = np.arange(args.batch_size).reshape(args.num_steps, args.num_envs)
+        else:
+            b_inds = np.arange(args.batch_size)
 
+        for epoch in range(args.update_epochs):
+            if use_sequential_mb:
+                np.random.shuffle(envinds)
+                mb_inds_list = []
+                mb_envinds_list = []
+                for start in range(0, args.num_envs, envsperbatch):
+                    end = start + envsperbatch
+                    mbenvinds = envinds[start:end]
+                    mb_envinds_list.append(mbenvinds)
+                    mb_inds_list.append(flatinds[:, mbenvinds].ravel())
+            else:
+                np.random.shuffle(b_inds)
+                mb_inds_list = [b_inds[i:i+args.minibatch_size]
+                                for i in range(0, args.batch_size, args.minibatch_size)]
+                mb_envinds_list = [None] * len(mb_inds_list)
+
+            for mb_inds, mbenvinds in zip(mb_inds_list, mb_envinds_list):
                 # [PYTREE] index each leaf by minibatch indices
                 mb_obs = tree_map(lambda x: x[mb_inds], b_obs)
-                _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
-                    mb_obs, b_action_masks[mb_inds],
-                    LSTMState(
+                if use_sequential_mb:
+                    mb_lstm_state = LSTMState(
                         h=initial_lstm_state.h[:, mbenvinds],
                         c=initial_lstm_state.c[:, mbenvinds],
-                    ),
+                    )
+                else:
+                    mb_lstm_state = LSTMState(
+                        h=initial_lstm_state.h[:, :1].expand(-1, len(mb_inds), -1).contiguous(),
+                        c=initial_lstm_state.c[:, :1].expand(-1, len(mb_inds), -1).contiguous(),
+                    )
+                _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
+                    mb_obs, b_action_masks[mb_inds],
+                    mb_lstm_state,
                     b_dones[mb_inds],
                     b_actions.long()[mb_inds],
                 )
@@ -795,7 +952,13 @@ if __name__ == "__main__":
 
                 optimizer.zero_grad()
                 loss.backward()
+                grad_norm_pre = torch.nn.utils.get_total_norm(
+                    [p.grad for p in agent.parameters() if p.grad is not None], 2.0
+                ).item()
                 nn.utils.clip_grad_norm_(agent.parameters(), args.max_grad_norm)
+                grad_norm_post = torch.nn.utils.get_total_norm(
+                    [p.grad for p in agent.parameters() if p.grad is not None], 2.0
+                ).item()
                 optimizer.step()
 
             if args.target_kl is not None and approx_kl > args.target_kl:
@@ -810,13 +973,24 @@ if __name__ == "__main__":
             elif global_approx_kl < 0.5 * args.target_kl:
                 alpha = min(1e-2, alpha * 1.5)
 
+        # Per-module gradient norms (computed from last minibatch of last epoch)
+        grad_norms = {}
+        for name in ["lstm", "pre_lstm", "flat_enc", "actor_trunk", "actor_head",
+                      "critic_trunk", "critic_head"]:
+            module = getattr(agent, name, None)
+            if module is None:
+                continue
+            grads = [p.grad for p in module.parameters() if p.grad is not None]
+            if grads:
+                grad_norms[name] = torch.nn.utils.get_total_norm(grads, 2.0).item()
+
         y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
         var_y = np.var(y_true)
         explained_var = np.nan if var_y == 0 else 1 - np.var(y_true - y_pred) / var_y
 
         # TRY NOT TO MODIFY: record rewards for plotting purposes
         if wandb.run is not None:
-            wandb.log({
+            log_dict = {
                 "charts/learning_rate": optimizer.param_groups[0]["lr"],
                 "losses/value_loss": v_loss.item(),
                 "losses/policy_loss": pg_loss.item(),
@@ -825,8 +999,15 @@ if __name__ == "__main__":
                 "losses/approx_kl": approx_kl.item(),
                 "losses/clipfrac": np.mean(clipfracs),
                 "losses/explained_variance": explained_var,
+                "grad/total_pre_clip": grad_norm_pre,
+                "grad/total_post_clip": grad_norm_post,
+                "lstm/h_norm": lstm_h_norm,
+                "lstm/c_norm": lstm_c_norm,
                 "global_step": global_step,
-            })
+            }
+            for name, norm in grad_norms.items():
+                log_dict[f"grad/{name}"] = norm
+            wandb.log(log_dict)
 
 
         # Inside the training loop:
@@ -840,7 +1021,12 @@ if __name__ == "__main__":
             torch.save(agent.state_dict(), os.path.join(args.model_dir, f"eco_{global_step}.pkt"))
             torch.save(agent.state_dict(), os.path.join(args.model_dir, "eco_latest.pkt"))
             last_save_step = global_step
-        print(f"Step: {global_step} SPS:", int(global_step / (time.time() - start_time)))
+        sps = int(global_step / (time.time() - start_time))
+        print(f"Step: {global_step} SPS: {sps}  "
+              f"ev={explained_var:.3f}  ent={entropy_loss.item():.3f}  "
+              f"grad={grad_norm_pre:.2f}/{grad_norm_post:.2f}  "
+              f"h={lstm_h_norm:.1f} c={lstm_c_norm:.1f}  "
+              f"kl={approx_kl.item():.4f}  vl={v_loss.item():.4f}")
         if wandb.run is not None:
             wandb.log({"charts/SPS": int(global_step / (time.time() - start_time)), "global_step": global_step})
 

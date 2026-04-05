@@ -63,9 +63,11 @@ class VecSinglePlayerEcoEnv:
         reward_shaping_scale: float = 1.0,
         opponent_penalty: float = 0.5,
         relative_seat: bool = True,
+        debug: bool = False,
     ):
         self.num_envs = num_envs
         self._step_count = 0
+        self._debug = debug
         assert opponent is not None and hasattr(opponent, 'batch_action'), \
             "opponent must be a BasePlayer with batch_action/slice interface"
         self._batched_opponent = opponent
@@ -126,8 +128,9 @@ class VecSinglePlayerEcoEnv:
 
         # ── 1. Start a generator for every env ───────────────────────────────
         # Snapshot state before stepping for post-mortem debugging
-        _pre_states = [copy.deepcopy(env.env.state) for env in self.envs]
-        _pre_seats  = [env._seat for env in self.envs]
+        if self._debug:
+            _pre_states = [copy.deepcopy(env.env.state) for env in self.envs]
+            _pre_seats  = [env._seat for env in self.envs]
 
         for i, (env, a) in enumerate(zip(self.envs, actions)):
             mask = env.legal_actions()
