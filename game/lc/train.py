@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Train Ticket to Ride agent using PPO+LSTM.
+Train Lost Cities agent using PPO+LSTM.
 
 Usage:
-    python -m game.ttr.train
-    python -m game.ttr.train --total-timesteps 50000000 --track
+    python -m game.lc.train
+    python -m game.lc.train --total-timesteps 10000000 --track
 """
 import os
 import random
@@ -19,23 +19,25 @@ from abstract import (
     LSTMBatchedPlayer, PPOLSTMTrainer,
 )
 from abstract.ppo_lstm import obs_to_tensor, make_lstm_state, LSTMState
-from game.ttr import TTREnvFactory, TTRAgent, TTRArgs
+from game.lc import LCEnvFactory, LCAgent, LCArgs
 
 
-class TTRTrainer(PPOLSTMTrainer):
-    """TTR trainer with benchmark against random opponent + game metrics."""
+class LCTrainer(PPOLSTMTrainer):
+    """Lost Cities trainer with benchmark against random + self-play."""
 
     BENCHMARK_ENVS = 32
     BENCHMARK_GAMES = 100
 
-    def __init__(self, config: TTRArgs, agent: TTRAgent, opponent, envs, device):
+    def __init__(self, config: LCArgs, agent: LCAgent, opponent, envs, device):
         super().__init__(config, agent, opponent, envs, device)
-        self._bench_factory = TTREnvFactory(num_players=config.num_players)
+        # Benchmark factory uses default penalty (true scoring) + same lane limit + same action mode
+        self._bench_factory = LCEnvFactory(new_color_penalty=20, max_lanes=config.max_lanes,
+                                           decompose_actions=config.decompose_actions,
+                                           three_phase=config.three_phase)
         self._bench_random = RandomPlayer()
         self._bench_key = key_from_seed(config.seed + 10000)
 
     def _run_benchmark(self, opponent, n_games, prefix, global_step, wandb):
-        """Run benchmark games and return logged metrics dict."""
         agent = self.agent
         device = self.device
         n_envs = self.BENCHMARK_ENVS
@@ -56,10 +58,8 @@ class TTRTrainer(PPOLSTMTrainer):
         agent_scores = []
         agent_rewards = []
         metrics_accum = {
-            "routes_claimed": [], "trains_remaining": [],
-            "dest_completed": [], "dest_failed": [], "dest_total": [],
-            "route_points": [], "dest_points": [], "dest_penalty": [],
-            "avg_route_length": [], "max_route_length": [], "total_points": [],
+            "total_points": [], "num_investment": [], "num_played": [],
+            "open_lanes": [], "cards_in_hand": [], "discard_draws": [],
         }
 
         while total < n_games:
@@ -93,7 +93,8 @@ class TTRTrainer(PPOLSTMTrainer):
                     gm = infos[i].get("game_metrics")
                     if gm:
                         for k in metrics_accum:
-                            metrics_accum[k].append(gm[k])
+                            if k in gm:
+                                metrics_accum[k].append(gm[k])
                     lstm_state.h[:, i] = 0
                     lstm_state.c[:, i] = 0
 
@@ -124,35 +125,39 @@ class TTRTrainer(PPOLSTMTrainer):
 
         n_games = self.BENCHMARK_GAMES
 
-        # Benchmark vs random
+        # vs random
         log_rand, w_r, l_r, d_r, ms_r, ss_r, ma_r = self._run_benchmark(
             self._bench_random, n_games, "benchmark/vs_random", global_step, wandb)
 
-        # Benchmark self-play (agent vs copy of itself)
-        self_opponent = LSTMBatchedPlayer(self.agent, self.device, num_envs=self.BENCHMARK_ENVS)
+        # self-play
+        self_opp = LSTMBatchedPlayer(self.agent, self.device, num_envs=self.BENCHMARK_ENVS)
         log_self, w_s, l_s, d_s, ms_s, ss_s, ma_s = self._run_benchmark(
-            self_opponent, n_games, "benchmark/selfplay", global_step, wandb)
+            self_opp, n_games, "benchmark/selfplay", global_step, wandb)
 
         log = {**log_rand, **log_self, "global_step": global_step}
         wandb.log(log)
 
         print(f"  vs Random: {w_r}W/{l_r}L/{d_r}D "
               f"| score={ms_r:.1f}±{ss_r:.1f} "
-              f"routes={np.mean(ma_r['routes_claimed']):.1f} "
-              f"dest={np.mean(ma_r['dest_completed']):.1f}/{np.mean(ma_r['dest_total']):.1f} "
+              f"inv={np.mean(ma_r['num_investment']):.1f} "
+              f"played={np.mean(ma_r['num_played']):.1f} "
+              f"lanes={np.mean(ma_r['open_lanes']):.1f} "
+              f"ddraw={np.mean(ma_r['discard_draws']):.1f} "
               f"pts={np.mean(ma_r['total_points']):.0f}")
         print(f"  Self-play: {w_s}W/{l_s}L/{d_s}D "
               f"| score={ms_s:.1f}±{ss_s:.1f} "
-              f"routes={np.mean(ma_s['routes_claimed']):.1f} "
-              f"dest={np.mean(ma_s['dest_completed']):.1f}/{np.mean(ma_s['dest_total']):.1f} "
+              f"inv={np.mean(ma_s['num_investment']):.1f} "
+              f"played={np.mean(ma_s['num_played']):.1f} "
+              f"lanes={np.mean(ma_s['open_lanes']):.1f} "
+              f"ddraw={np.mean(ma_s['discard_draws']):.1f} "
               f"pts={np.mean(ma_s['total_points']):.0f}")
 
 
 def main():
-    args = tyro.cli(TTRArgs)
+    args = tyro.cli(LCArgs)
     import wandb
 
-    run_name = f"ttr__{args.exp_name}__{args.seed}__{int(time.time())}"
+    run_name = f"lc__{args.exp_name}__{args.seed}__{int(time.time())}"
     if args.track:
         wandb.init(
             project=args.wandb_project_name,
@@ -174,11 +179,19 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
     # Agent
-    agent = TTRAgent(
-        num_players=args.num_players,
-        lstm_hidden=args.lstm_hidden,
-    ).to(device)
+    agent = LCAgent(lstm_hidden=args.lstm_hidden,
+                    decompose_actions=args.decompose_actions,
+                    three_phase=args.three_phase,
+                    blind_draw=args.blind_draw,
+                    no_lstm=args.no_lstm,
+                    hidden_dim=args.hidden_dim,
+                    mask_as_input=args.mask_as_input,
+                    product_actions=args.product_actions).to(device)
     print(f"Agent params: {sum(p.numel() for p in agent.parameters()):,}")
+
+    if args.pretrained:
+        agent.load_state_dict(torch.load(args.pretrained, map_location=device, weights_only=False))
+        print(f"Loaded pretrained model from {args.pretrained}")
 
     # Opponent
     if args.opponent_mode == "self_play":
@@ -187,11 +200,13 @@ def main():
         opponent = RandomPlayer()
 
     # Env
-    factory = TTREnvFactory(
-        num_players=args.num_players,
-        scale_route_score=args.scale_route_score,
-        scale_dest_penalty=args.scale_dest_penalty,
-    )
+    factory = LCEnvFactory(new_color_penalty=args.new_color_penalty,
+                           score_diff_reward=args.score_diff_reward,
+                           zero_one_reward=args.zero_one_reward,
+                           max_lanes=args.max_lanes,
+                           decompose_actions=args.decompose_actions,
+                           three_phase=args.three_phase,
+                           max_discard_draws=args.max_discard_draws)
     key = key_from_seed(args.seed)
     envs = VecSinglePlayerEnv(
         num_envs=args.num_envs,
@@ -201,7 +216,7 @@ def main():
     )
 
     # Train
-    trainer = TTRTrainer(
+    trainer = LCTrainer(
         config=args,
         agent=agent,
         opponent=opponent,

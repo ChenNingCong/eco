@@ -126,7 +126,8 @@ class EcoAgent(BaseAgent):
         combined = torch.cat([shared, lstm_out], dim=-1)
         return combined, LSTMState(h=h, c=c)
 
-    def get_value(self, obs: RÖkoObs, lstm_state: LSTMState, done: torch.Tensor):
+    def get_value(self, obs: RÖkoObs, lstm_state: LSTMState, done: torch.Tensor,
+                  action_mask=None):
         hidden, _ = self.get_states(obs, lstm_state, done)
         return self.critic_head(self.critic_trunk(hidden))
 

@@ -104,12 +104,16 @@ class PPOConfig:
     """final entropy coefficient (for annealing). 0 = no annealing (use ent_coef throughout)."""
     ent_anneal_steps: int = 0
     """number of steps over which to anneal entropy from ent_coef to ent_coef_end. 0 = no annealing."""
+    ent_anneal_mode: str = "linear"
+    """entropy annealing mode: 'linear' or 'exponential' (log-linear)."""
     vf_coef: float = 0.5
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
     target_kl: float = 0.01
     """the target KL divergence threshold"""
+    critic_warmup_steps: int = 0
+    """freeze actor for this many env steps, only train critic (for pretrained init)"""
     lstm_hidden: int = 128
     """LSTM hidden size."""
     model_dir: str = "model"
@@ -167,7 +171,8 @@ class BaseAgent(nn.Module, ABC):
         ...
 
     @abstractmethod
-    def get_value(self, obs, lstm_state: LSTMState, done: torch.Tensor):
+    def get_value(self, obs, lstm_state: LSTMState, done: torch.Tensor,
+                  action_mask=None):
         """Returns value estimate (B, 1)."""
         ...
 
@@ -342,7 +347,12 @@ class PPOLSTMTrainer:
             if cfg.ent_coef_end > 0 and cfg.ent_anneal_steps > 0:
                 steps_so_far = (iteration - 1) * cfg.batch_size
                 frac = min(steps_so_far / cfg.ent_anneal_steps, 1.0)
-                ent_coef_now = cfg.ent_coef + frac * (cfg.ent_coef_end - cfg.ent_coef)
+                if cfg.ent_anneal_mode == "exponential":
+                    # Log-linear: equal time per order of magnitude
+                    import math
+                    ent_coef_now = cfg.ent_coef * (cfg.ent_coef_end / cfg.ent_coef) ** frac
+                else:
+                    ent_coef_now = cfg.ent_coef + frac * (cfg.ent_coef_end - cfg.ent_coef)
             else:
                 ent_coef_now = cfg.ent_coef
 
@@ -382,7 +392,7 @@ class PPOLSTMTrainer:
 
             # ── GAE ──────────────────────────────────────────────────────
             with torch.no_grad():
-                next_value = agent.get_value(next_obs, next_lstm_state, next_done).reshape(1, -1)
+                next_value = agent.get_value(next_obs, next_lstm_state, next_done, next_masks).reshape(1, -1)
                 advantages = torch.zeros_like(rewards, device=device)
                 lastgaelam = 0
                 for t in reversed(range(cfg.num_steps)):
@@ -464,7 +474,10 @@ class PPOLSTMTrainer:
                         v_loss = 0.5 * ((newvalue - b_returns[mb_inds]) ** 2).mean()
 
                     entropy_loss = entropy.mean()
-                    loss = pg_loss - ent_coef_now * entropy_loss + v_loss * cfg.vf_coef
+                    if cfg.critic_warmup_steps > 0 and global_step < cfg.critic_warmup_steps:
+                        loss = v_loss * cfg.vf_coef  # critic only
+                    else:
+                        loss = pg_loss - ent_coef_now * entropy_loss + v_loss * cfg.vf_coef
 
                     optimizer.zero_grad()
                     loss.backward()

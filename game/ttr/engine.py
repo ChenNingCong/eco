@@ -147,10 +147,13 @@ class TTREngine(BaseGameEngine[TTRObs]):
     Ticket to Ride (US) game engine for 2 players.
     """
 
-    def __init__(self, rng: np.random.Generator, num_players: int = 2):
+    def __init__(self, rng: np.random.Generator, num_players: int = 2,
+                 scale_route_score: float = 1.0, scale_dest_penalty: float = 1.0):
         super().__init__(rng)
         assert 2 <= num_players <= 5, "num_players must be 2-5"
         self._num_players = num_players
+        self._scale_route_score = scale_route_score
+        self._scale_dest_penalty = scale_dest_penalty
         self._game_state = GAME_OVER
         self._turn_state = TURN_FINISHED
         self._current_player = 0
@@ -234,9 +237,9 @@ class TTREngine(BaseGameEngine[TTRObs]):
         if self._turn_state == TURN_FINISHED:
             self._end_turn()
 
-        # Terminal: +1 win, -1 loss
+        # Terminal: +1 win, -1 loss (using shaped scores for reward)
         if self._done:
-            scores = self.compute_scores()
+            scores = self.compute_shaped_scores()
             best = float(scores.max())
             for i in range(self._num_players):
                 rewards[i] = 1.0 if scores[i] >= best else -1.0
@@ -498,6 +501,20 @@ class TTREngine(BaseGameEngine[TTRObs]):
 
     def compute_scores(self) -> np.ndarray:
         return np.array([p.points for p in self._players], dtype=np.float32)
+
+    def compute_shaped_scores(self) -> np.ndarray:
+        """Scores with reward shaping applied (for training reward only)."""
+        s_route = self._scale_route_score
+        s_penalty = self._scale_dest_penalty
+        if s_route == 1.0 and s_penalty == 1.0:
+            return self.compute_scores()
+        shaped = np.empty(self._num_players, dtype=np.float32)
+        for i, p in enumerate(self._players):
+            route_pts = sum(ROUTE_POINTS_LIST[rid] for rid in p.routes)
+            dest_pts = sum(DEST_POINTS[did] for did in p.completed_dest)
+            dest_pen = sum(DEST_POINTS[did] for did in p.uncompleted_dest)
+            shaped[i] = route_pts * s_route + dest_pts - dest_pen * s_penalty
+        return shaped
 
     def game_metrics(self, player_idx: int) -> dict:
         """Return informative metrics for a specific player (call after game ends)."""

@@ -38,9 +38,12 @@ app = Flask(__name__, static_folder=_STATIC_DIR)
 
 class GameSession:
     def __init__(self, ai_fn=None):
-        self.ai_fn = ai_fn  # callable(engine, player_id) -> action, or None for manual
+        self.ai_fn = ai_fn  # callable(engine, player_id, lstm_state) -> (action, new_lstm_state), or None
         self.engine = None
         self.rng = None
+        self.lstm_state = None     # persistent LSTM state for AI across a game
+        self.last_ai_actions = []  # actions AI took on its last sequence of turns
+        self.action_log = []       # full game action log
 
     def new_game(self, seed=None):
         if seed is None:
@@ -48,6 +51,9 @@ class GameSession:
         self.rng = np.random.default_rng(seed)
         self.engine = TTREngine(rng=self.rng, num_players=2)
         self.engine.reset()
+        self.lstm_state = None  # reset on new game — ai_fn will initialize
+        self.last_ai_actions = []
+        self.action_log = []
         # Human is player 0, AI is player 1
         self._run_ai_turns()
 
@@ -59,21 +65,26 @@ class GameSession:
         mask = self.engine.legal_actions()
         if not mask[action]:
             return
+        self.action_log.append({"player": 0, "action": action, "desc": _describe_action(action)})
         self.engine.step(action)
         # After human turn (when FINISHED → next player), run AI
         self._run_ai_turns()
 
     def _run_ai_turns(self):
         """Run AI turns until it's human's turn or game over."""
+        self.last_ai_actions = []
         while not self.engine.done and self.engine.current_player == 1:
             mask = self.engine.legal_actions()
             if not mask.any():
                 break
             if self.ai_fn is not None:
-                action = self.ai_fn(self.engine, 1)
+                action, self.lstm_state = self.ai_fn(self.engine, 1, self.lstm_state)
             else:
                 # Random
                 action = int(self.rng.choice(np.where(mask)[0]))
+            desc = _describe_action(action)
+            self.last_ai_actions.append({"action": action, "desc": desc})
+            self.action_log.append({"player": 1, "action": action, "desc": desc})
             self.engine.step(action)
 
     def get_state(self) -> dict:
@@ -143,11 +154,18 @@ class GameSession:
                 "routes_claimed": len(p0.routes),
             },
             "ai": {
+                "hand": {COLOR_NAMES[c]: int(p1.hand[c]) for c in range(NUM_COLORS)},
                 "hand_size": int(p1.hand.sum()),
                 "trains": p1.trains,
                 "points": p1.points,
                 "routes_claimed": len(p1.routes),
                 "dest_count": len(p1.uncompleted_dest) + len(p1.completed_dest),
+                "destinations": [
+                    {"id": did, "city1": CITIES[DEST_CITY1[did]],
+                     "city2": CITIES[DEST_CITY2[did]], "points": DEST_POINTS[did],
+                     "status": "completed" if did in p1.completed_dest else "uncompleted"}
+                    for did in list(p1.completed_dest) + list(p1.uncompleted_dest)
+                ],
             },
             "visible_cards": {COLOR_NAMES[c]: int(e._visible[c]) for c in range(NUM_COLORS)},
             "deck_size": int(e._deck.sum()),
@@ -156,6 +174,8 @@ class GameSession:
             "destinations": dest_info,
             "avail_dest": avail_dest,
             "scores": [p0.points, p1.points] if e.done else None,
+            "ai_actions": self.last_ai_actions,
+            "action_log": self.action_log[-20:],  # last 20 actions
         }
 
 
@@ -247,16 +267,17 @@ def set_model():
         agent.eval()
         print(f"Loaded model from {path}")
 
-        def ai_fn(engine, player_id, _agent=agent):
+        def ai_fn(engine, player_id, lstm_state, _agent=agent):
             obs = engine.encode(player_id)
             obs_t = obs_to_tensor(TTRObs(*[np.expand_dims(f, 0) for f in obs]), device)
             mask = engine.legal_actions()
             mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
-            h_state = make_lstm_state(_agent.lstm_layers, 1, _agent.lstm_hidden, device)
+            if lstm_state is None:
+                lstm_state = make_lstm_state(_agent.lstm_layers, 1, _agent.lstm_hidden, device)
             done_t = torch.zeros(1)
             with torch.no_grad():
-                action, _, _, _, _ = _agent.get_action_and_value(obs_t, mask_t, h_state, done_t)
-            return int(action.item())
+                action, _, _, _, new_lstm_state = _agent.get_action_and_value(obs_t, mask_t, lstm_state, done_t)
+            return int(action.item()), new_lstm_state
 
         _loaded_models[model_id] = ai_fn
 
@@ -319,16 +340,17 @@ def main():
             agent.eval()
             print(f"Loaded model from {path}")
 
-            def ai_fn(engine, player_id):
+            def ai_fn(engine, player_id, lstm_state):
                 obs = engine.encode(player_id)
                 obs_t = obs_to_tensor(TTRObs(*[np.expand_dims(f, 0) for f in obs]), device)
                 mask = engine.legal_actions()
                 mask_t = torch.as_tensor(mask, dtype=torch.bool).unsqueeze(0)
-                h_state = make_lstm_state(agent.lstm_layers, 1, agent.lstm_hidden, device)
+                if lstm_state is None:
+                    lstm_state = make_lstm_state(agent.lstm_layers, 1, agent.lstm_hidden, device)
                 done_t = torch.zeros(1)
                 with torch.no_grad():
-                    action, _, _, _, _ = agent.get_action_and_value(obs_t, mask_t, h_state, done_t)
-                return int(action.item())
+                    action, _, _, _, new_lstm_state = agent.get_action_and_value(obs_t, mask_t, lstm_state, done_t)
+                return int(action.item()), new_lstm_state
 
             session.ai_fn = ai_fn
             _loaded_models["latest.pkt"] = ai_fn

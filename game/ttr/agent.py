@@ -26,6 +26,10 @@ class TTRArgs(PPOConfig):
     """number of players per game (only 2 supported)"""
     opponent_mode: Literal["self_play", "random"] = "self_play"
     """opponent policy: self_play or random."""
+    scale_route_score: float = 1.0
+    """scale route points for reward shaping (< 1 makes destinations relatively more valuable)"""
+    scale_dest_penalty: float = 1.0
+    """scale destination failure penalty for reward shaping (< 1 reduces penalty for failed destinations)"""
 
 
 class TTRAgent(BaseAgent):
@@ -120,7 +124,8 @@ class TTRAgent(BaseAgent):
         combined = torch.cat([shared, lstm_out], dim=-1)
         return combined, LSTMState(h=h, c=c)
 
-    def get_value(self, obs: TTRObs, lstm_state: LSTMState, done: torch.Tensor):
+    def get_value(self, obs: TTRObs, lstm_state: LSTMState, done: torch.Tensor,
+                  action_mask=None):
         hidden, _ = self.get_states(obs, lstm_state, done)
         return self.critic_head(self.critic_trunk(hidden))
 

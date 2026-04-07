@@ -11,6 +11,7 @@
     --tooltip-bg: #fff; --tooltip-border: #999; --tooltip-fg: #222;
     --status-bg: #e0e0e0;
     --dest-select-bg: #e8f0fe; --dest-select-border: #1565c0;
+    --log-ai: #fff3e0; --log-human: #e3f2fd;
   }
   html.dark {
     --bg: #1a1a2e; --bg2: #16213e; --bg3: #0f3460; --fg: #e0e0e0; --fg2: #aaa;
@@ -19,6 +20,7 @@
     --tooltip-bg: #0f3460; --tooltip-border: #4fc3f7; --tooltip-fg: #e0e0e0;
     --status-bg: #0f3460;
     --dest-select-bg: #0f3460; --dest-select-border: #4fc3f7;
+    --log-ai: #2a1a0e; --log-human: #0e1a2e;
   }
 
   /* ── Base ─────────────────────────────────────────────────────── */
@@ -28,9 +30,7 @@
   h1 { color: var(--accent); margin-bottom: 6px; font-size: 22px; }
   h2 { color: var(--bg2); background: var(--fg); padding: 3px 8px; margin: 6px 0 3px;
        border-radius: 4px; font-size: 13px; }
-  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-  .status { background: var(--status-bg); padding: 6px 10px; border-radius: 6px; font-size: 12px; flex: 1; }
-  .status span { margin-right: 14px; }
+  .top-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
   .btn { background: var(--accent); color: white; border: none; padding: 5px 10px; border-radius: 4px;
          cursor: pointer; font-size: 12px; margin: 2px; white-space: nowrap; }
   .btn:hover { opacity: 0.85; }
@@ -39,8 +39,26 @@
   .btn.theme-toggle { background: var(--bg3); color: var(--fg); font-size: 14px; padding: 4px 8px; }
   .main-layout { display: flex; gap: 10px; }
   .map-panel { flex: 3; background: var(--map-bg); border-radius: 8px; padding: 8px; position: relative; }
-  .side-panel { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 6px; }
+  .side-panel { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px;
+                max-height: calc(100vh - 100px); overflow-y: auto; }
   .side-section { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+
+  /* ── Phase banner ────────────────────────────────────────────── */
+  .phase-banner { padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: bold;
+                  text-align: center; margin-bottom: 8px; }
+  .phase-your-turn { background: #e3f2fd; color: #1565c0; border: 2px solid #1565c0; }
+  .phase-ai-turn { background: #fff3e0; color: #e65100; border: 2px solid #e65100;
+                   animation: pulse 1.5s ease-in-out infinite; }
+  .phase-game-over { background: var(--accent); color: white; border: 2px solid var(--accent); }
+  html.dark .phase-your-turn { background: #0d2137; color: #4fc3f7; border-color: #4fc3f7; }
+  html.dark .phase-ai-turn { background: #2a1a0e; color: #ffa726; border-color: #ffa726; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+  /* ── Stats bar ───────────────────────────────────────────────── */
+  .stats-bar { display: flex; gap: 16px; font-size: 12px; padding: 4px 8px;
+               background: var(--status-bg); border-radius: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+  .stats-bar .player-stats { display: flex; gap: 10px; }
+  .stats-bar .label { font-weight: bold; }
 
   /* ── Cards ────────────────────────────────────────────────────── */
   .hand { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
@@ -58,6 +76,7 @@
   .card-WILD { background: linear-gradient(135deg, #e94560, #1565c0); color: white; }
   .card.clickable { cursor: pointer; outline: 2px solid var(--accent2); }
   .card.clickable:hover { outline-color: var(--accent); }
+  .card-small { padding: 4px 8px; font-size: 11px; min-width: 36px; }
 
   /* ── Destinations ─────────────────────────────────────────────── */
   .dest-item { font-size: 11px; padding: 2px 0; }
@@ -67,8 +86,19 @@
                  border-radius: 4px; padding: 4px 8px; margin: 2px 0; cursor: pointer;
                  font-size: 11px; color: var(--fg); }
   .dest-select:hover { opacity: 0.8; }
-  #game-over { display: none; background: var(--accent); color: white; padding: 12px;
-               border-radius: 8px; text-align: center; font-size: 16px; margin-bottom: 6px; }
+
+  /* ── Action log ──────────────────────────────────────────────── */
+  .log-container { max-height: 160px; overflow-y: auto; font-size: 11px; }
+  .log-entry { padding: 2px 6px; border-radius: 3px; margin: 1px 0; }
+  .log-entry.human { background: var(--log-human); }
+  .log-entry.ai { background: var(--log-ai); }
+  .log-entry .log-player { font-weight: bold; margin-right: 4px; }
+
+  /* ── AI overlay (removed modal, using inline log instead) ──── */
+
+  /* ── Debug toggle ────────────────────────────────────────────── */
+  .debug-toggle { font-size: 11px; cursor: pointer; user-select: none; color: var(--fg2); }
+  .debug-toggle input { margin-right: 4px; }
 
   /* ── SVG map ──────────────────────────────────────────────────── */
   #map-svg { width: 100%; height: 100%; }
@@ -91,9 +121,29 @@
     <option value="random">Random</option>
   </select>
   <button class="btn theme-toggle" onclick="toggleTheme()" id="theme-btn" title="Toggle light/dark mode">&#9790;</button>
-  <div class="status" id="status">Click "New Game" to start</div>
+  <label class="debug-toggle"><input type="checkbox" id="show-ai-dest" onchange="renderIfState()"> Show AI destinations</label>
 </div>
-<div id="game-over"></div>
+
+<!-- Phase banner -->
+<div id="phase-banner" class="phase-banner phase-your-turn" style="display:none"></div>
+
+<!-- Stats bar -->
+<div class="stats-bar" id="stats-bar" style="display:none">
+  <div class="player-stats">
+    <span class="label" style="color:var(--accent2)">You:</span>
+    <span id="stat-human-trains"></span>
+    <span id="stat-human-points"></span>
+    <span id="stat-human-routes"></span>
+  </div>
+  <div class="player-stats">
+    <span class="label" style="color:var(--accent)">AI:</span>
+    <span id="stat-ai-trains"></span>
+    <span id="stat-ai-points"></span>
+    <span id="stat-ai-routes"></span>
+    <span id="stat-ai-cards"></span>
+    <span id="stat-ai-dest"></span>
+  </div>
+</div>
 
 <div class="main-layout">
   <div class="map-panel">
@@ -109,23 +159,18 @@
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
-        <!-- Player 0: diagonal stripes \ -->
         <pattern id="stripe-0" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
         </pattern>
-        <!-- Player 1: diagonal stripes / -->
         <pattern id="stripe-1" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(-45)">
           <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
         </pattern>
-        <!-- Player 2: horizontal stripes -->
         <pattern id="stripe-2" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(0)">
           <line x1="0" y1="0" x2="6" y2="0" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
         </pattern>
-        <!-- Player 3: dots -->
         <pattern id="stripe-3" patternUnits="userSpaceOnUse" width="6" height="6">
           <circle cx="3" cy="3" r="1.5" fill="rgba(255,255,255,0.4)"/>
         </pattern>
-        <!-- Player 4: crosshatch -->
         <pattern id="stripe-4" patternUnits="userSpaceOnUse" width="6" height="6">
           <line x1="0" y1="0" x2="6" y2="6" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
           <line x1="6" y1="0" x2="0" y2="6" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
@@ -140,27 +185,51 @@
   </div>
 
   <div class="side-panel">
+    <!-- Your hand -->
     <div class="side-section">
       <h2>Your Hand</h2>
       <div id="hand" class="hand"></div>
       <h2>Visible Cards <span id="deck-info" style="font-weight:normal;font-size:11px"></span></h2>
       <div id="visible" class="hand"></div>
     </div>
+
+    <!-- Opponent hand -->
+    <div class="side-section">
+      <h2>Opponent Hand <span id="ai-hand-total" style="font-weight:normal;font-size:11px"></span></h2>
+      <div id="ai-hand" class="hand"></div>
+      <div id="ai-dest-section" style="display:none">
+        <h2>Opponent Destinations (debug)</h2>
+        <div id="ai-destinations"></div>
+      </div>
+    </div>
+
+    <!-- Your destinations -->
     <div class="side-section">
       <h2>Your Destinations</h2>
       <div id="destinations"></div>
     </div>
+
+    <!-- Destination selection -->
     <div class="side-section" id="dest-select-panel" style="display:none">
       <h2>Select Destinations</h2>
       <div id="dest-select"></div>
       <div id="dest-select-actions" style="margin-top:4px"></div>
     </div>
+
+    <!-- Actions -->
     <div class="side-section">
-      <h2>Other Actions</h2>
+      <h2>Actions</h2>
       <div id="actions"></div>
+    </div>
+
+    <!-- Action log -->
+    <div class="side-section">
+      <h2>Action Log</h2>
+      <div id="action-log" class="log-container"></div>
     </div>
   </div>
 </div>
+
 
 <script>
 /* ── Theme ─────────────────────────────────────────────────────────────── */
@@ -169,7 +238,6 @@ function toggleTheme() {
   localStorage.setItem('ttr-theme', dark ? 'dark' : 'light');
   document.getElementById('theme-btn').innerHTML = dark ? '&#9788;' : '&#9790;';
 }
-// Restore saved theme
 if (localStorage.getItem('ttr-theme') === 'dark') {
   document.documentElement.classList.add('dark');
   document.getElementById('theme-btn').innerHTML = '&#9788;';
@@ -186,6 +254,21 @@ const ROUTE_COLORS = {
   PINK:'#e91e91', RED:'#f44336', YELLOW:'#fbc02d', BLACK:'#1a1a1a', WILD:'#9575cd'
 };
 const OWNER_COLORS = ['#1565c0', '#c62828', '#7b1fa2', '#2e7d32', '#e65100'];
+
+const PHASE_LABELS = {
+  'FIRST_ROUND/INIT': 'First Round - Choose your starting destinations',
+  'FIRST_ROUND/SELECTING_DEST': 'First Round - Select at least 2 destinations',
+  'FIRST_ROUND/FINISHED': 'First Round - Waiting...',
+  'PLAYING/INIT': 'Your Turn - Draw cards, claim a route, or draw destinations',
+  'PLAYING/SELECTING_DEST': 'Selecting Destinations - Pick at least 1',
+  'PLAYING/DRAWING_CARDS': 'Drawing Cards - Draw one more card',
+  'PLAYING/FINISHED': 'Turn complete',
+  'LAST_ROUND/INIT': 'LAST ROUND - Final turn! Draw, claim, or draw destinations',
+  'LAST_ROUND/SELECTING_DEST': 'LAST ROUND - Select at least 1 destination',
+  'LAST_ROUND/DRAWING_CARDS': 'LAST ROUND - Draw one more card',
+  'LAST_ROUND/FINISHED': 'Last round - Turn complete',
+  'GAME_OVER/FINISHED': 'Game Over',
+};
 
 /* ── API ───────────────────────────────────────────────────────────────── */
 async function api(path, body) {
@@ -213,6 +296,7 @@ function svgEl(tag, attrs) {
 }
 
 /* ── Build static city layer (once) ────────────────────────────────────── */
+let cityNameToId = {};
 function buildMap() {
   for (const c of mapData.cities) {
     cityXY[c.id] = project(c.lat, c.lon);
@@ -283,24 +367,20 @@ function renderRoutes() {
     const g = svgEl('g', {});
 
     if (owner >= 0) {
-      // Claimed: player-colored fill + thin route-colored border + stripes
       const ownerColor = OWNER_COLORS[owner] || '#888';
       const routeColor = ROUTE_COLORS[route.color] || '#888';
-      // Thin route-color border (behind)
       drawRouteCars(g, route, ep, {strokeWidth: 10});
       const borderChildren = [...g.children];
       for (const c of borderChildren) {
         c.setAttribute('stroke', routeColor);
         c.setAttribute('opacity', '0.9');
       }
-      // Wide player-colored fill + stripes (on top)
       drawRouteCars(g, route, ep, {strokeWidth: 7, stripeId: `stripe-${owner}`});
       const fillChildren = [...g.children].slice(borderChildren.length);
       for (const c of fillChildren) {
         if (!c.getAttribute('stroke')) c.setAttribute('stroke', ownerColor);
       }
     } else {
-      // Unclaimed
       const routeColor = ROUTE_COLORS[route.color] || '#888';
       drawRouteCars(g, route, ep);
       const cars = [...g.children];
@@ -322,10 +402,9 @@ function renderRoutes() {
       g.onclick = () => doAction(claimId);
     }
 
-    // Tooltip
     const c1 = mapData.cities[route.city1].name.replace(/_/g,' ');
     const c2 = mapData.cities[route.city2].name.replace(/_/g,' ');
-    const ow = owner===0?' ★YOU':owner===1?' ★AI':'';
+    const ow = owner===0?' [YOU]':owner===1?' [AI]':'';
     const txt = `${c1} \u2013 ${c2} | ${route.color} | len ${route.length} | ${route.points}pts${ow}`;
     g.onmouseenter = () => { tip.textContent = txt; tip.style.display = 'block'; };
     g.onmousemove = (e) => {
@@ -343,8 +422,6 @@ function renderRoutes() {
 }
 
 /* ── Destination highlight on map ──────────────────────────────────────── */
-let cityNameToId = {};
-
 function highlightDest(destId) {
   const hl = document.getElementById('highlight-layer');
   hl.innerHTML = '';
@@ -352,13 +429,10 @@ function highlightDest(destId) {
   if (!d) return;
   const p1 = cityXY[d.city1], p2 = cityXY[d.city2];
   if (!p1 || !p2) return;
-
-  // Dashed line between the two cities
   hl.appendChild(svgEl('line', {
     x1:p1.x, y1:p1.y, x2:p2.x, y2:p2.y,
     stroke:'var(--accent)', 'stroke-width':2, 'stroke-dasharray':'6,4', opacity:'0.8',
   }));
-  // Highlight city dots
   for (const p of [p1, p2]) {
     hl.appendChild(svgEl('circle', {
       cx:p.x, cy:p.y, r:7, fill:'none', stroke:'var(--accent)', 'stroke-width':2,
@@ -370,6 +444,49 @@ function clearHighlight() {
   document.getElementById('highlight-layer').innerHTML = '';
 }
 
+/* ── Render action log ─────────────────────────────────────────────────── */
+function renderLog(s) {
+  const log = document.getElementById('action-log');
+  log.innerHTML = '';
+  if (!s.action_log) return;
+  for (const entry of s.action_log) {
+    const div = document.createElement('div');
+    div.className = `log-entry ${entry.player === 0 ? 'human' : 'ai'}`;
+    const label = entry.player === 0 ? 'You' : 'AI';
+    div.innerHTML = `<span class="log-player">${label}:</span> ${entry.desc}`;
+    log.appendChild(div);
+  }
+  log.scrollTop = log.scrollHeight;
+}
+
+/* ── Render opponent hand ──────────────────────────────────────────────── */
+function renderAIHand(s) {
+  const container = document.getElementById('ai-hand');
+  container.innerHTML = '';
+  document.getElementById('ai-hand-total').textContent = `(${s.ai.hand_size} cards)`;
+  if (s.ai.hand) {
+    for (const [color, count] of Object.entries(s.ai.hand)) {
+      if (count > 0)
+        container.innerHTML += `<span class="card card-small card-${color}">${color}: ${count}</span>`;
+    }
+  }
+
+  // AI destinations (debug)
+  const showDest = document.getElementById('show-ai-dest').checked;
+  const destSection = document.getElementById('ai-dest-section');
+  if (showDest && s.ai.destinations && s.ai.destinations.length > 0) {
+    destSection.style.display = '';
+    const destDiv = document.getElementById('ai-destinations');
+    destDiv.innerHTML = '';
+    for (const d of s.ai.destinations) {
+      const cls = d.status === 'completed' ? 'completed' : 'uncompleted';
+      destDiv.innerHTML += `<div class="dest-item ${cls}" onmouseenter="highlightDest(${d.id})" onmouseleave="clearHighlight()">${d.city1} &rarr; ${d.city2} (${d.points}pts) [${d.status}]</div>`;
+    }
+  } else {
+    destSection.style.display = 'none';
+  }
+}
+
 /* ── Main render ───────────────────────────────────────────────────────── */
 function render(s) {
   if (!s.started) return;
@@ -377,21 +494,32 @@ function render(s) {
   legalActionSet.clear();
   for (const a of s.legal_actions) legalActionSet.add(a.id);
 
-  // Game over
-  const go = document.getElementById('game-over');
+  // Phase banner
+  const banner = document.getElementById('phase-banner');
+  banner.style.display = 'block';
   if (s.done) {
-    go.style.display = 'block';
+    banner.className = 'phase-banner phase-game-over';
     const w = s.scores[0]>s.scores[1] ? 'You win!' : s.scores[0]<s.scores[1] ? 'AI wins!' : 'Tie!';
-    go.innerHTML = `Game Over &mdash; ${w} (You: ${s.scores[0]} pts, AI: ${s.scores[1]} pts)`;
-  } else { go.style.display = 'none'; }
+    banner.textContent = `Game Over - ${w} (You: ${s.scores[0]} pts, AI: ${s.scores[1]} pts)`;
+  } else if (s.current_player === 0) {
+    banner.className = 'phase-banner phase-your-turn';
+    const key = `${s.game_state}/${s.turn_state}`;
+    banner.textContent = PHASE_LABELS[key] || `Your Turn (${s.game_state} / ${s.turn_state})`;
+  } else {
+    banner.className = 'phase-banner phase-ai-turn';
+    banner.textContent = 'AI is playing...';
+  }
 
-  // Status
-  const myTurn = s.current_player === 0 && !s.done;
-  document.getElementById('status').innerHTML =
-    `<span>${s.game_state} / ${s.turn_state}</span>` +
-    `<span style="color:${myTurn?'var(--accent2)':'var(--accent)'}">${myTurn?'YOUR TURN':'AI TURN'}</span>` +
-    `<span>Trains: ${s.human.trains}</span><span>Pts: ${s.human.points}</span>` +
-    `<span style="color:var(--accent)">AI: ${s.ai.trains}tr / ${s.ai.points}pts</span>`;
+  // Stats bar
+  document.getElementById('stats-bar').style.display = 'flex';
+  document.getElementById('stat-human-trains').textContent = `${s.human.trains} trains`;
+  document.getElementById('stat-human-points').textContent = `${s.human.points} pts`;
+  document.getElementById('stat-human-routes').textContent = `${s.human.routes_claimed} routes`;
+  document.getElementById('stat-ai-trains').textContent = `${s.ai.trains} trains`;
+  document.getElementById('stat-ai-points').textContent = `${s.ai.points} pts`;
+  document.getElementById('stat-ai-routes').textContent = `${s.ai.routes_claimed} routes`;
+  document.getElementById('stat-ai-cards').textContent = `${s.ai.hand_size} cards`;
+  document.getElementById('stat-ai-dest').textContent = `${s.ai.dest_count} dest`;
 
   // Hand
   const hand = document.getElementById('hand');
@@ -411,6 +539,9 @@ function render(s) {
       (ok ? ` onclick="doAction(${aid})"` : '') + `>${color}: ${count}</span>`;
   }
   document.getElementById('deck-info').textContent = `(Deck: ${s.deck_size})`;
+
+  // Opponent hand
+  renderAIHand(s);
 
   // Destinations (with hover highlight)
   const dest = document.getElementById('destinations');
@@ -440,40 +571,54 @@ function render(s) {
       ? `<button class="btn" onclick="doAction(41)">Finish Selecting</button>` : '';
   } else { dsp.style.display = 'none'; }
 
-  // Other actions (draw deck, draw destinations)
+  // Actions (draw deck, draw destinations)
   const acts = document.getElementById('actions');
   acts.innerHTML = '';
   for (const a of s.legal_actions) {
-    if (a.id >= 1 && a.id <= 9) continue;
-    if (a.id >= 11 && a.id <= 41) continue;
-    if (a.id >= 42) continue;
+    if (a.id >= 1 && a.id <= 9) continue;  // visible card draws handled above
+    if (a.id >= 11 && a.id <= 41) continue; // dest selection handled above
+    if (a.id >= 42) continue;               // route claims handled on map
     acts.innerHTML += `<button class="btn action" onclick="doAction(${a.id})">${a.desc}</button>`;
   }
+
+  // Action log
+  renderLog(s);
 
   if (mapData) renderRoutes();
 }
 
+function renderIfState() { if (gameState) render(gameState); }
+
+/* ── Actions ──────────────────────────────────────────────────────────── */
 async function doAction(id) {
   const s = await api('/api/action', {action: id});
+
   // Auto-finish destination selection if it's the only legal action
   if (s.legal_actions.length === 1 && s.legal_actions[0].id === 41) {
     return doAction(41);
   }
+
   render(s);
 }
-async function newGame() { render(await api('/api/new', {})); }
+
+async function newGame() {
+  render(await api('/api/new', {}));
+}
 
 async function setModel(modelId) {
   const res = await api('/api/set_model', {model: modelId});
-  document.getElementById('status').textContent =
-    res.status === 'ok' ? `AI model: ${res.model}` : `Error: ${res.msg}`;
+  const banner = document.getElementById('phase-banner');
+  if (res.status === 'ok') {
+    banner.style.display = 'block';
+    banner.className = 'phase-banner phase-your-turn';
+    banner.textContent = `AI model set to: ${res.model}`;
+  }
 }
 
 /* ── Init ──────────────────────────────────────────────────────────────── */
 (async () => {
   mapData = await api('/api/map_data');
   buildMap();
-  // Populate model selector
   const models = await api('/api/models');
   const sel = document.getElementById('model-select');
   sel.innerHTML = '';
@@ -483,7 +628,6 @@ async function setModel(modelId) {
     opt.textContent = m.name;
     sel.appendChild(opt);
   }
-  // Default to last model (usually latest.pkt)
   if (models.length > 1) sel.value = models[models.length - 1].id;
   render(await api('/api/state'));
 })();
