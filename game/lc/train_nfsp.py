@@ -324,9 +324,11 @@ def train(cfg: NFSPConfig):
     rl_transitions = 0
     sl_transitions = 0
 
+    # Benchmark vs random uses no discard limit — fair measure of raw skill,
+    # since random opponent doesn't create cycling issues.
     bench_factory = LCEnvFactory(new_color_penalty=cfg.new_color_penalty,
                                  max_lanes=cfg.max_lanes,
-                                 max_discard_draws=cfg.max_discard_draws)
+                                 max_discard_draws=0)
 
     while global_step < cfg.total_timesteps:
         N = cfg.num_envs

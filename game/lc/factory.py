@@ -13,12 +13,16 @@ class LCEnvFactory(EnvFactory):
                  zero_one_reward: bool = False,
                  max_lanes: int = 5, decompose_actions: bool = False,
                  three_phase: bool = False, max_discard_draws: int = 0,
-                 raw_score_reward: bool = False, dense_reward: bool = False):
+                 raw_score_reward: bool = False, dense_reward: bool = False,
+                 dense_opponent_delta: bool = False,
+                 dense_opp_penalty: bool = False):
         self.new_color_penalty = new_color_penalty
         self.score_diff_reward = score_diff_reward
         self.zero_one_reward = zero_one_reward
         self.raw_score_reward = raw_score_reward
         self.dense_reward = dense_reward
+        self.dense_opponent_delta = dense_opponent_delta
+        self.dense_opp_penalty = dense_opp_penalty
         self.max_lanes = max_lanes
         self.decompose_actions = decompose_actions
         self.three_phase = three_phase
@@ -33,4 +37,6 @@ class LCEnvFactory(EnvFactory):
                          decompose_actions=self.decompose_actions,
                          three_phase=self.three_phase,
                          max_discard_draws=self.max_discard_draws,
-                         dense_reward=self.dense_reward)
+                         dense_reward=self.dense_reward,
+                         dense_opponent_delta=self.dense_opponent_delta,
+                         dense_opp_penalty=self.dense_opp_penalty)

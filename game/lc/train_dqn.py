@@ -183,6 +183,8 @@ def main():
                            zero_one_reward=args.zero_one_reward,
                            raw_score_reward=args.raw_score_reward,
                            dense_reward=args.dense_reward,
+                           dense_opponent_delta=args.dense_opponent_delta,
+                           dense_opp_penalty=args.dense_opp_penalty,
                            max_lanes=args.max_lanes,
                            max_discard_draws=args.max_discard_draws)
     key = key_from_seed(args.seed)

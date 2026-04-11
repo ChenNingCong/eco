@@ -94,6 +94,7 @@ def run_matchup(agent_model, agent_type, opp_model, opp_type, device,
 
     wins, losses, draws, total = 0, 0, 0, 0
     agent_scores, opp_scores = [], []
+    ddraw_list = []
     env_counts = np.zeros(n_envs, dtype=int)  # completions per env
     envs_done = 0  # number of envs that hit their quota
 
@@ -149,9 +150,12 @@ def run_matchup(agent_model, agent_type, opp_model, opp_type, device,
                     if a_sc > o_sc: wins += 1
                     elif a_sc < o_sc: losses += 1
                     else: draws += 1
+                gm = infos[i].get("game_metrics")
+                if gm and "discard_draws" in gm:
+                    ddraw_list.append(gm["discard_draws"])
 
     envs.close()
-    return wins, losses, draws, agent_scores, opp_scores
+    return wins, losses, draws, agent_scores, opp_scores, ddraw_list
 
 
 def main():
@@ -174,22 +178,24 @@ def main():
     print()
 
     # P1 as agent, P2 as opponent
-    w1, l1, d1, sc1a, sc2a = run_matchup(
+    w1, l1, d1, sc1a, sc2a, dd1 = run_matchup(
         model1, type1, model2, type2, device,
         args.num_envs, args.num_games, args.max_discard_draws, seed=9999)
     t1 = w1 + l1 + d1
+    dd1_str = f"  ddraw={np.mean(dd1):.1f}±{np.std(dd1):.1f}" if dd1 else ""
     print(f"P1 as agent: {w1}W/{l1}L/{d1}D  "
           f"P1 score={np.mean(sc1a):.1f}±{np.std(sc1a):.1f}  "
-          f"P2 score={np.mean(sc2a):.1f}±{np.std(sc2a):.1f}")
+          f"P2 score={np.mean(sc2a):.1f}±{np.std(sc2a):.1f}{dd1_str}")
 
     # P2 as agent, P1 as opponent
-    w2, l2, d2, sc2b, sc1b = run_matchup(
+    w2, l2, d2, sc2b, sc1b, dd2 = run_matchup(
         model2, type2, model1, type1, device,
         args.num_envs, args.num_games, args.max_discard_draws, seed=8888)
     t2 = w2 + l2 + d2
+    dd2_str = f"  ddraw={np.mean(dd2):.1f}±{np.std(dd2):.1f}" if dd2 else ""
     print(f"P2 as agent: {w2}W/{l2}L/{d2}D  "
           f"P2 score={np.mean(sc2b):.1f}±{np.std(sc2b):.1f}  "
-          f"P1 score={np.mean(sc1b):.1f}±{np.std(sc1b):.1f}")
+          f"P1 score={np.mean(sc1b):.1f}±{np.std(sc1b):.1f}{dd2_str}")
 
     # Combined
     total = t1 + t2

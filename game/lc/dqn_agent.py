@@ -28,6 +28,10 @@ class LCDQNArgs(DQNConfig):
     """reward = own score / 30 (maximize raw score, ignore opponent)"""
     dense_reward: bool = False
     """per-step reward = delta in current player's score / 30"""
+    dense_opponent_delta: bool = False
+    """dense reward uses delta(own - opp) / 30 every step (requires --dense-reward)"""
+    dense_opp_penalty: bool = False
+    """dense mid-game delta(own)/30 + terminal -opp_score/30 (requires --dense-reward)"""
 
 
 class LCQNetwork(BaseQNetwork):

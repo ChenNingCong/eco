@@ -175,13 +175,17 @@ class LCEngine(BaseGameEngine[LCObs]):
                  three_phase: bool = False,
                  max_discard_draws: int = 0,
                  raw_score_reward: bool = False,
-                 dense_reward: bool = False):
+                 dense_reward: bool = False,
+                 dense_opponent_delta: bool = False,
+                 dense_opp_penalty: bool = False):
         super().__init__(rng)
         self._new_color_penalty = new_color_penalty
         self._score_diff_reward = score_diff_reward
         self._zero_one_reward = zero_one_reward
         self._raw_score_reward = raw_score_reward
         self._dense_reward = dense_reward
+        self._dense_opponent_delta = dense_opponent_delta
+        self._dense_opp_penalty = dense_opp_penalty
         self._max_lanes = max_lanes
         self._decompose_actions = decompose_actions
         self._three_phase = three_phase
@@ -225,6 +229,56 @@ class LCEngine(BaseGameEngine[LCObs]):
                     rewards[i] = 1.0
                 elif self._scores[i] <= worst:
                     rewards[i] = -1.0
+
+    def _assign_dense_terminal_rewards(self, rewards: list[float]) -> None:
+        """Dense terminal: score-delta shaping + optional terminal bonus.
+
+        When dense_reward is combined with a terminal reward flag, the terminal
+        step gives: delta(own_score)/30 + terminal_bonus.
+        - dense alone (= dense raw_score): just delta(own)/30
+        - dense + score_diff: delta(own-opp)/30 at terminal only (mid-game: delta(own)/30)
+        - dense + dense_opponent_delta: delta(own-opp)/30 every step including terminal
+        - dense + zero_one: delta(own)/30 + (1 if win else 0)
+        - dense + default: delta(own)/30 + (+1/-1/0)
+        """
+        if self._dense_opp_penalty:
+            # delta(own)/30 + (-opp_score/30) at terminal
+            # Episode total = own/30 - opp/30 = (own-opp)/30
+            for i in range(NUM_PLAYERS):
+                opp = 1 - i
+                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
+                rewards[i] = delta - self._scores[opp] / self.SCORE_DIFF_NORM
+        elif self._dense_opponent_delta or self._score_diff_reward:
+            # Per-player delta of (own - opp) so episode total = score_diff
+            for i in range(NUM_PLAYERS):
+                opp = 1 - i
+                own_delta = (self._scores[i] - self._prev_scores[i])
+                opp_delta = (self._scores[opp] - self._prev_scores[opp])
+                rewards[i] = (own_delta - opp_delta) / self.SCORE_DIFF_NORM
+        elif self._zero_one_reward:
+            # Score-delta shaping + zero-one terminal bonus
+            best = float(self._scores.max())
+            for i in range(NUM_PLAYERS):
+                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
+                bonus = 1.0 if self._scores[i] >= best else 0.0
+                rewards[i] = delta + bonus
+        elif self._raw_score_reward:
+            # dense + raw_score: same as plain dense (delta already sums to raw_score)
+            for i in range(NUM_PLAYERS):
+                rewards[i] = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
+        else:
+            # dense + default: score-delta shaping + win/loss/draw bonus
+            best = float(self._scores.max())
+            worst = float(self._scores.min())
+            for i in range(NUM_PLAYERS):
+                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
+                if self._scores[i] >= best:
+                    bonus = 1.0
+                elif self._scores[i] <= worst:
+                    bonus = -1.0
+                else:
+                    bonus = 0.0
+                rewards[i] = delta + bonus
 
     def _reset(self) -> None:
         # Build and shuffle deck
@@ -321,14 +375,23 @@ class LCEngine(BaseGameEngine[LCObs]):
             self._done = True
             self._scores = self._calculate_scores()
             if self._dense_reward:
-                for i in range(NUM_PLAYERS):
-                    rewards[i] = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
+                self._assign_dense_terminal_rewards(rewards)
             else:
                 self._assign_terminal_rewards(rewards)
         else:
             if self._dense_reward:
                 cur_scores = self._calculate_scores()
-                rewards[p] = (cur_scores[p] - self._prev_scores[p]) / self.SCORE_DIFF_NORM
+                if self._dense_opponent_delta or self._score_diff_reward:
+                    # Give both players delta(own - opp) / 30 each step.
+                    # Acting player sees +delta(own)/30, non-acting sees -delta(acting)/30.
+                    # VecSinglePlayerEnv accumulates both into the agent's reward.
+                    for i in range(NUM_PLAYERS):
+                        opp = 1 - i
+                        own_delta = cur_scores[i] - self._prev_scores[i]
+                        opp_delta = cur_scores[opp] - self._prev_scores[opp]
+                        rewards[i] = (own_delta - opp_delta) / self.SCORE_DIFF_NORM
+                else:
+                    rewards[p] = (cur_scores[p] - self._prev_scores[p]) / self.SCORE_DIFF_NORM
                 self._prev_scores[:] = cur_scores
             self._current_player = 1 - p
 
@@ -493,8 +556,14 @@ class LCEngine(BaseGameEngine[LCObs]):
         return self._legal_actions_flat()
 
     def _discard_draws_blocked(self) -> bool:
-        """True if discard draws should be masked (limit reached)."""
-        if self._max_discard_draws <= 0:
+        """True if discard draws should be masked (limit reached).
+        max_discard_draws < 0: completely disabled (no discard draws ever)
+        max_discard_draws == 0: unlimited
+        max_discard_draws > 0: cap on total discard draws across both players
+        """
+        if self._max_discard_draws < 0:
+            return True
+        if self._max_discard_draws == 0:
             return False
         return (self._discard_draws[0] + self._discard_draws[1]) >= self._max_discard_draws
 
