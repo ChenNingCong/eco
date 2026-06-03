@@ -1,5 +1,5 @@
 """
-Lost Cities — BaseGameEngine implementation.
+Lost Cities — BaseGameEngine implementation (Numba jitclass-accelerated).
 
 2-player card game. 60 cards: 5 colors × 12 cards (3 investments + numbered 2–10).
 Each turn: play a card (expedition or discard) then draw a card (deck or discard pile).
@@ -10,10 +10,17 @@ Action encoding (600 total):
   card_id ∈ [0, 50)  — 5 colors × 10 unique values
   action_type ∈ {0=expedition, 1=discard}
   draw_source ∈ [0, 6) — 0=deck, 1–5=discard piles by color
+
+Architecture:
+  LCState (@jitclass)  — pure game state + compiled methods (step, encode, legal, reset)
+  LCEngine (Python)    — thin wrapper for BaseGameEngine interface + RNG
+  batch_* (@njit)      — loop over typed.List[LCState] in compiled code
 """
 
 from typing import NamedTuple
 import numpy as np
+import numba as nb
+from numba.typed import List as NbList
 from abstract.game import BaseGameEngine
 
 # ── Constants ───────────────────────────────────────────────────────────────
@@ -40,34 +47,37 @@ PHASE_PLAY = 0   # choose card + expedition/discard
 PHASE_DRAW = 1   # choose draw source
 
 # Decomposed action space (106 total, phase-dependent masking):
-#   Play actions  0..99:  card_id * 2 + action_type (expedition=0, discard=1)
-#   Draw actions  100..105: 100 + draw_source (0=deck, 1-5=discard piles)
 NUM_PLAY_ACTIONS = NUM_CARD_IDS * NUM_ACTION_TYPES  # 100
 NUM_DRAW_ACTIONS = NUM_DRAW_SOURCES                  # 6
 NUM_DECOMPOSED_ACTIONS = NUM_PLAY_ACTIONS + NUM_DRAW_ACTIONS  # 106
 
 # Phases (for 3-phase decomposed action mode)
-PHASE3_SELECT_CARD = 0   # choose which card from hand
-PHASE3_ACTION_TYPE = 1   # expedition or discard
-PHASE3_DRAW = 2          # choose draw source
+PHASE3_SELECT_CARD = 0
+PHASE3_ACTION_TYPE = 1
+PHASE3_DRAW = 2
 
-# 3-phase decomposed action space (58 total, phase-dependent masking):
-#   Card select  0..49:  card_id
-#   Action type  50..51: 50 + action_type (0=expedition, 1=discard)
-#   Draw source  52..57: 52 + draw_source (0=deck, 1-5=discard piles)
+# 3-phase decomposed action space (58 total):
 NUM_CARD_SELECT_ACTIONS = NUM_CARD_IDS               # 50
 NUM_TYPE_ACTIONS = NUM_ACTION_TYPES                   # 2
 NUM_3PHASE_DRAW_ACTIONS = NUM_DRAW_SOURCES            # 6
 NUM_3PHASE_ACTIONS = NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS + NUM_3PHASE_DRAW_ACTIONS  # 58
 
-# Card values: index 0 = investment (value 0), index k (k>=1) = value k+1
+# Card values
 def _card_value(value_idx: int) -> int:
     return 0 if value_idx == 0 else value_idx + 1
 
 CARD_VALUES = [_card_value(i) for i in range(NUM_UNIQUE_VALUES)]
-# How many copies of each unique card exist in the deck
-# Investment (value_idx=0): 3 copies; numbered (value_idx 1-9): 1 copy each
+_CARD_VALUES_ARR = np.array(CARD_VALUES, dtype=np.int32)
 CARD_COPIES = [3] + [1] * 9
+
+# Pre-built deck template
+_DECK_TEMPLATE = np.empty(TOTAL_CARDS, dtype=np.int8)
+_idx = 0
+for _c in range(NUM_COLORS):
+    for _v in range(NUM_UNIQUE_VALUES):
+        for _ in range(CARD_COPIES[_v]):
+            _DECK_TEMPLATE[_idx] = _c * NUM_UNIQUE_VALUES + _v
+            _idx += 1
 
 
 # ── Action encoding ────────────────────────────────────────────────────────
@@ -82,7 +92,6 @@ def decode_action(flat: int) -> tuple[int, int, int]:
     return card_id, action_type, draw_source
 
 def card_id_to_color_value(card_id: int) -> tuple[int, int]:
-    """card_id -> (color_idx, value_idx)"""
     return card_id // NUM_UNIQUE_VALUES, card_id % NUM_UNIQUE_VALUES
 
 def color_value_to_card_id(color_idx: int, value_idx: int) -> int:
@@ -92,46 +101,33 @@ def color_value_to_card_id(color_idx: int, value_idx: int) -> int:
 # ── Decomposed action encoding ────────────────────────────────────────────
 
 def encode_play_action(card_id: int, action_type: int) -> int:
-    """Encode play-phase action: card_id * 2 + action_type."""
     return card_id * 2 + action_type
 
 def decode_play_action(action: int) -> tuple[int, int]:
-    """Decode play-phase action → (card_id, action_type)."""
     return action // 2, action % 2
 
 def encode_draw_action(draw_source: int) -> int:
-    """Encode draw-phase action: NUM_PLAY_ACTIONS + draw_source."""
     return NUM_PLAY_ACTIONS + draw_source
 
 def decode_draw_action(action: int) -> int:
-    """Decode draw-phase action → draw_source."""
     return action - NUM_PLAY_ACTIONS
 
-
-# ── 3-phase decomposed action encoding ───────────────────────────────────
-
 def encode_card_select_action(card_id: int) -> int:
-    """Encode card-select phase action."""
     return card_id
 
 def decode_card_select_action(action: int) -> int:
-    """Decode card-select phase action → card_id."""
     return action
 
 def encode_type_action(action_type: int) -> int:
-    """Encode action-type phase action: NUM_CARD_SELECT_ACTIONS + action_type."""
     return NUM_CARD_SELECT_ACTIONS + action_type
 
 def decode_type_action(action: int) -> int:
-    """Decode action-type phase action → action_type."""
     return action - NUM_CARD_SELECT_ACTIONS
 
 def encode_3phase_draw_action(draw_source: int) -> int:
-    """Encode 3-phase draw action: NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS + draw_source."""
     return NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS + draw_source
 
 def decode_3phase_draw_action(action: int) -> int:
-    """Decode 3-phase draw action → draw_source."""
     return action - NUM_CARD_SELECT_ACTIONS - NUM_TYPE_ACTIONS
 
 
@@ -147,24 +143,629 @@ class LCObs(NamedTuple):
     discard_top3: np.ndarray      # (50,) 3rd card of each discard pile
     deck_size: np.ndarray         # (1,) deck_size / 44 (max after dealing)
     scores: np.ndarray            # (2,) current scores / 100, rotated [own, opp]
-    phase: np.ndarray             # (1,) int32: 0=play, 1=draw (2-phase); 0=select, 1=type, 2=draw (3-phase)
+    phase: np.ndarray             # (1,) int32
     played_card: np.ndarray       # (NUM_CARD_IDS,) one-hot of card selected/played
-    played_type: np.ndarray       # (1,) 0=expedition, 1=discard (-1 when not yet chosen)
+    played_type: np.ndarray       # (1,) 0=expedition, 1=discard (-1 default)
 
 def float_dim(decompose_actions: bool = False, three_phase: bool = False) -> int:
-    """Total float feature dimension (excludes phase, which is embedded)."""
     base = 50 * 6 + 1 + 2  # 303
     if decompose_actions or three_phase:
-        base += NUM_CARD_IDS + 1  # played_card (50) + played_type (1)
+        base += NUM_CARD_IDS + 1
     return base
 
 
-# ── Engine ──────────────────────────────────────────────────────────────────
+# ── Numba RNG seed ──────────────────────────────────────────────────────────
+# Numba uses a process-global (thread-local) PRNG for np.random calls inside
+# @njit / jitclass.  All 128 envs in a process share it sequentially — fine.
+# But each process (multiprocessing) MUST call seed_numba_rng() with a unique
+# seed at startup to avoid identical shuffle sequences across workers.
+
+@nb.njit
+def seed_numba_rng(seed):
+    """Seed Numba's internal PRNG. Call once per process with a unique seed."""
+    np.random.seed(seed)
+
+
+# ── LCState jitclass ────────────────────────────────────────────────────────
+
+_lc_state_spec = [
+    # Mutable game state
+    ('hands',             nb.int8[:, :]),       # (2, 50)
+    ('exp_vals',          nb.int8[:, :, :]),    # (2, 5, 12)
+    ('exp_len',           nb.int8[:, :]),       # (2, 5)
+    ('discard',           nb.int8[:, :]),       # (5, 12)
+    ('discard_len',       nb.int8[:]),          # (5,)
+    ('deck',              nb.int8[:]),          # (60,)
+    ('deck_top',          nb.int32),
+    ('current_player',    nb.int8),
+    ('is_done',           nb.boolean),
+    ('scores',            nb.float32[:]),       # (2,)
+    ('prev_scores',       nb.float32[:]),       # (2,)
+    ('discard_draws',     nb.int32[:]),         # (2,)
+    # Decomposed phase state
+    ('phase',             nb.int8),
+    ('played_color',      nb.int8),
+    ('played_val_idx',    nb.int8),
+    ('played_card_id',    nb.int8),
+    ('played_action_type', nb.int8),
+    # Config (immutable after init)
+    ('penalty',           nb.int32),
+    ('max_lanes',         nb.int8),
+    ('max_dd',            nb.int32),           # max_discard_draws
+    ('dense_reward',      nb.boolean),
+    ('score_diff_reward', nb.boolean),
+    ('zero_one_reward',   nb.boolean),
+    ('raw_score_reward',  nb.boolean),
+    ('dense_opp_delta',   nb.boolean),
+    ('dense_opp_penalty', nb.boolean),
+    # Constants
+    ('deck_template',     nb.int8[:]),         # (60,)
+    ('card_values',       nb.int32[:]),        # (10,)
+]
+
+
+@nb.experimental.jitclass(_lc_state_spec)
+class LCState:
+
+    def __init__(self, penalty, max_lanes, max_dd,
+                 dense_reward, score_diff_reward, zero_one_reward,
+                 raw_score_reward, dense_opp_delta, dense_opp_penalty,
+                 deck_template, card_values):
+        self.penalty = penalty
+        self.max_lanes = max_lanes
+        self.max_dd = max_dd
+        self.dense_reward = dense_reward
+        self.score_diff_reward = score_diff_reward
+        self.zero_one_reward = zero_one_reward
+        self.raw_score_reward = raw_score_reward
+        self.dense_opp_delta = dense_opp_delta
+        self.dense_opp_penalty = dense_opp_penalty
+        self.deck_template = deck_template
+        self.card_values = card_values
+        # Allocate state arrays
+        self.hands = np.zeros((2, 50), dtype=np.int8)
+        self.exp_vals = np.zeros((2, 5, 12), dtype=np.int8)
+        self.exp_len = np.zeros((2, 5), dtype=np.int8)
+        self.discard = np.zeros((5, 12), dtype=np.int8)
+        self.discard_len = np.zeros(5, dtype=np.int8)
+        self.deck = np.empty(60, dtype=np.int8)
+        self.deck_top = nb.int32(0)
+        self.current_player = nb.int8(0)
+        self.is_done = False
+        self.scores = np.zeros(2, dtype=np.float32)
+        self.prev_scores = np.zeros(2, dtype=np.float32)
+        self.discard_draws = np.zeros(2, dtype=np.int32)
+        self.phase = nb.int8(0)
+        self.played_color = nb.int8(-1)
+        self.played_val_idx = nb.int8(-1)
+        self.played_card_id = nb.int8(-1)
+        self.played_action_type = nb.int8(-1)
+
+    # ── Reset ──────────────────────────────────────────────────────────
+
+    def reset(self):
+        self.deck[:] = self.deck_template
+        np.random.shuffle(self.deck)
+        self.deck_top = nb.int32(60)
+        self.hands[:] = 0
+        self.exp_vals[:] = 0
+        self.exp_len[:] = 0
+        self.discard[:] = 0
+        self.discard_len[:] = 0
+        self.current_player = nb.int8(0)
+        self.is_done = False
+        self.scores[:] = 0.0
+        self.prev_scores[:] = 0.0
+        self.discard_draws[:] = 0
+        self.phase = nb.int8(0)
+        self.played_color = nb.int8(-1)
+        self.played_val_idx = nb.int8(-1)
+        self.played_card_id = nb.int8(-1)
+        self.played_action_type = nb.int8(-1)
+        # Deal hands
+        for _ in range(8):
+            for p in range(2):
+                self.deck_top -= 1
+                cid = self.deck[self.deck_top]
+                self.hands[p, cid] += 1
+
+    # ── Scoring ────────────────────────────────────────────────────────
+
+    def calc_scores(self):
+        """Calculate scores for both players, write into self.scores."""
+        for p in range(2):
+            total = nb.int32(0)
+            for c in range(5):
+                n = self.exp_len[p, c]
+                if n == 0:
+                    continue
+                base_value = nb.int32(0)
+                num_inv = nb.int32(0)
+                for j in range(n):
+                    v = self.exp_vals[p, c, j]
+                    if v == 0:
+                        num_inv += 1
+                    else:
+                        base_value += self.card_values[v]
+                multiplier = num_inv + 1
+                exp_score = (base_value - self.penalty) * multiplier
+                if n >= 8:
+                    exp_score += 20
+                total += exp_score
+            self.scores[p] = nb.float32(total)
+
+    # ── Reward assignment ──────────────────────────────────────────────
+
+    def _assign_terminal(self, r):
+        if self.raw_score_reward:
+            r[0] = self.scores[0] / 30.0
+            r[1] = self.scores[1] / 30.0
+        elif self.score_diff_reward:
+            r[0] = (self.scores[0] - self.scores[1]) / 30.0
+            r[1] = (self.scores[1] - self.scores[0]) / 30.0
+        elif self.zero_one_reward:
+            best = max(self.scores[0], self.scores[1])
+            r[0] = 1.0 if self.scores[0] >= best else 0.0
+            r[1] = 1.0 if self.scores[1] >= best else 0.0
+        else:
+            best = max(self.scores[0], self.scores[1])
+            worst = min(self.scores[0], self.scores[1])
+            for i in range(2):
+                if self.scores[i] >= best:
+                    r[i] = 1.0
+                elif self.scores[i] <= worst:
+                    r[i] = -1.0
+                else:
+                    r[i] = 0.0
+
+    def _assign_dense_terminal(self, r):
+        if self.dense_opp_penalty:
+            for i in range(2):
+                opp = 1 - i
+                delta = (self.scores[i] - self.prev_scores[i]) / 30.0
+                r[i] = delta - self.scores[opp] / 30.0
+        elif self.dense_opp_delta or self.score_diff_reward:
+            for i in range(2):
+                opp = 1 - i
+                r[i] = ((self.scores[i] - self.prev_scores[i]) -
+                        (self.scores[opp] - self.prev_scores[opp])) / 30.0
+        elif self.zero_one_reward:
+            best = max(self.scores[0], self.scores[1])
+            for i in range(2):
+                delta = (self.scores[i] - self.prev_scores[i]) / 30.0
+                bonus = 1.0 if self.scores[i] >= best else 0.0
+                r[i] = delta + bonus
+        elif self.raw_score_reward:
+            for i in range(2):
+                r[i] = (self.scores[i] - self.prev_scores[i]) / 30.0
+        else:
+            best = max(self.scores[0], self.scores[1])
+            worst = min(self.scores[0], self.scores[1])
+            for i in range(2):
+                delta = (self.scores[i] - self.prev_scores[i]) / 30.0
+                if self.scores[i] >= best:
+                    bonus = 1.0
+                elif self.scores[i] <= worst:
+                    bonus = -1.0
+                else:
+                    bonus = 0.0
+                r[i] = delta + bonus
+
+    # ── Step (flat 600-action) ─────────────────────────────────────────
+
+    def step_flat(self, action, r):
+        """Step with flat action, write 2-player rewards into r[0:2]."""
+        r[0] = 0.0
+        r[1] = 0.0
+        card_id = action // 12
+        action_type = (action // 6) % 2
+        draw_source = action % 6
+        p = self.current_player
+        color = card_id // 10
+        val_idx = card_id % 10
+
+        # Play
+        self.hands[p, card_id] -= 1
+        if action_type == 0:
+            n = self.exp_len[p, color]
+            self.exp_vals[p, color, n] = nb.int8(val_idx)
+            self.exp_len[p, color] = n + 1
+        else:
+            n = self.discard_len[color]
+            self.discard[color, n] = nb.int8(card_id)
+            self.discard_len[color] = n + 1
+
+        # Draw
+        if draw_source == 0:
+            self.deck_top -= 1
+            drawn = self.deck[self.deck_top]
+            self.hands[p, drawn] += 1
+        else:
+            pile_c = draw_source - 1
+            self.discard_len[pile_c] -= 1
+            drawn = self.discard[pile_c, self.discard_len[pile_c]]
+            self.hands[p, drawn] += 1
+            self.discard_draws[p] += 1
+
+        # Terminal
+        if self.deck_top == 0:
+            self.is_done = True
+            self.calc_scores()
+            if self.dense_reward:
+                self._assign_dense_terminal(r)
+            else:
+                self._assign_terminal(r)
+        else:
+            if self.dense_reward:
+                prev0 = self.prev_scores[0]
+                prev1 = self.prev_scores[1]
+                self.calc_scores()
+                cur0 = self.scores[0]
+                cur1 = self.scores[1]
+                if self.dense_opp_delta or self.score_diff_reward:
+                    for i in range(2):
+                        opp = 1 - i
+                        oi = self.scores[i] - self.prev_scores[i]
+                        oo = self.scores[opp] - self.prev_scores[opp]
+                        r[i] = (oi - oo) / 30.0
+                else:
+                    r[p] = (self.scores[p] - self.prev_scores[p]) / 30.0
+                self.prev_scores[0] = cur0
+                self.prev_scores[1] = cur1
+            self.current_player = nb.int8(1 - p)
+
+    # ── Step (decomposed 2-phase) ──────────────────────────────────────
+
+    def step_decomposed(self, action, r):
+        if self.phase == 0:  # PHASE_PLAY
+            self._step_play(action, r)
+        else:
+            self._step_draw(action, r)
+
+    def _step_play(self, action, r):
+        r[0] = 0.0
+        r[1] = 0.0
+        card_id = action // 2
+        action_type = action % 2
+        p = self.current_player
+        color = card_id // 10
+        val_idx = card_id % 10
+        self.hands[p, card_id] -= 1
+        if action_type == 0:
+            n = self.exp_len[p, color]
+            self.exp_vals[p, color, n] = nb.int8(val_idx)
+            self.exp_len[p, color] = n + 1
+        else:
+            n = self.discard_len[color]
+            self.discard[color, n] = nb.int8(card_id)
+            self.discard_len[color] = n + 1
+        self.played_color = nb.int8(color)
+        self.played_val_idx = nb.int8(val_idx)
+        self.played_action_type = nb.int8(action_type)
+        self.phase = nb.int8(1)  # PHASE_DRAW
+
+    def _step_draw(self, action, r):
+        r[0] = 0.0
+        r[1] = 0.0
+        draw_source = action - 100  # NUM_PLAY_ACTIONS
+        p = self.current_player
+        if draw_source == 0:
+            self.deck_top -= 1
+            drawn = self.deck[self.deck_top]
+            self.hands[p, drawn] += 1
+        else:
+            pile_c = draw_source - 1
+            self.discard_len[pile_c] -= 1
+            drawn = self.discard[pile_c, self.discard_len[pile_c]]
+            self.hands[p, drawn] += 1
+            self.discard_draws[p] += 1
+        if self.deck_top == 0:
+            self.is_done = True
+            self.calc_scores()
+            self._assign_terminal(r)
+        else:
+            self.current_player = nb.int8(1 - p)
+        self.phase = nb.int8(0)  # PHASE_PLAY
+
+    # ── Step (3-phase) ─────────────────────────────────────────────────
+
+    def step_3phase(self, action, r):
+        if self.phase == 0:  # SELECT_CARD
+            r[0] = 0.0; r[1] = 0.0
+            card_id = action
+            color = card_id // 10
+            val_idx = card_id % 10
+            self.played_card_id = nb.int8(card_id)
+            self.played_color = nb.int8(color)
+            self.played_val_idx = nb.int8(val_idx)
+            self.phase = nb.int8(1)
+        elif self.phase == 1:  # ACTION_TYPE
+            r[0] = 0.0; r[1] = 0.0
+            action_type = action - 50  # NUM_CARD_SELECT_ACTIONS
+            p = self.current_player
+            card_id = self.played_card_id
+            color = self.played_color
+            val_idx = self.played_val_idx
+            self.hands[p, card_id] -= 1
+            if action_type == 0:
+                n = self.exp_len[p, color]
+                self.exp_vals[p, color, n] = nb.int8(val_idx)
+                self.exp_len[p, color] = n + 1
+            else:
+                n = self.discard_len[color]
+                self.discard[color, n] = nb.int8(card_id)
+                self.discard_len[color] = n + 1
+            self.played_action_type = nb.int8(action_type)
+            self.phase = nb.int8(2)
+        else:  # DRAW
+            r[0] = 0.0; r[1] = 0.0
+            draw_source = action - 52  # NUM_CARD_SELECT + NUM_TYPE
+            p = self.current_player
+            if draw_source == 0:
+                self.deck_top -= 1
+                drawn = self.deck[self.deck_top]
+                self.hands[p, drawn] += 1
+            else:
+                pile_c = draw_source - 1
+                self.discard_len[pile_c] -= 1
+                drawn = self.discard[pile_c, self.discard_len[pile_c]]
+                self.hands[p, drawn] += 1
+                self.discard_draws[p] += 1
+            if self.deck_top == 0:
+                self.is_done = True
+                self.calc_scores()
+                self._assign_terminal(r)
+            else:
+                self.current_player = nb.int8(1 - p)
+            self.phase = nb.int8(0)
+            self.played_card_id = nb.int8(-1)
+            self.played_color = nb.int8(-1)
+            self.played_val_idx = nb.int8(-1)
+            self.played_action_type = nb.int8(-1)
+
+    # ── Legal actions ──────────────────────────────────────────────────
+
+    def _dd_blocked(self):
+        if self.max_dd < 0:
+            return True
+        if self.max_dd == 0:
+            return False
+        return (self.discard_draws[0] + self.discard_draws[1]) >= self.max_dd
+
+    def _is_valid_exp(self, player, card_id):
+        color = card_id // 10
+        val_idx = card_id % 10
+        n = self.exp_len[player, color]
+        if n == 0:
+            return True
+        last = self.exp_vals[player, color, n - 1]
+        if val_idx == 0:
+            num_inv = nb.int32(0)
+            for j in range(n):
+                if self.exp_vals[player, color, j] == 0:
+                    num_inv += 1
+            return num_inv < 3 and last == 0
+        return val_idx > last
+
+    def fill_legal_flat(self, mask):
+        mask[:] = False
+        p = self.current_player
+        block = self._dd_blocked()
+        open_lanes = nb.int32(0)
+        for c in range(5):
+            if self.exp_len[p, c] > 0:
+                open_lanes += 1
+        for card_id in range(50):
+            if self.hands[p, card_id] <= 0:
+                continue
+            color = card_id // 10
+            # Expedition
+            can_exp = False
+            n = self.exp_len[p, color]
+            if (n > 0 or open_lanes < self.max_lanes):
+                if self._is_valid_exp(p, card_id):
+                    can_exp = True
+            if can_exp:
+                base = card_id * 12
+                if self.deck_top > 0:
+                    mask[base] = True
+                if not block:
+                    for ds in range(1, 6):
+                        if self.discard_len[ds - 1] > 0:
+                            mask[base + ds] = True
+            # Discard
+            base = card_id * 12 + 6
+            if self.deck_top > 0:
+                mask[base] = True
+            if not block:
+                for ds in range(1, 6):
+                    if ds - 1 == color:
+                        continue
+                    if self.discard_len[ds - 1] > 0:
+                        mask[base + ds] = True
+
+    def fill_legal_decomposed(self, mask):
+        mask[:] = False
+        p = self.current_player
+        if self.phase == 0:  # PLAY
+            open_lanes = nb.int32(0)
+            for c in range(5):
+                if self.exp_len[p, c] > 0:
+                    open_lanes += 1
+            for card_id in range(50):
+                if self.hands[p, card_id] <= 0:
+                    continue
+                n = self.exp_len[p, card_id // 10]
+                if (n > 0 or open_lanes < self.max_lanes) and self._is_valid_exp(p, card_id):
+                    mask[card_id * 2] = True
+                mask[card_id * 2 + 1] = True
+        else:  # DRAW
+            if self.deck_top > 0:
+                mask[100] = True
+            if not self._dd_blocked():
+                for c in range(5):
+                    if self.played_action_type == 1 and c == self.played_color:
+                        continue
+                    if self.discard_len[c] > 0:
+                        mask[101 + c] = True
+
+    def fill_legal_3phase(self, mask):
+        mask[:] = False
+        p = self.current_player
+        if self.phase == 0:  # SELECT
+            for card_id in range(50):
+                if self.hands[p, card_id] > 0:
+                    mask[card_id] = True
+        elif self.phase == 1:  # TYPE
+            open_lanes = nb.int32(0)
+            for c in range(5):
+                if self.exp_len[p, c] > 0:
+                    open_lanes += 1
+            n = self.exp_len[p, self.played_color]
+            if (n > 0 or open_lanes < self.max_lanes) and self._is_valid_exp(p, self.played_card_id):
+                mask[50] = True
+            mask[51] = True
+        else:  # DRAW
+            if self.deck_top > 0:
+                mask[52] = True
+            if not self._dd_blocked():
+                for c in range(5):
+                    if self.played_action_type == 1 and c == self.played_color:
+                        continue
+                    if self.discard_len[c] > 0:
+                        mask[53 + c] = True
+
+    # ── Encode observation ─────────────────────────────────────────────
+
+    def encode_obs(self, player_id,
+                   hand_out, own_exp_out, opp_exp_out,
+                   dt1_out, dt2_out, dt3_out,
+                   deck_size_out, scores_out, phase_out,
+                   played_card_out, played_type_out):
+        opp = 1 - player_id
+        for i in range(50):
+            hand_out[i] = self.hands[player_id, i] / 3.0
+        own_exp_out[:] = 0.0
+        opp_exp_out[:] = 0.0
+        for c in range(5):
+            for j in range(self.exp_len[player_id, c]):
+                cid = c * 10 + self.exp_vals[player_id, c, j]
+                own_exp_out[cid] += 1.0 / 3.0
+            for j in range(self.exp_len[opp, c]):
+                cid = c * 10 + self.exp_vals[opp, c, j]
+                opp_exp_out[cid] += 1.0 / 3.0
+        dt1_out[:] = 0.0
+        dt2_out[:] = 0.0
+        dt3_out[:] = 0.0
+        for c in range(5):
+            n = self.discard_len[c]
+            if n >= 1:
+                dt1_out[self.discard[c, n - 1]] = 1.0
+            if n >= 2:
+                dt2_out[self.discard[c, n - 2]] = 1.0
+            if n >= 3:
+                dt3_out[self.discard[c, n - 3]] = 1.0
+        deck_size_out[0] = self.deck_top / 44.0
+        # Scores for obs (not game scores): own/100, opp/100
+        self.calc_scores()
+        scores_out[0] = self.scores[player_id] / 100.0
+        scores_out[1] = self.scores[opp] / 100.0
+        phase_out[0] = self.phase
+        played_card_out[:] = 0.0
+        played_type_out[0] = -1.0
+        if self.played_color >= 0:
+            played_card_out[self.played_color * 10 + self.played_val_idx] = 1.0
+            if self.played_action_type >= 0:
+                played_type_out[0] = nb.float32(self.played_action_type)
+
+
+# ── Batch @njit functions ──────────────────────────────────────────────────
+
+@nb.njit
+def batch_step_agents(states, actions, seats, acc_rewards, rbuf):
+    """Step all states with agent actions, accumulate seat rewards."""
+    for i in range(len(states)):
+        s = states[i]
+        if s.is_done:
+            continue
+        s.step_flat(actions[i], rbuf)
+        acc_rewards[i] += rbuf[seats[i]]
+
+
+@nb.njit
+def batch_find_and_encode_opponents(states, seats, pending_out,
+                                    hand, own_exp, opp_exp,
+                                    dt1, dt2, dt3,
+                                    deck_size, scores, phase,
+                                    played_card, played_type,
+                                    mask):
+    """Find envs needing opponent turn, encode obs + legal masks contiguously."""
+    n = nb.int32(0)
+    for i in range(len(states)):
+        s = states[i]
+        if s.is_done or s.current_player == seats[i]:
+            continue
+        pending_out[n] = nb.int32(i)
+        p = s.current_player
+        s.encode_obs(p, hand[n], own_exp[n], opp_exp[n],
+                     dt1[n], dt2[n], dt3[n],
+                     deck_size[n], scores[n], phase[n],
+                     played_card[n], played_type[n])
+        s.fill_legal_flat(mask[n])
+        n += 1
+    return n
+
+
+@nb.njit
+def batch_step_pending(states, pending, n_pending, actions,
+                       seats, acc_rewards, rbuf):
+    """Step pending states with opponent actions."""
+    for j in range(n_pending):
+        i = pending[j]
+        s = states[i]
+        s.step_flat(actions[j], rbuf)
+        acc_rewards[i] += rbuf[seats[i]]
+
+
+@nb.njit
+def batch_collect_results(states, acc_rewards, rewards_out, terminated_out, done_indices):
+    """Copy rewards and check done flags. Returns number of done envs."""
+    n_done = nb.int32(0)
+    for i in range(len(states)):
+        rewards_out[i] = nb.float32(acc_rewards[i])
+        if states[i].is_done:
+            terminated_out[i] = True
+            done_indices[n_done] = nb.int32(i)
+            n_done += 1
+        else:
+            terminated_out[i] = False
+    return n_done
+
+
+@nb.njit
+def batch_encode_agents(states, seats,
+                        hand, own_exp, opp_exp,
+                        dt1, dt2, dt3,
+                        deck_size, scores, phase,
+                        played_card, played_type,
+                        mask):
+    """Encode agent obs + legal masks for all states."""
+    for i in range(len(states)):
+        s = states[i]
+        p = seats[i]
+        s.encode_obs(p, hand[i], own_exp[i], opp_exp[i],
+                     dt1[i], dt2[i], dt3[i],
+                     deck_size[i], scores[i], phase[i],
+                     played_card[i], played_type[i])
+        s.fill_legal_flat(mask[i])
+
+
+# ── LCEngine — Python wrapper ──────────────────────────────────────────────
 
 class LCEngine(BaseGameEngine[LCObs]):
-    """Lost Cities game engine for 2 players."""
+    """Lost Cities engine. Wraps LCState jitclass for BaseGameEngine interface."""
 
-    SCORE_DIFF_NORM = 30.0  # normalization for score-difference reward
+    SCORE_DIFF_NORM = 30.0
 
     def __init__(self, rng: np.random.Generator,
                  new_color_penalty: int = DEFAULT_NEW_COLOR_PENALTY,
@@ -179,148 +780,67 @@ class LCEngine(BaseGameEngine[LCObs]):
                  dense_opponent_delta: bool = False,
                  dense_opp_penalty: bool = False):
         super().__init__(rng)
-        self._new_color_penalty = new_color_penalty
-        self._score_diff_reward = score_diff_reward
-        self._zero_one_reward = zero_one_reward
-        self._raw_score_reward = raw_score_reward
-        self._dense_reward = dense_reward
-        self._dense_opponent_delta = dense_opponent_delta
-        self._dense_opp_penalty = dense_opp_penalty
-        self._max_lanes = max_lanes
         self._decompose_actions = decompose_actions
         self._three_phase = three_phase
-        self._max_discard_draws = max_discard_draws
-        self._prev_scores = np.zeros(NUM_PLAYERS, dtype=np.float32)
-        # State arrays — allocated once, reset each game
-        self._hands: list[np.ndarray] = [np.zeros(NUM_CARD_IDS, dtype=np.int8) for _ in range(NUM_PLAYERS)]
-        self._expeditions: list[list[list[int]]] = [[[] for _ in range(NUM_COLORS)] for _ in range(NUM_PLAYERS)]
-        self._discard_piles: list[list[int]] = [[] for _ in range(NUM_COLORS)]
-        self._deck: list[int] = []  # list of card_ids
-        self._current_player = 0
-        self._done = False
-        self._scores = np.zeros(NUM_PLAYERS, dtype=np.float32)
-        self._discard_draws = [0, 0]  # count of draws from discard piles per player
-        # Decomposed action state (phase tracking)
-        self._phase = PHASE3_SELECT_CARD if three_phase else PHASE_PLAY
-        self._played_color = -1       # color of card selected/played
-        self._played_val_idx = -1     # value index of card selected/played
-        self._played_card_id = -1     # card_id of card selected (3-phase)
-        self._played_action_type = -1  # 0=expedition, 1=discard
-
-    def _assign_terminal_rewards(self, rewards: list[float]) -> None:
-        """Fill terminal rewards based on reward mode."""
-        if self._raw_score_reward:
-            for i in range(NUM_PLAYERS):
-                rewards[i] = self._scores[i] / self.SCORE_DIFF_NORM
-            return
-        if self._score_diff_reward:
-            for i in range(NUM_PLAYERS):
-                opp = 1 - i
-                rewards[i] = (self._scores[i] - self._scores[opp]) / self.SCORE_DIFF_NORM
-        elif self._zero_one_reward:
-            best = float(self._scores.max())
-            for i in range(NUM_PLAYERS):
-                rewards[i] = 1.0 if self._scores[i] >= best else 0.0
+        self._state = LCState(
+            penalty=new_color_penalty,
+            max_lanes=max_lanes,
+            max_dd=max_discard_draws,
+            dense_reward=dense_reward,
+            score_diff_reward=score_diff_reward,
+            zero_one_reward=zero_one_reward,
+            raw_score_reward=raw_score_reward,
+            dense_opp_delta=dense_opponent_delta,
+            dense_opp_penalty=dense_opp_penalty,
+            deck_template=_DECK_TEMPLATE.copy(),
+            card_values=_CARD_VALUES_ARR.copy(),
+        )
+        self._reward_buf = np.zeros(2, dtype=np.float64)
+        if three_phase:
+            self._mask_buf = np.zeros(NUM_3PHASE_ACTIONS, dtype=np.bool_)
+        elif decompose_actions:
+            self._mask_buf = np.zeros(NUM_DECOMPOSED_ACTIONS, dtype=np.bool_)
         else:
-            best = float(self._scores.max())
-            worst = float(self._scores.min())
-            for i in range(NUM_PLAYERS):
-                if self._scores[i] >= best:
-                    rewards[i] = 1.0
-                elif self._scores[i] <= worst:
-                    rewards[i] = -1.0
+            self._mask_buf = np.zeros(NUM_ACTIONS, dtype=np.bool_)
 
-    def _assign_dense_terminal_rewards(self, rewards: list[float]) -> None:
-        """Dense terminal: score-delta shaping + optional terminal bonus.
+    @property
+    def _scores(self) -> np.ndarray:
+        return self._state.scores
 
-        When dense_reward is combined with a terminal reward flag, the terminal
-        step gives: delta(own_score)/30 + terminal_bonus.
-        - dense alone (= dense raw_score): just delta(own)/30
-        - dense + score_diff: delta(own-opp)/30 at terminal only (mid-game: delta(own)/30)
-        - dense + dense_opponent_delta: delta(own-opp)/30 every step including terminal
-        - dense + zero_one: delta(own)/30 + (1 if win else 0)
-        - dense + default: delta(own)/30 + (+1/-1/0)
-        """
-        if self._dense_opp_penalty:
-            # delta(own)/30 + (-opp_score/30) at terminal
-            # Episode total = own/30 - opp/30 = (own-opp)/30
-            for i in range(NUM_PLAYERS):
-                opp = 1 - i
-                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
-                rewards[i] = delta - self._scores[opp] / self.SCORE_DIFF_NORM
-        elif self._dense_opponent_delta or self._score_diff_reward:
-            # Per-player delta of (own - opp) so episode total = score_diff
-            for i in range(NUM_PLAYERS):
-                opp = 1 - i
-                own_delta = (self._scores[i] - self._prev_scores[i])
-                opp_delta = (self._scores[opp] - self._prev_scores[opp])
-                rewards[i] = (own_delta - opp_delta) / self.SCORE_DIFF_NORM
-        elif self._zero_one_reward:
-            # Score-delta shaping + zero-one terminal bonus
-            best = float(self._scores.max())
-            for i in range(NUM_PLAYERS):
-                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
-                bonus = 1.0 if self._scores[i] >= best else 0.0
-                rewards[i] = delta + bonus
-        elif self._raw_score_reward:
-            # dense + raw_score: same as plain dense (delta already sums to raw_score)
-            for i in range(NUM_PLAYERS):
-                rewards[i] = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
-        else:
-            # dense + default: score-delta shaping + win/loss/draw bonus
-            best = float(self._scores.max())
-            worst = float(self._scores.min())
-            for i in range(NUM_PLAYERS):
-                delta = (self._scores[i] - self._prev_scores[i]) / self.SCORE_DIFF_NORM
-                if self._scores[i] >= best:
-                    bonus = 1.0
-                elif self._scores[i] <= worst:
-                    bonus = -1.0
-                else:
-                    bonus = 0.0
-                rewards[i] = delta + bonus
+    @property
+    def _hands(self):
+        return self._state.hands
+
+    @property
+    def _exp_vals(self):
+        return self._state.exp_vals
+
+    @property
+    def _exp_len(self):
+        return self._state.exp_len
+
+    @property
+    def _discard(self):
+        return self._state.discard
+
+    @property
+    def _discard_len(self):
+        return self._state.discard_len
+
+    @property
+    def _discard_draws(self):
+        return self._state.discard_draws
 
     def _reset(self) -> None:
-        # Build and shuffle deck
-        deck = []
-        for color in range(NUM_COLORS):
-            for val_idx in range(NUM_UNIQUE_VALUES):
-                for _ in range(CARD_COPIES[val_idx]):
-                    deck.append(color_value_to_card_id(color, val_idx))
-        self.rng.shuffle(deck)
-        self._deck = list(deck)
-
-        # Reset state
-        for p in range(NUM_PLAYERS):
-            self._hands[p][:] = 0
-            self._expeditions[p] = [[] for _ in range(NUM_COLORS)]
-        self._discard_piles = [[] for _ in range(NUM_COLORS)]
-        self._current_player = 0
-        self._done = False
-        self._scores[:] = 0
-        self._discard_draws = [0, 0]
-        self._prev_scores[:] = 0
-        self._phase = PHASE3_SELECT_CARD if self._three_phase else PHASE_PLAY
-        self._played_color = -1
-        self._played_val_idx = -1
-        self._played_card_id = -1
-        self._played_action_type = -1
-
-        # Deal hands
-        for _ in range(HAND_SIZE):
-            for p in range(NUM_PLAYERS):
-                card_id = self._deck.pop()
-                self._hands[p][card_id] += 1
-
-    # ── Properties ──────────────────────────────────────────────────────
+        self._state.reset()
 
     @property
     def current_player(self) -> int:
-        return self._current_player
+        return int(self._state.current_player)
 
     @property
     def done(self) -> bool:
-        return self._done
+        return self._state.is_done
 
     @property
     def num_players(self) -> int:
@@ -334,477 +854,87 @@ class LCEngine(BaseGameEngine[LCObs]):
             return NUM_DECOMPOSED_ACTIONS
         return NUM_ACTIONS
 
-    # ── Step ────────────────────────────────────────────────────────────
-
     def step(self, action: int) -> tuple[float, ...]:
+        r = self._reward_buf
+        s = self._state
         if self._three_phase:
-            return self._step_3phase(action)
-        if self._decompose_actions:
-            return self._step_decomposed(action)
-        return self._step_flat(action)
-
-    def _step_flat(self, action: int) -> tuple[float, ...]:
-        """Original flat action step (600 actions)."""
-        rewards = [0.0] * NUM_PLAYERS
-        card_id, action_type, draw_source = decode_action(action)
-        p = self._current_player
-        hand = self._hands[p]
-        color, val_idx = card_id_to_color_value(card_id)
-
-        assert hand[card_id] > 0, f"Player {p} doesn't have card {card_id}"
-
-        # Play phase
-        hand[card_id] -= 1
-        if action_type == 0:  # expedition
-            self._expeditions[p][color].append(val_idx)
-        else:  # discard
-            self._discard_piles[color].append(card_id)
-
-        # Draw phase
-        if draw_source == 0:  # deck
-            drawn = self._deck.pop()
-            hand[drawn] += 1
-        else:  # discard pile (source 1-5 -> color 0-4)
-            pile_color = draw_source - 1
-            drawn = self._discard_piles[pile_color].pop()
-            hand[drawn] += 1
-            self._discard_draws[p] += 1
-
-        # Check game end
-        if len(self._deck) == 0:
-            self._done = True
-            self._scores = self._calculate_scores()
-            if self._dense_reward:
-                self._assign_dense_terminal_rewards(rewards)
-            else:
-                self._assign_terminal_rewards(rewards)
+            s.step_3phase(action, r)
+        elif self._decompose_actions:
+            s.step_decomposed(action, r)
         else:
-            if self._dense_reward:
-                cur_scores = self._calculate_scores()
-                if self._dense_opponent_delta or self._score_diff_reward:
-                    # Give both players delta(own - opp) / 30 each step.
-                    # Acting player sees +delta(own)/30, non-acting sees -delta(acting)/30.
-                    # VecSinglePlayerEnv accumulates both into the agent's reward.
-                    for i in range(NUM_PLAYERS):
-                        opp = 1 - i
-                        own_delta = cur_scores[i] - self._prev_scores[i]
-                        opp_delta = cur_scores[opp] - self._prev_scores[opp]
-                        rewards[i] = (own_delta - opp_delta) / self.SCORE_DIFF_NORM
-                else:
-                    rewards[p] = (cur_scores[p] - self._prev_scores[p]) / self.SCORE_DIFF_NORM
-                self._prev_scores[:] = cur_scores
-            self._current_player = 1 - p
-
-        return tuple(rewards)
-
-    def _step_decomposed(self, action: int) -> tuple[float, ...]:
-        """Decomposed two-phase step (106 actions)."""
-        if self._phase == PHASE_PLAY:
-            return self._step_play_phase(action)
-        else:
-            return self._step_draw_phase(action)
-
-    def _step_play_phase(self, action: int) -> tuple[float, ...]:
-        """Phase 1: play a card (expedition or discard). No reward, stays on same player."""
-        assert action < NUM_PLAY_ACTIONS, f"Expected play action 0..{NUM_PLAY_ACTIONS-1}, got {action}"
-        card_id, action_type = decode_play_action(action)
-        p = self._current_player
-        hand = self._hands[p]
-        color, val_idx = card_id_to_color_value(card_id)
-
-        assert hand[card_id] > 0, f"Player {p} doesn't have card {card_id}"
-
-        hand[card_id] -= 1
-        if action_type == 0:  # expedition
-            self._expeditions[p][color].append(val_idx)
-        else:  # discard
-            self._discard_piles[color].append(card_id)
-
-        # Remember what was played (for draw-phase masking + obs)
-        self._played_color = color
-        self._played_val_idx = val_idx
-        self._played_action_type = action_type
-        self._phase = PHASE_DRAW
-        return tuple([0.0] * NUM_PLAYERS)
-
-    def _step_draw_phase(self, action: int) -> tuple[float, ...]:
-        """Phase 2: draw a card. May produce terminal reward. Switches player."""
-        assert action >= NUM_PLAY_ACTIONS, f"Expected draw action {NUM_PLAY_ACTIONS}..{NUM_DECOMPOSED_ACTIONS-1}, got {action}"
-        draw_source = decode_draw_action(action)
-        p = self._current_player
-        hand = self._hands[p]
-        rewards = [0.0] * NUM_PLAYERS
-
-        if draw_source == 0:  # deck
-            drawn = self._deck.pop()
-            hand[drawn] += 1
-        else:  # discard pile
-            pile_color = draw_source - 1
-            drawn = self._discard_piles[pile_color].pop()
-            hand[drawn] += 1
-            self._discard_draws[p] += 1
-
-        # Check game end
-        if len(self._deck) == 0:
-            self._done = True
-            self._scores = self._calculate_scores()
-            self._assign_terminal_rewards(rewards)
-        else:
-            self._current_player = 1 - p
-
-        self._phase = PHASE_PLAY
-        return tuple(rewards)
-
-    # ── 3-phase step ───────────────────────────────────────────────────
-
-    def _step_3phase(self, action: int) -> tuple[float, ...]:
-        """3-phase decomposed step (58 actions)."""
-        if self._phase == PHASE3_SELECT_CARD:
-            return self._step_select_card(action)
-        elif self._phase == PHASE3_ACTION_TYPE:
-            return self._step_action_type(action)
-        else:
-            return self._step_3phase_draw(action)
-
-    def _step_select_card(self, action: int) -> tuple[float, ...]:
-        """Phase 1: select a card from hand. No reward, stays on same player."""
-        assert action < NUM_CARD_SELECT_ACTIONS, f"Expected card select 0..{NUM_CARD_SELECT_ACTIONS-1}, got {action}"
-        card_id = decode_card_select_action(action)
-        p = self._current_player
-        assert self._hands[p][card_id] > 0, f"Player {p} doesn't have card {card_id}"
-
-        color, val_idx = card_id_to_color_value(card_id)
-        self._played_card_id = card_id
-        self._played_color = color
-        self._played_val_idx = val_idx
-        self._phase = PHASE3_ACTION_TYPE
-        return tuple([0.0] * NUM_PLAYERS)
-
-    def _step_action_type(self, action: int) -> tuple[float, ...]:
-        """Phase 2: expedition or discard the selected card. No reward, stays on same player."""
-        assert NUM_CARD_SELECT_ACTIONS <= action < NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS, \
-            f"Expected type action {NUM_CARD_SELECT_ACTIONS}..{NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS - 1}, got {action}"
-        action_type = decode_type_action(action)
-        p = self._current_player
-        card_id = self._played_card_id
-        color = self._played_color
-        val_idx = self._played_val_idx
-
-        # Now actually play the card
-        self._hands[p][card_id] -= 1
-        if action_type == 0:  # expedition
-            self._expeditions[p][color].append(val_idx)
-        else:  # discard
-            self._discard_piles[color].append(card_id)
-
-        self._played_action_type = action_type
-        self._phase = PHASE3_DRAW
-        return tuple([0.0] * NUM_PLAYERS)
-
-    def _step_3phase_draw(self, action: int) -> tuple[float, ...]:
-        """Phase 3: draw a card. May produce terminal reward. Switches player."""
-        assert action >= NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS, \
-            f"Expected draw action {NUM_CARD_SELECT_ACTIONS + NUM_TYPE_ACTIONS}..{NUM_3PHASE_ACTIONS-1}, got {action}"
-        draw_source = decode_3phase_draw_action(action)
-        p = self._current_player
-        hand = self._hands[p]
-        rewards = [0.0] * NUM_PLAYERS
-
-        if draw_source == 0:  # deck
-            drawn = self._deck.pop()
-            hand[drawn] += 1
-        else:  # discard pile
-            pile_color = draw_source - 1
-            drawn = self._discard_piles[pile_color].pop()
-            hand[drawn] += 1
-            self._discard_draws[p] += 1
-
-        # Check game end
-        if len(self._deck) == 0:
-            self._done = True
-            self._scores = self._calculate_scores()
-            self._assign_terminal_rewards(rewards)
-        else:
-            self._current_player = 1 - p
-
-        self._phase = PHASE3_SELECT_CARD
-        self._played_card_id = -1
-        self._played_color = -1
-        self._played_val_idx = -1
-        self._played_action_type = -1
-        return tuple(rewards)
-
-    # ── Legal actions ───────────────────────────────────────────────────
-
-    def _is_valid_expedition_play(self, player: int, card_id: int) -> bool:
-        color, val_idx = card_id_to_color_value(card_id)
-        exp = self._expeditions[player][color]
-        if not exp:
-            return True
-        last_val = exp[-1]
-        if val_idx == 0:  # investment
-            num_inv = sum(1 for v in exp if v == 0)
-            return num_inv < 3 and last_val == 0
-        else:  # numbered
-            return val_idx > last_val
+            s.step_flat(action, r)
+        return (float(r[0]), float(r[1]))
 
     def legal_actions(self) -> np.ndarray:
+        s = self._state
+        m = self._mask_buf
         if self._three_phase:
-            return self._legal_actions_3phase()
-        if self._decompose_actions:
-            return self._legal_actions_decomposed()
-        return self._legal_actions_flat()
-
-    def _discard_draws_blocked(self) -> bool:
-        """True if discard draws should be masked (limit reached).
-        max_discard_draws < 0: completely disabled (no discard draws ever)
-        max_discard_draws == 0: unlimited
-        max_discard_draws > 0: cap on total discard draws across both players
-        """
-        if self._max_discard_draws < 0:
-            return True
-        if self._max_discard_draws == 0:
-            return False
-        return (self._discard_draws[0] + self._discard_draws[1]) >= self._max_discard_draws
-
-    def _legal_actions_flat(self) -> np.ndarray:
-        """Original flat legal actions (600-dim)."""
-        mask = np.zeros(NUM_ACTIONS, dtype=bool)
-        p = self._current_player
-        hand = self._hands[p]
-        block_ddraw = self._discard_draws_blocked()
-
-        # Count open lanes for lane limit check
-        open_lanes = sum(1 for c in range(NUM_COLORS) if self._expeditions[p][c])
-
-        for card_id in range(NUM_CARD_IDS):
-            if hand[card_id] <= 0:
-                continue
-            color, val_idx = card_id_to_color_value(card_id)
-
-            # Expedition play (block opening a new lane if at max)
-            can_open_new = open_lanes < self._max_lanes
-            lane_is_open = len(self._expeditions[p][color]) > 0
-            if self._is_valid_expedition_play(p, card_id) and (lane_is_open or can_open_new):
-                for ds in range(NUM_DRAW_SOURCES):
-                    if ds == 0:
-                        if len(self._deck) > 0:
-                            mask[encode_action(card_id, 0, ds)] = True
-                    else:
-                        if block_ddraw:
-                            continue
-                        pile_color = ds - 1
-                        if len(self._discard_piles[pile_color]) > 0:
-                            mask[encode_action(card_id, 0, ds)] = True
-
-            # Discard
-            for ds in range(NUM_DRAW_SOURCES):
-                if ds == 0:
-                    if len(self._deck) > 0:
-                        mask[encode_action(card_id, 1, ds)] = True
-                else:
-                    if block_ddraw:
-                        continue
-                    pile_color = ds - 1
-                    if pile_color == color:
-                        continue
-                    if len(self._discard_piles[pile_color]) > 0:
-                        mask[encode_action(card_id, 1, ds)] = True
-
-        return mask
-
-    def _legal_actions_decomposed(self) -> np.ndarray:
-        """Decomposed legal actions (106-dim), phase-dependent."""
-        mask = np.zeros(NUM_DECOMPOSED_ACTIONS, dtype=bool)
-        p = self._current_player
-
-        if self._phase == PHASE_PLAY:
-            hand = self._hands[p]
-            open_lanes = sum(1 for c in range(NUM_COLORS) if self._expeditions[p][c])
-
-            for card_id in range(NUM_CARD_IDS):
-                if hand[card_id] <= 0:
-                    continue
-                color, val_idx = card_id_to_color_value(card_id)
-
-                # Expedition play
-                can_open_new = open_lanes < self._max_lanes
-                lane_is_open = len(self._expeditions[p][color]) > 0
-                if self._is_valid_expedition_play(p, card_id) and (lane_is_open or can_open_new):
-                    mask[encode_play_action(card_id, 0)] = True
-
-                # Discard (always legal for cards in hand)
-                mask[encode_play_action(card_id, 1)] = True
-
-        else:  # PHASE_DRAW
-            # Deck draw
-            if len(self._deck) > 0:
-                mask[encode_draw_action(0)] = True
-
-            # Discard pile draws (blocked if limit reached)
-            if not self._discard_draws_blocked():
-                for c in range(NUM_COLORS):
-                    # Can't draw from the pile you just discarded to
-                    if self._played_action_type == 1 and c == self._played_color:
-                        continue
-                    if self._discard_piles[c]:
-                        mask[encode_draw_action(c + 1)] = True
-
-        return mask
-
-    def _legal_actions_3phase(self) -> np.ndarray:
-        """3-phase legal actions (58-dim), phase-dependent."""
-        mask = np.zeros(NUM_3PHASE_ACTIONS, dtype=bool)
-        p = self._current_player
-
-        if self._phase == PHASE3_SELECT_CARD:
-            hand = self._hands[p]
-            for card_id in range(NUM_CARD_IDS):
-                if hand[card_id] > 0:
-                    mask[encode_card_select_action(card_id)] = True
-
-        elif self._phase == PHASE3_ACTION_TYPE:
-            card_id = self._played_card_id
-            # Expedition: check validity + lane limit
-            open_lanes = sum(1 for c in range(NUM_COLORS) if self._expeditions[p][c])
-            can_open_new = open_lanes < self._max_lanes
-            color = self._played_color
-            lane_is_open = len(self._expeditions[p][color]) > 0
-            if self._is_valid_expedition_play(p, card_id) and (lane_is_open or can_open_new):
-                mask[encode_type_action(0)] = True
-            # Discard: always legal
-            mask[encode_type_action(1)] = True
-
-        else:  # PHASE3_DRAW
-            # Deck draw
-            if len(self._deck) > 0:
-                mask[encode_3phase_draw_action(0)] = True
-            # Discard pile draws (blocked if limit reached)
-            if not self._discard_draws_blocked():
-                for c in range(NUM_COLORS):
-                    if self._played_action_type == 1 and c == self._played_color:
-                        continue
-                    if self._discard_piles[c]:
-                        mask[encode_3phase_draw_action(c + 1)] = True
-
-        return mask
-
-    # ── Observation ─────────────────────────────────────────────────────
+            s.fill_legal_3phase(m)
+        elif self._decompose_actions:
+            s.fill_legal_decomposed(m)
+        else:
+            s.fill_legal_flat(m)
+        return m
 
     def encode(self, player_id: int) -> LCObs:
-        opp = 1 - player_id
-        hand = self._hands[player_id].astype(np.float32) / 3.0
-        own_exp = np.zeros(NUM_CARD_IDS, dtype=np.float32)
-        opp_exp = np.zeros(NUM_CARD_IDS, dtype=np.float32)
+        s = self._state
+        hand = np.zeros(50, dtype=np.float32)
+        own_exp = np.zeros(50, dtype=np.float32)
+        opp_exp = np.zeros(50, dtype=np.float32)
+        dt1 = np.zeros(50, dtype=np.float32)
+        dt2 = np.zeros(50, dtype=np.float32)
+        dt3 = np.zeros(50, dtype=np.float32)
+        deck_size = np.zeros(1, dtype=np.float32)
+        scores = np.zeros(2, dtype=np.float32)
+        phase = np.zeros(1, dtype=np.int32)
+        played_card = np.zeros(50, dtype=np.float32)
+        played_type = np.zeros(1, dtype=np.float32)
+        s.encode_obs(player_id, hand, own_exp, opp_exp,
+                     dt1, dt2, dt3, deck_size, scores, phase,
+                     played_card, played_type)
+        return LCObs(hand=hand, own_expeditions=own_exp,
+                     opp_expeditions=opp_exp,
+                     discard_top1=dt1, discard_top2=dt2, discard_top3=dt3,
+                     deck_size=deck_size, scores=scores, phase=phase,
+                     played_card=played_card, played_type=played_type)
 
-        for color in range(NUM_COLORS):
-            for val_idx in self._expeditions[player_id][color]:
-                own_exp[color_value_to_card_id(color, val_idx)] += 1.0 / 3.0
-            for val_idx in self._expeditions[opp][color]:
-                opp_exp[color_value_to_card_id(color, val_idx)] += 1.0 / 3.0
-
-        # Discard piles: encode top 3 cards
-        dt1 = np.zeros(NUM_CARD_IDS, dtype=np.float32)
-        dt2 = np.zeros(NUM_CARD_IDS, dtype=np.float32)
-        dt3 = np.zeros(NUM_CARD_IDS, dtype=np.float32)
-        for color in range(NUM_COLORS):
-            pile = self._discard_piles[color]
-            if len(pile) >= 1:
-                dt1[pile[-1]] = 1.0
-            if len(pile) >= 2:
-                dt2[pile[-2]] = 1.0
-            if len(pile) >= 3:
-                dt3[pile[-3]] = 1.0
-
-        deck_size = np.array([len(self._deck) / 44.0], dtype=np.float32)
-
-        # Current scores, rotated so own score is first
-        cur_scores = self._calculate_scores()
-        scores = np.array([cur_scores[player_id] / 100.0,
-                           cur_scores[opp] / 100.0], dtype=np.float32)
-
-        phase = np.array([self._phase], dtype=np.int32)
-
-        # Played card info (for decomposed/3-phase modes)
-        played_card = np.zeros(NUM_CARD_IDS, dtype=np.float32)
-        played_type = np.array([-1.0], dtype=np.float32)
-        if self._decompose_actions and self._phase == PHASE_DRAW and self._played_color >= 0:
-            played_card[color_value_to_card_id(self._played_color, self._played_val_idx)] = 1.0
-            played_type[0] = float(self._played_action_type)
-        elif self._three_phase and self._played_color >= 0:
-            # In action_type phase: show selected card, type not yet chosen
-            # In draw phase: show selected card + action type
-            played_card[color_value_to_card_id(self._played_color, self._played_val_idx)] = 1.0
-            if self._played_action_type >= 0:
-                played_type[0] = float(self._played_action_type)
-
-        return LCObs(
-            hand=hand,
-            own_expeditions=own_exp,
-            opp_expeditions=opp_exp,
-            discard_top1=dt1,
-            discard_top2=dt2,
-            discard_top3=dt3,
-            deck_size=deck_size,
-            scores=scores,
-            phase=phase,
-            played_card=played_card,
-            played_type=played_type,
-        )
-
-    # ── Scoring ─────────────────────────────────────────────────────────
+    def encode_into(self, player_id: int, out: LCObs, idx: int) -> None:
+        self._state.encode_obs(
+            player_id,
+            out.hand[idx], out.own_expeditions[idx], out.opp_expeditions[idx],
+            out.discard_top1[idx], out.discard_top2[idx], out.discard_top3[idx],
+            out.deck_size[idx], out.scores[idx], out.phase[idx],
+            out.played_card[idx], out.played_type[idx])
 
     def _calculate_scores(self) -> np.ndarray:
-        scores = np.zeros(NUM_PLAYERS, dtype=np.float32)
-        for p in range(NUM_PLAYERS):
-            total = 0
-            for color in range(NUM_COLORS):
-                exp = self._expeditions[p][color]
-                if not exp:
-                    continue
-                base_value = sum(CARD_VALUES[v] for v in exp)
-                num_inv = sum(1 for v in exp if v == 0)
-                multiplier = num_inv + 1
-                exp_score = (base_value - self._new_color_penalty) * multiplier
-                if len(exp) >= 8:
-                    exp_score += EIGHT_CARD_BONUS
-                total += exp_score
-            scores[p] = total
-        return scores
+        self._state.calc_scores()
+        return self._state.scores.copy()
 
     def compute_scores(self) -> np.ndarray:
-        if self._done:
-            return self._scores.copy()
-        return self._calculate_scores()
+        if self._state.is_done:
+            return self._state.scores.copy()
+        self._state.calc_scores()
+        return self._state.scores.copy()
 
     def game_metrics(self, player_idx: int) -> dict:
-        """Game metrics for a specific player (call after game ends)."""
-        exp_list = self._expeditions[player_idx]
-        num_investment = 0
+        s = self._state
+        num_inv = 0
         num_played = 0
         open_lanes = 0
-        per_color_scores = []
-
         for color in range(NUM_COLORS):
-            exp = exp_list[color]
-            if not exp:
+            n = s.exp_len[player_idx, color]
+            if n == 0:
                 continue
             open_lanes += 1
-            num_played += len(exp)
-            inv = sum(1 for v in exp if v == 0)
-            num_investment += inv
-            base_value = sum(CARD_VALUES[v] for v in exp)
-            multiplier = inv + 1
-            score = (base_value - self._new_color_penalty) * multiplier
-            if len(exp) >= 8:
-                score += EIGHT_CARD_BONUS
-            per_color_scores.append(score)
-
+            num_played += n
+            for j in range(n):
+                if s.exp_vals[player_idx, color, j] == 0:
+                    num_inv += 1
         return {
-            "total_points": float(self._scores[player_idx]) if self._done else float(self._calculate_scores()[player_idx]),
-            "num_investment": num_investment,
+            "total_points": float(s.scores[player_idx]) if s.is_done else float(self.compute_scores()[player_idx]),
+            "num_investment": num_inv,
             "num_played": num_played,
             "open_lanes": open_lanes,
-            "cards_in_hand": int(self._hands[player_idx].sum()),
-            "discard_draws": self._discard_draws[player_idx],
+            "cards_in_hand": int(s.hands[player_idx].sum()),
+            "discard_draws": int(s.discard_draws[player_idx]),
         }

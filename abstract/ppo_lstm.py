@@ -106,6 +106,10 @@ class PPOConfig:
     """number of steps over which to anneal entropy from ent_coef to ent_coef_end. 0 = no annealing."""
     ent_anneal_mode: str = "linear"
     """entropy annealing mode: 'linear' or 'exponential' (log-linear)."""
+    target_entropy: float = 0.0
+    """target entropy for adaptive α (Suphx-style). 0 = disabled."""
+    target_entropy_beta: float = 1.0
+    """step size β for adaptive entropy coefficient: α ← α · exp(β · (H_target - H̄))"""
     vf_coef: float = 0.5
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
@@ -122,6 +126,8 @@ class PPOConfig:
     """the interval (in samples) at which to run benchmark (~20 iterations)"""
     save_interval: int = 81_920
     """the interval (in samples) at which to save the model (~20 iterations)"""
+    opponent_sync_interval: int = 0
+    """sync frozen opponent weights every N iterations. 0 = shared weights (no frozen copy)."""
 
     # computed at runtime
     batch_size: int = 0
@@ -193,6 +199,7 @@ class LSTMBatchedPlayer(BasePlayer):
     """
     Manages batched LSTM hidden states for N envs.
     The NN agent is stateless (pure); this class holds the recurrent state.
+    Pre-allocates GPU buffers to avoid per-call tensor allocation.
     """
     def __init__(self, agent: BaseAgent, device, num_envs: int):
         self.agent = agent
@@ -201,6 +208,19 @@ class LSTMBatchedPlayer(BasePlayer):
         self.lstm_state = make_lstm_state(
             agent.lstm_layers, num_envs, agent.lstm_hidden, device,
         )
+        # Pre-allocated GPU buffers (lazy init on first batch_action call)
+        self._gpu_obs = None
+        self._gpu_mask = None
+        self._gpu_done = None
+        self._obs_fields_list = None
+
+    def sync_weights(self, source_agent):
+        """Copy weights from source agent (for frozen opponent).
+        Handles torch.compile _orig_mod prefix mismatch."""
+        # Unwrap compiled modules if present
+        target = self.agent._orig_mod if hasattr(self.agent, '_orig_mod') else self.agent
+        source = source_agent._orig_mod if hasattr(source_agent, '_orig_mod') else source_agent
+        target.load_state_dict(source.state_dict())
 
     def reset(self, env_indices=None):
         """Reset LSTM state for given env indices (or all if None)."""
@@ -213,12 +233,56 @@ class LSTMBatchedPlayer(BasePlayer):
                 self.lstm_state.h[:, idx] = 0
                 self.lstm_state.c[:, idx] = 0
 
+    def _init_gpu_bufs(self, obs_batch):
+        """Lazy-init pre-allocated GPU buffers matching obs shape."""
+        obs_cls = type(obs_batch)
+        self._obs_fields_list = obs_cls._fields
+        self._gpu_obs = obs_cls(**{
+            f: torch.zeros((self.num_envs, *getattr(obs_batch, f).shape[1:]),
+                           dtype=_obs_dtype(getattr(obs_batch, f)),
+                           device=self.device)
+            for f in obs_cls._fields
+        })
+        self._gpu_mask = torch.zeros(
+            self.num_envs, obs_batch.hand.shape[-1] * 12 if hasattr(obs_batch, 'hand') else 600,
+            dtype=torch.bool, device=self.device)
+        # Detect num_actions from mask_batch shape on first call
+        self._gpu_done = torch.zeros(self.num_envs, device=self.device)
+
     def batch_action(self, obs_batch, mask_batch: np.ndarray,
                      idxs: list) -> np.ndarray:
         """Batched action for a subset of envs identified by idxs."""
-        obs_t = obs_to_tensor(obs_batch, self.device)
-        mask_t = torch.as_tensor(mask_batch, dtype=torch.bool, device=self.device)
-        done_t = torch.zeros(len(idxs), device=self.device)
+        n = len(idxs)
+
+        # Lazy init GPU buffers
+        if self._gpu_obs is None:
+            self._init_gpu_bufs(obs_batch)
+            # Fix mask size now that we know it
+            self._gpu_mask = torch.zeros(
+                self.num_envs, mask_batch.shape[-1],
+                dtype=torch.bool, device=self.device)
+
+        # Copy obs to pre-allocated GPU (zero-copy numpy→CPU via from_numpy)
+        for f in self._obs_fields_list:
+            src = getattr(obs_batch, f)
+            dst = getattr(self._gpu_obs, f)
+            if isinstance(src, np.ndarray):
+                dst[:n].copy_(torch.from_numpy(src))
+            else:
+                dst[:n].copy_(src)
+
+        # Copy mask
+        if isinstance(mask_batch, np.ndarray):
+            self._gpu_mask[:n].copy_(torch.from_numpy(mask_batch))
+        else:
+            self._gpu_mask[:n].copy_(mask_batch)
+
+        # Slice to batch size (views, no copy)
+        obs_cls = type(obs_batch)
+        obs_t = obs_cls(**{f: getattr(self._gpu_obs, f)[:n] for f in self._obs_fields_list})
+        mask_t = self._gpu_mask[:n]
+        done_t = self._gpu_done[:n]
+
         idx_t = torch.tensor(idxs, dtype=torch.long, device=self.device)
         sub_state = LSTMState(
             h=self.lstm_state.h[:, idx_t].contiguous(),
@@ -309,6 +373,15 @@ class PPOLSTMTrainer:
 
         optimizer = optim.Adam(agent.parameters(), lr=cfg.learning_rate, eps=1e-5)
 
+        # torch.compile for faster NN forward/backward (dynamic shapes for varying batch sizes)
+        compiled_agent = torch.compile(agent, dynamic=True)
+
+        # Frozen opponent: don't overwrite with agent's compiled model
+        # Shared opponent: use compiled agent for faster inference
+        _frozen_opponent = cfg.opponent_sync_interval > 0
+        if not _frozen_opponent and isinstance(opponent, LSTMBatchedPlayer):
+            opponent.agent = compiled_agent
+
         # Allocate rollout buffers
         _proto_obs, _proto_masks = envs.reset()
         obs          = alloc_obs_buffer(_proto_obs, cfg.num_steps, cfg.num_envs, device)
@@ -319,8 +392,36 @@ class PPOLSTMTrainer:
         values       = torch.zeros((cfg.num_steps, cfg.num_envs), device=device)
         action_masks = torch.zeros((cfg.num_steps, cfg.num_envs, agent.num_actions), dtype=torch.bool, device=device)
 
-        next_obs  = obs_to_tensor(_proto_obs, device)
-        next_masks = torch.as_tensor(_proto_masks, dtype=torch.bool, device=device)
+        # Detect BatchStepper for zero-copy buffer optimization
+        _use_stepper = hasattr(envs, '_stepper') and envs._stepper is not None
+        _obs_pairs = None  # pre-computed (gpu, cpu) tensor pairs for fast copy
+
+        if _use_stepper:
+            stepper = envs._stepper
+            # Pre-allocate CPU tensor views sharing memory with stepper's numpy buffers
+            obs_cls = type(_proto_obs)
+            _obs_cpu = obs_cls(**{
+                f: torch.from_numpy(getattr(stepper.obs, f))
+                for f in obs_cls._fields
+            })
+            _masks_cpu = torch.from_numpy(stepper.masks)
+            _rewards_cpu = torch.from_numpy(stepper._rewards)
+            _done_cpu = torch.from_numpy(stepper._done_f32)  # float32
+
+            # Persistent GPU tensors (reused every step, no allocation)
+            next_obs = obs_cls(**{
+                f: getattr(_obs_cpu, f).to(device).clone()
+                for f in obs_cls._fields
+            })
+            next_masks = _masks_cpu.to(device).clone()
+
+            # Pre-compute copy pairs for fast iteration
+            _obs_pairs = [(getattr(next_obs, f), getattr(_obs_cpu, f))
+                          for f in obs_cls._fields]
+        else:
+            next_obs  = obs_to_tensor(_proto_obs, device)
+            next_masks = torch.as_tensor(_proto_masks, dtype=torch.bool, device=device)
+
         next_done = torch.zeros(cfg.num_envs, device=device)
         next_lstm_state = make_lstm_state(agent.lstm_layers, cfg.num_envs, agent.lstm_hidden, device)
 
@@ -329,6 +430,7 @@ class PPOLSTMTrainer:
         last_save_step = 0
         start_time = time.time()
         alpha = cfg.learning_rate
+        ent_coef_now = cfg.ent_coef  # initial α (may be adapted by target_entropy)
 
         for iteration in range(1, cfg.num_iterations + 1):
             initial_lstm_state = LSTMState(
@@ -343,12 +445,15 @@ class PPOLSTMTrainer:
             if cfg.target_kl is not None:
                 optimizer.param_groups[0]["lr"] = alpha
 
-            # Entropy coefficient annealing
-            if cfg.ent_coef_end > 0 and cfg.ent_anneal_steps > 0:
+            # Entropy coefficient: adaptive (Suphx) or annealed or fixed
+            if cfg.target_entropy > 0:
+                # Adaptive α: α ← α + β(H_target - H̄)
+                # ent_coef_now is updated AFTER each iteration using observed entropy
+                pass  # ent_coef_now updated at end of iteration (needs entropy_loss)
+            elif cfg.ent_coef_end > 0 and cfg.ent_anneal_steps > 0:
                 steps_so_far = (iteration - 1) * cfg.batch_size
                 frac = min(steps_so_far / cfg.ent_anneal_steps, 1.0)
                 if cfg.ent_anneal_mode == "exponential":
-                    # Log-linear: equal time per order of magnitude
                     import math
                     ent_coef_now = cfg.ent_coef * (cfg.ent_coef_end / cfg.ent_coef) ** frac
                 else:
@@ -364,7 +469,7 @@ class PPOLSTMTrainer:
                 action_masks[step] = next_masks
 
                 with torch.no_grad():
-                    action, logprob, _, value, next_lstm_state = agent.get_action_and_value(
+                    action, logprob, _, value, next_lstm_state = compiled_agent.get_action_and_value(
                         next_obs, action_masks[step], next_lstm_state, next_done
                     )
                     values[step] = value.flatten()
@@ -372,19 +477,33 @@ class PPOLSTMTrainer:
                 logprobs[step] = logprob
 
                 next_obs_np, next_masks_np, reward, terminations, truncations, infos = envs.step(action.cpu().numpy())
-                next_done = np.logical_or(terminations, truncations)
-                done_indices = list(np.where(next_done)[0])
+                next_done_np = np.logical_or(terminations, truncations)
+                done_indices = list(np.where(next_done_np)[0])
                 if done_indices:
                     opponent.reset(done_indices)
-                rewards[step] = torch.tensor(reward, dtype=torch.float32, device=device).view(-1)
-                next_obs   = obs_to_tensor(next_obs_np, device)
-                next_masks = torch.as_tensor(next_masks_np, dtype=torch.bool, device=device)
-                next_done  = torch.Tensor(next_done).to(device)
+
+                if _use_stepper:
+                    # Zero-copy: JIT wrote to numpy, CPU tensors auto-updated, copy to GPU
+                    for gpu_t, cpu_t in _obs_pairs:
+                        gpu_t.copy_(cpu_t)
+                    next_masks.copy_(_masks_cpu)
+                    rewards[step].copy_(_rewards_cpu)
+                    next_done.copy_(_done_cpu)
+                else:
+                    rewards[step] = torch.tensor(reward, dtype=torch.float32, device=device).view(-1)
+                    next_obs   = obs_to_tensor(next_obs_np, device)
+                    next_masks = torch.as_tensor(next_masks_np, dtype=torch.bool, device=device)
+                    next_done  = torch.Tensor(next_done_np).to(device)
 
                 if wandb and wandb.run is not None:
-                    for i in range(len(infos)):
-                        if infos[i].get("final_scores") is not None:
-                            wandb.log({"charts/episodic_return": float(reward[i]), "global_step": global_step})
+                    if _use_stepper:
+                        # StepInfo: pre-allocated arrays
+                        for idx in done_indices:
+                            wandb.log({"charts/episodic_return": float(reward[idx]), "global_step": global_step})
+                    else:
+                        for i in range(len(infos)):
+                            if infos[i].get("final_scores") is not None:
+                                wandb.log({"charts/episodic_return": float(reward[i]), "global_step": global_step})
 
             # LSTM hidden state diagnostics
             lstm_h_norm = next_lstm_state.h.norm().item() / (cfg.num_envs ** 0.5)
@@ -392,7 +511,7 @@ class PPOLSTMTrainer:
 
             # ── GAE ──────────────────────────────────────────────────────
             with torch.no_grad():
-                next_value = agent.get_value(next_obs, next_lstm_state, next_done, next_masks).reshape(1, -1)
+                next_value = compiled_agent.get_value(next_obs, next_lstm_state, next_done, next_masks).reshape(1, -1)
                 advantages = torch.zeros_like(rewards, device=device)
                 lastgaelam = 0
                 for t in reversed(range(cfg.num_steps)):
@@ -439,7 +558,7 @@ class PPOLSTMTrainer:
                         h=initial_lstm_state.h[:, mbenvinds],
                         c=initial_lstm_state.c[:, mbenvinds],
                     )
-                    _, newlogprob, entropy, newvalue, _ = agent.get_action_and_value(
+                    _, newlogprob, entropy, newvalue, _ = compiled_agent.get_action_and_value(
                         mb_obs, b_action_masks[mb_inds],
                         mb_lstm_state,
                         b_dones[mb_inds],
@@ -500,6 +619,19 @@ class PPOLSTMTrainer:
                 elif approx_kl < 0.5 * cfg.target_kl:
                     alpha = min(1e-2, alpha * 1.5)
 
+            # Adaptive entropy coefficient (Suphx-style, multiplicative)
+            # α ← α · exp(β · (H_target - H̄))
+            if cfg.target_entropy > 0:
+                import math
+                observed_entropy = entropy_loss.item()
+                ent_coef_now *= math.exp(cfg.target_entropy_beta * (cfg.target_entropy - observed_entropy))
+                ent_coef_now = max(min(ent_coef_now, 1.0), 1e-6)
+
+            # ── Frozen opponent sync ─────────────────────────────────────
+            if _frozen_opponent and iteration % cfg.opponent_sync_interval == 0:
+                if hasattr(opponent, 'sync_weights'):
+                    opponent.sync_weights(agent)
+
             # ── Logging ──────────────────────────────────────────────────
             y_pred, y_true = b_values.cpu().numpy(), b_returns.cpu().numpy()
             var_y = np.var(y_true)
@@ -525,7 +657,10 @@ class PPOLSTMTrainer:
                 wandb.log(log_dict)
 
             if global_step >= last_log_step + cfg.log_interval:
+                bench_t0 = time.time()
                 self.benchmark(global_step)
+                bench_time = time.time() - bench_t0
+                start_time += bench_time  # exclude benchmark from SPS
                 last_log_step = global_step
 
             if global_step >= last_save_step + cfg.save_interval and global_step > 0:

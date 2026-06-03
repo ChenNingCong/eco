@@ -20,6 +20,8 @@ from abstract import (
 )
 from abstract.ppo_lstm import obs_to_tensor, make_lstm_state, LSTMState
 from game.lc import LCEnvFactory, LCAgent, LCArgs
+from game.lc.engine import seed_numba_rng
+from game.lc.batch_stepper import LCBatchStepper
 
 
 class LCTrainer(PPOLSTMTrainer):
@@ -175,6 +177,8 @@ def main():
     torch.use_deterministic_algorithms(args.torch_deterministic)
     if args.torch_deterministic:
         os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+    # Seed Numba's global PRNG (used by jitclass deck shuffle)
+    seed_numba_rng(args.seed)
 
     device = torch.device("cuda" if torch.cuda.is_available() and args.cuda else "cpu")
 
@@ -195,7 +199,24 @@ def main():
 
     # Opponent
     if args.opponent_mode == "self_play":
-        opponent = LSTMBatchedPlayer(agent, device, num_envs=args.num_envs)
+        if args.opponent_sync_interval > 0:
+            # Frozen target opponent: separate model copy, synced periodically
+            import copy
+            opponent_model = LCAgent(lstm_hidden=args.lstm_hidden,
+                                    decompose_actions=args.decompose_actions,
+                                    three_phase=args.three_phase,
+                                    blind_draw=args.blind_draw,
+                                    no_lstm=args.no_lstm,
+                                    hidden_dim=args.hidden_dim,
+                                    mask_as_input=args.mask_as_input,
+                                    product_actions=args.product_actions).to(device)
+            opponent_model.load_state_dict(agent.state_dict())
+            opponent_model.eval()
+            opponent_model = torch.compile(opponent_model, dynamic=True)
+            opponent = LSTMBatchedPlayer(opponent_model, device, num_envs=args.num_envs)
+            print(f"Frozen opponent (sync every {args.opponent_sync_interval} iters)")
+        else:
+            opponent = LSTMBatchedPlayer(agent, device, num_envs=args.num_envs)
     else:
         opponent = RandomPlayer()
 
@@ -208,11 +229,13 @@ def main():
                            three_phase=args.three_phase,
                            max_discard_draws=args.max_discard_draws)
     key = key_from_seed(args.seed)
+    stepper = LCBatchStepper()
     envs = VecSinglePlayerEnv(
         num_envs=args.num_envs,
         opponent=opponent,
         env_factory=factory,
         key=key,
+        batch_stepper=stepper,
     )
 
     # Train

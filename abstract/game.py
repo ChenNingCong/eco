@@ -95,6 +95,18 @@ class BaseGameEngine(ABC, Generic[Obs]):
         """Size of the action space."""
         ...
 
+    def encode_into(self, player_id: int, out: Obs, idx: int) -> None:
+        """Write observation into pre-allocated batched buffer at index `idx`.
+
+        `out` is a batched obs (e.g. NamedTuple where each field has shape
+        (N, ...)).  This method writes into out.field[idx] for each field.
+
+        Default: calls encode() and copies.  Override for zero-alloc writes.
+        """
+        obs = self.encode(player_id)
+        for field in type(obs)._fields:
+            getattr(out, field)[idx] = getattr(obs, field)
+
     def compute_scores(self) -> np.ndarray:
         """Compute current scores for all players. Override in subclass."""
         raise NotImplementedError
