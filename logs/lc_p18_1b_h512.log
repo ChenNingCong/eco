@@ -1,0 +1,15 @@
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/zzhang18/.netrc.
+wandb: Currently logged in as: nchen3 (ningcong-chen) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/zzhang18/nchen3/eco/wandb/run-20260411_040518-qqupy5tc
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run lc__lc_p18_1b_h512__1__1775894717
+wandb: ⭐️ View project at https://wandb.ai/ningcong-chen/ppo-eco
+wandb: 🚀 View run at https://wandb.ai/ningcong-chen/ppo-eco/runs/qqupy5tc
+Agent params: 2,243,161
+Step: 131072 SPS: 21759  ev=-1.034  ent=3.437  grad=1.19/0.50  h=2.5 c=6.3  kl=0.0118  vl=0.0403
+Step: 262144 SPS: 16879  ev=-0.219  ent=3.429  grad=1.30/0.50  h=2.6 c=6.7  kl=0.0069  vl=0.0351
+Step: 393216 SPS: 16015  ev=-0.032  ent=3.423  grad=0.12/0.12  h=2.6 c=7.0  kl=0.0083  vl=0.0296
+Step: 524288 SPS: 14787  ev=0.099  ent=3.407  grad=1.68/0.50  h=2.7 c=7.2  kl=0.0085  vl=0.0344
+Step: 655360 SPS: 14419  ev=0.180  ent=3.392  grad=0.35/0.35  h=2.7 c=7.3  kl=0.0090  vl=0.0287
+Step: 786432 SPS: 14139  ev=0.239  ent=3.379  grad=1.16/0.50  h=2.7 c=7.3  kl=0.0092  vl=0.0309

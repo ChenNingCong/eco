@@ -1,0 +1,46 @@
+Starting server on 0.0.0.0:5002
+ * Serving Flask app 'server'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5002
+ * Running on http://10.128.145.148:5002
+Press CTRL+C to quit
+127.0.0.1 - - [07/Apr/2026 22:58:30] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:58:30] "GET /game/opponent HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:58:37] "POST /game/set_opponent HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:58:38] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:58:38] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:58:49] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:59:40] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:59:40] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:59:42] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:59:42] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 22:59:43] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:00:37] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:00:38] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:00:40] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:01:30] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:01:30] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:01:31] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:02:19] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:02:19] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:02:23] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:04:39] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:04:39] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:04:41] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:05:32] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:05:32] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:05:35] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:06:46] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:06:46] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [07/Apr/2026 23:06:50] "GET /game/autoplay HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:45] "GET /game/opponent HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:46] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [08/Apr/2026 01:06:47] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:48] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:51] "POST /game/set_opponent HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:51] "GET /game/reset?starting_player=0 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:52] "GET /game/state/0 HTTP/1.1" 200 -
+127.0.0.1 - - [08/Apr/2026 01:06:54] "GET /game/autoplay HTTP/1.1" 200 -

@@ -1,0 +1,1842 @@
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/zzhang18/.netrc.
+wandb: Currently logged in as: nchen3 (ningcong-chen) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/zzhang18/nchen3/eco/wandb/run-20260407_155057-n2g7qo7g
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run lc__lc_dqn_vs_random_dense__1__1775591457
+wandb: ⭐️ View project at https://wandb.ai/ningcong-chen/ppo-eco
+wandb: 🚀 View run at https://wandb.ai/ningcong-chen/ppo-eco/runs/n2g7qo7g
+Q-network params: 1,255,512
+Step: 81920  SPS: 1762  ε=0.099  ret=-0.033  score=-34.5  buf=8%  updates=562
+  vs Random: 118W/10L/0D | score=-4.9±10.3 inv=0.0 played=0.4 lanes=0.4 ddraw=26.3 pts=-5
+  Self-play: 11W/29L/88D | score=-4.5±9.5 inv=0.1 played=0.6 lanes=0.4 ddraw=24.9 pts=-4
+Step: 163840  SPS: 1910  ε=0.098  ret=-0.005  score=-28.7  buf=16%  updates=1202
+  vs Random: 119W/7L/2D | score=-6.0±10.7 inv=0.1 played=0.7 lanes=0.5 ddraw=25.1 pts=-6
+  Self-play: 34W/47L/47D | score=-8.9±13.5 inv=0.0 played=1.0 lanes=0.8 ddraw=25.2 pts=-9
+Step: 245760  SPS: 1964  ε=0.098  ret=-0.001  score=-29.1  buf=25%  updates=1842
+  vs Random: 124W/4L/0D | score=-3.8±8.2 inv=0.0 played=0.5 lanes=0.4 ddraw=24.2 pts=-4
+  Self-play: 13W/44L/71D | score=-6.6±11.4 inv=0.1 played=0.7 lanes=0.6 ddraw=24.9 pts=-7
+Step: 327680  SPS: 1990  ε=0.097  ret=0.004  score=-27.9  buf=33%  updates=2482
+  vs Random: 122W/5L/1D | score=-4.4±9.5 inv=0.1 played=0.4 lanes=0.3 ddraw=25.9 pts=-4
+  Self-play: 15W/36L/77D | score=-4.3±8.2 inv=0.0 played=0.6 lanes=0.4 ddraw=25.1 pts=-4
+Step: 409600  SPS: 1999  ε=0.096  ret=0.016  score=-22.8  buf=41%  updates=3122
+  vs Random: 122W/6L/0D | score=-4.5±9.6 inv=0.1 played=0.6 lanes=0.4 ddraw=26.8 pts=-5
+  Self-play: 12W/31L/85D | score=-3.6±8.6 inv=0.1 played=0.6 lanes=0.4 ddraw=24.9 pts=-4
+Step: 491520  SPS: 2000  ε=0.095  ret=0.034  score=-21.4  buf=49%  updates=3762
+  vs Random: 121W/6L/1D | score=-3.4±7.9 inv=0.1 played=0.4 lanes=0.3 ddraw=26.4 pts=-3
+  Self-play: 6W/29L/93D | score=-3.5±8.1 inv=0.0 played=0.5 lanes=0.3 ddraw=24.8 pts=-3
+Step: 573440  SPS: 1998  ε=0.094  ret=-0.012  score=-23.1  buf=57%  updates=4402
+  vs Random: 119W/9L/0D | score=-6.0±11.4 inv=0.1 played=0.8 lanes=0.5 ddraw=25.7 pts=-6
+  Self-play: 9W/33L/86D | score=-3.9±8.1 inv=0.0 played=0.5 lanes=0.4 ddraw=25.0 pts=-4
+Step: 655360  SPS: 2003  ε=0.093  ret=-0.007  score=-22.1  buf=66%  updates=5042
+  vs Random: 120W/8L/0D | score=-3.5±9.0 inv=0.1 played=0.8 lanes=0.4 ddraw=26.3 pts=-3
+  Self-play: 11W/35L/82D | score=-4.6±9.8 inv=0.0 played=0.9 lanes=0.6 ddraw=25.1 pts=-5
+Step: 737280  SPS: 2009  ε=0.093  ret=0.005  score=-20.5  buf=74%  updates=5682
+  vs Random: 126W/2L/0D | score=-2.2±6.4 inv=0.0 played=0.4 lanes=0.2 ddraw=26.2 pts=-2
+  Self-play: 14W/26L/88D | score=-4.2±10.7 inv=0.0 played=0.6 lanes=0.4 ddraw=25.3 pts=-4
+Step: 819200  SPS: 2013  ε=0.092  ret=0.011  score=-20.3  buf=82%  updates=6322
+  vs Random: 120W/7L/1D | score=-3.4±9.1 inv=0.1 played=0.7 lanes=0.4 ddraw=26.0 pts=-3
+  Self-play: 18W/48L/62D | score=-5.3±8.5 inv=0.0 played=1.3 lanes=0.8 ddraw=24.7 pts=-5
+Step: 901120  SPS: 2015  ε=0.091  ret=-0.023  score=-17.7  buf=90%  updates=6962
+  vs Random: 119W/7L/2D | score=-3.2±8.7 inv=0.1 played=0.7 lanes=0.4 ddraw=27.3 pts=-3
+  Self-play: 25W/43L/60D | score=-6.4±11.5 inv=0.0 played=1.1 lanes=0.8 ddraw=24.8 pts=-6
+Step: 983040  SPS: 2013  ε=0.090  ret=0.003  score=-19.5  buf=98%  updates=7602
+  vs Random: 124W/4L/0D | score=-4.6±10.2 inv=0.1 played=0.9 lanes=0.5 ddraw=27.2 pts=-5
+  Self-play: 20W/39L/69D | score=-5.0±10.7 inv=0.0 played=1.4 lanes=0.8 ddraw=24.9 pts=-5
+Step: 1064960  SPS: 2015  ε=0.089  ret=0.020  score=-16.6  buf=100%  updates=8242
+  vs Random: 124W/4L/0D | score=-3.9±8.1 inv=0.1 played=0.8 lanes=0.5 ddraw=26.0 pts=-4
+  Self-play: 19W/40L/69D | score=-5.1±10.8 inv=0.1 played=1.4 lanes=0.8 ddraw=24.8 pts=-5
+Step: 1146880  SPS: 2018  ε=0.089  ret=0.019  score=-16.3  buf=100%  updates=8882
+  vs Random: 125W/3L/0D | score=-2.9±7.9 inv=0.1 played=0.9 lanes=0.5 ddraw=25.7 pts=-3
+  Self-play: 31W/35L/62D | score=-3.6±8.3 inv=0.1 played=1.3 lanes=0.6 ddraw=24.8 pts=-4
+Step: 1228800  SPS: 2017  ε=0.088  ret=0.037  score=-13.9  buf=100%  updates=9522
+  vs Random: 123W/3L/2D | score=-2.6±6.7 inv=0.1 played=1.0 lanes=0.5 ddraw=26.6 pts=-3
+  Self-play: 21W/48L/59D | score=-4.2±9.4 inv=0.0 played=1.5 lanes=0.8 ddraw=25.0 pts=-4
+Step: 1310720  SPS: 2012  ε=0.087  ret=0.001  score=-18.1  buf=100%  updates=10162
+  vs Random: 125W/3L/0D | score=-2.3±7.4 inv=0.0 played=0.9 lanes=0.5 ddraw=27.1 pts=-2
+  Self-play: 21W/40L/67D | score=-4.9±12.6 inv=0.1 played=2.3 lanes=1.1 ddraw=24.6 pts=-5
+Step: 1392640  SPS: 2012  ε=0.086  ret=0.011  score=-12.8  buf=100%  updates=10802
+  vs Random: 123W/4L/1D | score=-3.0±9.8 inv=0.1 played=1.2 lanes=0.5 ddraw=26.5 pts=-3
+  Self-play: 22W/35L/71D | score=-2.8±9.7 inv=0.0 played=1.5 lanes=0.7 ddraw=25.0 pts=-3
+Step: 1474560  SPS: 2008  ε=0.085  ret=0.026  score=-11.9  buf=100%  updates=11442
+  vs Random: 123W/3L/2D | score=-3.5±11.0 inv=0.1 played=1.8 lanes=0.8 ddraw=27.2 pts=-4
+  Self-play: 31W/40L/57D | score=-3.6±10.6 inv=0.1 played=2.0 lanes=0.9 ddraw=24.8 pts=-4
+Step: 1556480  SPS: 2006  ε=0.084  ret=-0.009  score=-10.9  buf=100%  updates=12082
+  vs Random: 126W/1L/1D | score=-1.6±6.4 inv=0.1 played=1.6 lanes=0.6 ddraw=26.9 pts=-2
+  Self-play: 42W/54L/32D | score=-2.4±14.1 inv=0.1 played=4.0 lanes=1.6 ddraw=24.8 pts=-2
+Step: 1638400  SPS: 2006  ε=0.084  ret=0.033  score=-10.0  buf=100%  updates=12722
+  vs Random: 123W/4L/1D | score=-1.2±9.1 inv=0.1 played=2.3 lanes=0.9 ddraw=26.9 pts=-1
+  Self-play: 28W/51L/49D | score=-1.3±10.2 inv=0.1 played=3.6 lanes=1.4 ddraw=24.6 pts=-1
+Step: 1720320  SPS: 2002  ε=0.083  ret=0.002  score=-9.9  buf=100%  updates=13362
+  vs Random: 123W/5L/0D | score=-1.2±9.3 inv=0.1 played=3.1 lanes=1.1 ddraw=26.4 pts=-1
+  Self-play: 51W/49L/28D | score=0.3±11.5 inv=0.1 played=3.8 lanes=1.3 ddraw=25.0 pts=0
+Step: 1802240  SPS: 2000  ε=0.082  ret=0.049  score=-10.2  buf=100%  updates=14002
+  vs Random: 126W/2L/0D | score=-1.4±13.5 inv=0.1 played=4.2 lanes=1.6 ddraw=25.9 pts=-1
+  Self-play: 54W/57L/17D | score=-0.7±14.3 inv=0.1 played=5.6 lanes=2.0 ddraw=24.7 pts=-1
+Step: 1884160  SPS: 1990  ε=0.081  ret=0.027  score=-9.3  buf=100%  updates=14642
+  vs Random: 124W/3L/1D | score=0.9±9.3 inv=0.1 played=3.5 lanes=1.2 ddraw=26.9 pts=1
+  Self-play: 50W/67L/11D | score=0.7±16.1 inv=0.2 played=5.9 lanes=2.1 ddraw=24.8 pts=1
+Step: 1966080  SPS: 1983  ε=0.080  ret=0.035  score=-2.5  buf=100%  updates=15282
+  vs Random: 123W/5L/0D | score=3.0±13.2 inv=0.1 played=7.7 lanes=2.6 ddraw=26.5 pts=3
+  Self-play: 56W/66L/6D | score=1.2±15.6 inv=0.1 played=7.3 lanes=2.5 ddraw=24.9 pts=1
+Step: 2048000  SPS: 1976  ε=0.080  ret=0.050  score=-2.3  buf=100%  updates=15922
+  vs Random: 125W/3L/0D | score=2.3±14.5 inv=0.2 played=7.9 lanes=2.7 ddraw=26.1 pts=2
+  Self-play: 57W/67L/4D | score=-2.0±14.3 inv=0.1 played=7.3 lanes=2.6 ddraw=25.2 pts=-2
+Step: 2129920  SPS: 1966  ε=0.079  ret=0.043  score=-1.1  buf=100%  updates=16562
+  vs Random: 125W/3L/0D | score=6.5±13.8 inv=0.2 played=10.4 lanes=3.3 ddraw=26.7 pts=6
+  Self-play: 70W/57L/1D | score=2.1±14.9 inv=0.2 played=8.7 lanes=2.9 ddraw=24.8 pts=2
+Step: 2211840  SPS: 1957  ε=0.078  ret=0.028  score=4.0  buf=100%  updates=17202
+  vs Random: 121W/7L/0D | score=4.6±17.1 inv=0.3 played=12.5 lanes=4.0 ddraw=26.5 pts=5
+  Self-play: 59W/65L/4D | score=0.8±19.8 inv=0.4 played=11.1 lanes=3.6 ddraw=24.5 pts=1
+Step: 2293760  SPS: 1950  ε=0.077  ret=0.052  score=5.7  buf=100%  updates=17842
+  vs Random: 127W/0L/1D | score=5.8±15.8 inv=0.4 played=13.4 lanes=4.3 ddraw=25.9 pts=6
+  Self-play: 56W/67L/5D | score=-0.8±17.9 inv=0.3 played=11.0 lanes=3.7 ddraw=24.9 pts=-1
+Step: 2375680  SPS: 1942  ε=0.076  ret=0.059  score=8.1  buf=100%  updates=18482
+  vs Random: 125W/2L/1D | score=8.2±18.0 inv=0.5 played=14.6 lanes=4.5 ddraw=26.3 pts=8
+  Self-play: 60W/66L/2D | score=-0.1±19.2 inv=0.4 played=12.2 lanes=4.0 ddraw=25.0 pts=-0
+Step: 2457600  SPS: 1938  ε=0.075  ret=0.028  score=3.0  buf=100%  updates=19122
+  vs Random: 128W/0L/0D | score=9.3±16.1 inv=0.5 played=14.2 lanes=4.3 ddraw=27.3 pts=9
+  Self-play: 72W/56L/0D | score=3.1±20.5 inv=0.4 played=12.9 lanes=4.1 ddraw=25.2 pts=3
+Step: 2539520  SPS: 1930  ε=0.075  ret=0.035  score=8.0  buf=100%  updates=19762
+  vs Random: 127W/1L/0D | score=10.2±15.8 inv=0.4 played=15.1 lanes=4.6 ddraw=26.7 pts=10
+  Self-play: 60W/65L/3D | score=1.0±18.5 inv=0.4 played=12.2 lanes=4.0 ddraw=25.1 pts=1
+Step: 2621440  SPS: 1922  ε=0.074  ret=0.036  score=8.0  buf=100%  updates=20402
+  vs Random: 123W/4L/1D | score=7.6±16.2 inv=0.5 played=15.3 lanes=4.7 ddraw=27.2 pts=8
+  Self-play: 51W/74L/3D | score=-1.3±19.4 inv=0.5 played=13.5 lanes=4.4 ddraw=25.3 pts=-1
+Step: 2703360  SPS: 1918  ε=0.073  ret=0.057  score=9.5  buf=100%  updates=21042
+  vs Random: 124W/4L/0D | score=12.1±17.2 inv=0.7 played=15.9 lanes=4.6 ddraw=26.7 pts=12
+  Self-play: 57W/71L/0D | score=-0.6±22.7 inv=0.8 played=14.0 lanes=4.4 ddraw=25.0 pts=-1
+Step: 2785280  SPS: 1913  ε=0.072  ret=0.049  score=8.7  buf=100%  updates=21682
+  vs Random: 124W/4L/0D | score=12.6±17.2 inv=0.5 played=15.3 lanes=4.5 ddraw=26.8 pts=13
+  Self-play: 63W/65L/0D | score=0.1±21.7 inv=0.6 played=13.3 lanes=4.3 ddraw=25.1 pts=0
+Step: 2867200  SPS: 1907  ε=0.071  ret=0.059  score=8.0  buf=100%  updates=22322
+  vs Random: 128W/0L/0D | score=14.3±17.1 inv=0.5 played=16.1 lanes=4.7 ddraw=26.8 pts=14
+  Self-play: 50W/77L/1D | score=-2.7±22.1 inv=0.6 played=13.9 lanes=4.5 ddraw=25.5 pts=-3
+Step: 2949120  SPS: 1901  ε=0.071  ret=0.039  score=11.5  buf=100%  updates=22962
+  vs Random: 126W/2L/0D | score=15.2±17.5 inv=0.5 played=15.9 lanes=4.6 ddraw=27.1 pts=15
+  Self-play: 58W/69L/1D | score=-3.0±21.8 inv=0.6 played=14.0 lanes=4.5 ddraw=25.2 pts=-3
+Step: 3031040  SPS: 1895  ε=0.070  ret=0.082  score=11.1  buf=100%  updates=23602
+  vs Random: 127W/1L/0D | score=16.5±16.5 inv=0.6 played=16.4 lanes=4.7 ddraw=27.1 pts=17
+  Self-play: 67W/61L/0D | score=3.4±22.2 inv=0.7 played=14.3 lanes=4.4 ddraw=25.0 pts=3
+Step: 3112960  SPS: 1890  ε=0.069  ret=0.055  score=9.7  buf=100%  updates=24242
+  vs Random: 124W/4L/0D | score=11.5±20.5 inv=0.8 played=16.7 lanes=4.8 ddraw=28.1 pts=12
+  Self-play: 61W/67L/0D | score=-1.1±24.0 inv=0.9 played=14.6 lanes=4.7 ddraw=24.8 pts=-1
+Step: 3194880  SPS: 1888  ε=0.068  ret=0.049  score=15.4  buf=100%  updates=24882
+  vs Random: 126W/0L/2D | score=15.6±19.7 inv=0.8 played=16.6 lanes=4.7 ddraw=27.2 pts=16
+  Self-play: 62W/65L/1D | score=1.2±24.4 inv=0.9 played=15.0 lanes=4.7 ddraw=25.2 pts=1
+Step: 3276800  SPS: 1882  ε=0.067  ret=0.060  score=10.9  buf=100%  updates=25522
+  vs Random: 126W/2L/0D | score=16.8±20.5 inv=0.8 played=17.4 lanes=4.8 ddraw=26.8 pts=17
+  Self-play: 57W/71L/0D | score=-1.3±23.6 inv=0.8 played=15.1 lanes=4.8 ddraw=25.0 pts=-1
+Step: 3358720  SPS: 1882  ε=0.066  ret=0.062  score=11.9  buf=100%  updates=26162
+  vs Random: 123W/5L/0D | score=13.8±20.3 inv=0.9 played=17.0 lanes=4.8 ddraw=27.4 pts=14
+  Self-play: 49W/75L/4D | score=-0.5±23.8 inv=0.9 played=14.9 lanes=4.7 ddraw=25.0 pts=-1
+Step: 3440640  SPS: 1882  ε=0.066  ret=0.094  score=15.2  buf=100%  updates=26802
+  vs Random: 126W/2L/0D | score=18.1±21.1 inv=0.8 played=16.8 lanes=4.7 ddraw=26.9 pts=18
+  Self-play: 70W/56L/2D | score=5.3±22.6 inv=0.8 played=15.3 lanes=4.6 ddraw=24.7 pts=5
+Step: 3522560  SPS: 1884  ε=0.065  ret=0.050  score=14.1  buf=100%  updates=27442
+  vs Random: 128W/0L/0D | score=21.3±16.9 inv=1.2 played=17.6 lanes=4.8 ddraw=27.3 pts=21
+  Self-play: 59W/66L/3D | score=1.9±25.0 inv=1.2 played=15.1 lanes=4.6 ddraw=25.0 pts=2
+Step: 3604480  SPS: 1882  ε=0.064  ret=0.058  score=14.9  buf=100%  updates=28082
+  vs Random: 126W/1L/1D | score=14.9±20.7 inv=0.8 played=17.4 lanes=4.9 ddraw=27.0 pts=15
+  Self-play: 62W/65L/1D | score=0.5±27.7 inv=1.0 played=15.0 lanes=4.6 ddraw=25.4 pts=1
+Step: 3686400  SPS: 1881  ε=0.063  ret=0.066  score=11.4  buf=100%  updates=28722
+  vs Random: 125W/3L/0D | score=15.1±23.1 inv=1.1 played=17.6 lanes=4.9 ddraw=27.7 pts=15
+  Self-play: 62W/66L/0D | score=-0.5±28.1 inv=1.1 played=15.5 lanes=4.8 ddraw=25.3 pts=-1
+Step: 3768320  SPS: 1879  ε=0.062  ret=0.060  score=13.6  buf=100%  updates=29362
+  vs Random: 126W/2L/0D | score=18.1±22.2 inv=1.1 played=17.8 lanes=4.8 ddraw=27.2 pts=18
+  Self-play: 58W/70L/0D | score=-1.7±28.9 inv=1.2 played=15.5 lanes=4.8 ddraw=24.9 pts=-2
+Step: 3850240  SPS: 1878  ε=0.061  ret=0.066  score=15.7  buf=100%  updates=30002
+  vs Random: 126W/1L/1D | score=19.0±21.2 inv=1.0 played=18.1 lanes=4.9 ddraw=27.3 pts=19
+  Self-play: 66W/61L/1D | score=3.3±28.9 inv=0.9 played=16.3 lanes=4.9 ddraw=24.6 pts=3
+Step: 3932160  SPS: 1878  ε=0.061  ret=0.094  score=15.2  buf=100%  updates=30642
+  vs Random: 122W/6L/0D | score=15.7±26.1 inv=1.3 played=17.8 lanes=4.8 ddraw=27.7 pts=16
+  Self-play: 70W/58L/0D | score=3.8±25.8 inv=1.3 played=16.5 lanes=4.9 ddraw=24.9 pts=4
+Step: 4014080  SPS: 1879  ε=0.060  ret=0.070  score=16.7  buf=100%  updates=31282
+  vs Random: 122W/6L/0D | score=17.2±21.8 inv=1.0 played=17.7 lanes=4.8 ddraw=28.2 pts=17
+  Self-play: 66W/60L/2D | score=1.4±27.4 inv=1.1 played=15.9 lanes=4.8 ddraw=24.9 pts=1
+Step: 4096000  SPS: 1880  ε=0.059  ret=0.090  score=13.6  buf=100%  updates=31922
+  vs Random: 124W/4L/0D | score=20.2±24.5 inv=0.9 played=18.1 lanes=4.8 ddraw=27.3 pts=20
+  Self-play: 62W/65L/1D | score=4.2±30.1 inv=1.0 played=15.9 lanes=4.7 ddraw=24.8 pts=4
+Step: 4177920  SPS: 1879  ε=0.058  ret=0.061  score=16.0  buf=100%  updates=32562
+  vs Random: 127W/1L/0D | score=18.6±24.0 inv=1.0 played=17.9 lanes=4.8 ddraw=27.4 pts=19
+  Self-play: 66W/61L/1D | score=2.3±29.7 inv=1.2 played=16.1 lanes=4.8 ddraw=24.9 pts=2
+Step: 4259840  SPS: 1880  ε=0.057  ret=0.102  score=15.5  buf=100%  updates=33202
+  vs Random: 127W/1L/0D | score=21.5±22.2 inv=1.0 played=18.6 lanes=4.8 ddraw=28.1 pts=22
+  Self-play: 57W/70L/1D | score=-1.9±33.4 inv=1.2 played=16.0 lanes=4.8 ddraw=24.9 pts=-2
+Step: 4341760  SPS: 1881  ε=0.057  ret=0.051  score=14.4  buf=100%  updates=33842
+  vs Random: 127W/1L/0D | score=23.7±21.4 inv=0.9 played=18.6 lanes=4.8 ddraw=27.0 pts=24
+  Self-play: 57W/69L/2D | score=2.7±25.0 inv=0.9 played=15.5 lanes=4.7 ddraw=25.0 pts=3
+Step: 4423680  SPS: 1882  ε=0.056  ret=0.075  score=16.0  buf=100%  updates=34482
+  vs Random: 123W/5L/0D | score=20.6±22.9 inv=0.9 played=17.7 lanes=4.8 ddraw=27.4 pts=21
+  Self-play: 66W/61L/1D | score=2.3±28.6 inv=0.9 played=15.8 lanes=4.8 ddraw=24.9 pts=2
+Step: 4505600  SPS: 1882  ε=0.055  ret=0.087  score=15.5  buf=100%  updates=35122
+  vs Random: 122W/5L/1D | score=17.9±24.5 inv=1.2 played=18.2 lanes=4.9 ddraw=27.5 pts=18
+  Self-play: 67W/61L/0D | score=2.9±30.3 inv=1.4 played=16.4 lanes=4.8 ddraw=24.7 pts=3
+Step: 4587520  SPS: 1883  ε=0.054  ret=0.098  score=14.3  buf=100%  updates=35762
+  vs Random: 125W/3L/0D | score=21.2±23.4 inv=1.2 played=18.5 lanes=4.9 ddraw=27.7 pts=21
+  Self-play: 54W/74L/0D | score=-1.8±29.1 inv=1.1 played=15.8 lanes=4.8 ddraw=25.4 pts=-2
+Step: 4669440  SPS: 1884  ε=0.053  ret=0.054  score=14.7  buf=100%  updates=36402
+  vs Random: 121W/7L/0D | score=14.3±26.9 inv=1.1 played=17.9 lanes=4.9 ddraw=27.6 pts=14
+  Self-play: 68W/59L/1D | score=7.3±29.0 inv=1.1 played=16.1 lanes=4.7 ddraw=24.7 pts=7
+Step: 4751360  SPS: 1882  ε=0.052  ret=0.077  score=17.2  buf=100%  updates=37042
+  vs Random: 125W/3L/0D | score=19.3±23.3 inv=1.1 played=18.5 lanes=4.9 ddraw=27.4 pts=19
+  Self-play: 53W/75L/0D | score=1.8±27.8 inv=1.2 played=15.8 lanes=4.7 ddraw=25.0 pts=2
+Step: 4833280  SPS: 1877  ε=0.052  ret=0.099  score=23.4  buf=100%  updates=37682
+  vs Random: 123W/5L/0D | score=17.2±22.5 inv=1.4 played=18.3 lanes=4.8 ddraw=27.8 pts=17
+  Self-play: 64W/64L/0D | score=-1.4±32.8 inv=1.5 played=15.8 lanes=4.7 ddraw=25.0 pts=-1
+Step: 4915200  SPS: 1875  ε=0.051  ret=0.071  score=14.9  buf=100%  updates=38322
+  vs Random: 126W/2L/0D | score=18.6±24.9 inv=1.3 played=18.5 lanes=4.9 ddraw=27.2 pts=19
+  Self-play: 61W/67L/0D | score=5.4±33.3 inv=1.2 played=16.5 lanes=4.8 ddraw=24.9 pts=5
+Step: 4997120  SPS: 1875  ε=0.050  ret=0.066  score=18.1  buf=100%  updates=38962
+  vs Random: 123W/4L/1D | score=22.8±24.6 inv=1.2 played=18.7 lanes=4.9 ddraw=27.3 pts=23
+  Self-play: 72W/55L/1D | score=10.8±31.7 inv=1.3 played=16.9 lanes=4.8 ddraw=24.5 pts=11
+Step: 5079040  SPS: 1871  ε=0.050  ret=0.080  score=19.6  buf=100%  updates=39602
+  vs Random: 122W/6L/0D | score=20.9±26.2 inv=1.2 played=18.5 lanes=4.8 ddraw=27.7 pts=21
+  Self-play: 74W/53L/1D | score=9.2±30.3 inv=1.2 played=16.9 lanes=4.8 ddraw=24.6 pts=9
+Step: 5160960  SPS: 1869  ε=0.050  ret=0.064  score=14.6  buf=100%  updates=40242
+  vs Random: 125W/3L/0D | score=22.2±26.5 inv=1.4 played=18.8 lanes=4.8 ddraw=27.7 pts=22
+  Self-play: 64W/63L/1D | score=2.9±32.3 inv=1.5 played=16.4 lanes=4.7 ddraw=25.1 pts=3
+Step: 5242880  SPS: 1866  ε=0.050  ret=0.116  score=18.4  buf=100%  updates=40882
+  vs Random: 124W/4L/0D | score=22.4±24.1 inv=1.4 played=18.5 lanes=4.8 ddraw=27.5 pts=22
+  Self-play: 64W/63L/1D | score=3.9±34.2 inv=1.5 played=16.5 lanes=4.7 ddraw=25.1 pts=4
+Step: 5324800  SPS: 1864  ε=0.050  ret=0.072  score=14.8  buf=100%  updates=41522
+  vs Random: 123W/5L/0D | score=16.2±26.5 inv=1.4 played=18.0 lanes=4.8 ddraw=28.1 pts=16
+  Self-play: 53W/74L/1D | score=3.8±28.6 inv=1.5 played=16.4 lanes=4.7 ddraw=24.7 pts=4
+Step: 5406720  SPS: 1861  ε=0.050  ret=0.100  score=15.5  buf=100%  updates=42162
+  vs Random: 124W/4L/0D | score=19.7±28.0 inv=1.6 played=18.8 lanes=4.8 ddraw=27.2 pts=20
+  Self-play: 63W/65L/0D | score=7.0±30.2 inv=1.5 played=17.2 lanes=4.8 ddraw=24.8 pts=7
+Step: 5488640  SPS: 1858  ε=0.050  ret=0.091  score=17.6  buf=100%  updates=42802
+  vs Random: 123W/5L/0D | score=24.4±26.2 inv=1.7 played=19.1 lanes=4.8 ddraw=27.5 pts=24
+  Self-play: 52W/76L/0D | score=-1.4±33.4 inv=1.9 played=16.7 lanes=4.9 ddraw=25.0 pts=-1
+Step: 5570560  SPS: 1855  ε=0.050  ret=0.044  score=11.7  buf=100%  updates=43442
+  vs Random: 127W/1L/0D | score=23.5±22.7 inv=1.4 played=19.1 lanes=4.9 ddraw=27.9 pts=23
+  Self-play: 62W/66L/0D | score=3.8±32.4 inv=1.5 played=16.4 lanes=4.7 ddraw=25.0 pts=4
+Step: 5652480  SPS: 1853  ε=0.050  ret=0.102  score=16.9  buf=100%  updates=44082
+  vs Random: 125W/3L/0D | score=21.4±22.5 inv=1.4 played=18.4 lanes=4.8 ddraw=28.1 pts=21
+  Self-play: 66W/60L/2D | score=7.3±29.5 inv=1.5 played=16.8 lanes=4.8 ddraw=24.7 pts=7
+Step: 5734400  SPS: 1851  ε=0.050  ret=0.092  score=19.7  buf=100%  updates=44722
+  vs Random: 125W/3L/0D | score=27.0±26.5 inv=1.4 played=19.4 lanes=4.8 ddraw=27.6 pts=27
+  Self-play: 57W/71L/0D | score=3.0±34.0 inv=1.3 played=16.3 lanes=4.8 ddraw=25.4 pts=3
+Step: 5816320  SPS: 1849  ε=0.050  ret=0.051  score=19.5  buf=100%  updates=45362
+  vs Random: 122W/6L/0D | score=22.0±26.1 inv=1.4 played=18.8 lanes=4.8 ddraw=27.5 pts=22
+  Self-play: 62W/65L/1D | score=4.5±29.0 inv=1.5 played=16.5 lanes=4.8 ddraw=25.1 pts=4
+Step: 5898240  SPS: 1847  ε=0.050  ret=0.089  score=20.1  buf=100%  updates=46002
+  vs Random: 122W/5L/1D | score=23.0±27.6 inv=1.5 played=19.2 lanes=4.9 ddraw=27.4 pts=23
+  Self-play: 62W/65L/1D | score=6.0±31.7 inv=1.6 played=16.4 lanes=4.7 ddraw=25.1 pts=6
+Step: 5980160  SPS: 1845  ε=0.050  ret=0.120  score=18.9  buf=100%  updates=46642
+  vs Random: 126W/2L/0D | score=25.3±26.7 inv=1.5 played=18.5 lanes=4.7 ddraw=28.0 pts=25
+  Self-play: 53W/73L/2D | score=2.6±30.1 inv=1.6 played=16.1 lanes=4.7 ddraw=25.4 pts=3
+Step: 6062080  SPS: 1843  ε=0.050  ret=0.081  score=18.2  buf=100%  updates=47282
+  vs Random: 124W/4L/0D | score=29.3±27.1 inv=1.6 played=19.4 lanes=4.8 ddraw=27.2 pts=29
+  Self-play: 65W/63L/0D | score=6.3±29.8 inv=1.6 played=16.7 lanes=4.8 ddraw=25.3 pts=6
+Step: 6144000  SPS: 1842  ε=0.050  ret=0.076  score=22.2  buf=100%  updates=47922
+  vs Random: 124W/4L/0D | score=22.1±25.6 inv=1.6 played=18.3 lanes=4.7 ddraw=27.2 pts=22
+  Self-play: 61W/67L/0D | score=7.0±32.0 inv=1.6 played=16.8 lanes=4.7 ddraw=25.0 pts=7
+Step: 6225920  SPS: 1841  ε=0.050  ret=0.099  score=13.0  buf=100%  updates=48562
+  vs Random: 128W/0L/0D | score=23.4±24.6 inv=1.4 played=18.8 lanes=4.8 ddraw=27.4 pts=23
+  Self-play: 53W/75L/0D | score=3.9±26.7 inv=1.5 played=16.1 lanes=4.7 ddraw=25.2 pts=4
+Step: 6307840  SPS: 1839  ε=0.050  ret=0.081  score=18.0  buf=100%  updates=49202
+  vs Random: 124W/3L/1D | score=20.8±27.6 inv=1.5 played=18.9 lanes=4.8 ddraw=28.2 pts=21
+  Self-play: 66W/61L/1D | score=8.7±29.2 inv=1.5 played=17.2 lanes=4.8 ddraw=24.9 pts=9
+Step: 6389760  SPS: 1837  ε=0.050  ret=0.105  score=19.3  buf=100%  updates=49842
+  vs Random: 124W/4L/0D | score=24.5±24.9 inv=1.5 played=19.3 lanes=4.9 ddraw=28.0 pts=24
+  Self-play: 61W/67L/0D | score=2.6±27.9 inv=1.4 played=16.7 lanes=4.8 ddraw=24.9 pts=3
+Step: 6471680  SPS: 1835  ε=0.050  ret=0.090  score=22.6  buf=100%  updates=50482
+  vs Random: 121W/7L/0D | score=22.4±28.2 inv=1.3 played=18.8 lanes=4.8 ddraw=28.5 pts=22
+  Self-play: 71W/56L/1D | score=9.2±28.3 inv=1.3 played=16.8 lanes=4.8 ddraw=24.7 pts=9
+Step: 6553600  SPS: 1834  ε=0.050  ret=0.073  score=17.2  buf=100%  updates=51122
+  vs Random: 125W/2L/1D | score=27.3±28.7 inv=1.6 played=18.9 lanes=4.7 ddraw=27.2 pts=27
+  Self-play: 68W/60L/0D | score=11.0±29.4 inv=1.6 played=16.9 lanes=4.7 ddraw=24.5 pts=11
+Step: 6635520  SPS: 1832  ε=0.050  ret=0.106  score=21.9  buf=100%  updates=51762
+  vs Random: 128W/0L/0D | score=24.6±24.5 inv=1.7 played=18.7 lanes=4.8 ddraw=28.0 pts=25
+  Self-play: 70W/58L/0D | score=12.6±31.2 inv=1.7 played=16.6 lanes=4.7 ddraw=24.1 pts=13
+Step: 6717440  SPS: 1831  ε=0.050  ret=0.100  score=20.5  buf=100%  updates=52402
+  vs Random: 127W/1L/0D | score=26.0±25.8 inv=1.6 played=19.5 lanes=4.8 ddraw=27.6 pts=26
+  Self-play: 72W/55L/1D | score=13.2±31.1 inv=1.7 played=17.2 lanes=4.7 ddraw=25.0 pts=13
+Step: 6799360  SPS: 1829  ε=0.050  ret=0.085  score=21.4  buf=100%  updates=53042
+  vs Random: 125W/3L/0D | score=23.3±22.6 inv=1.5 played=19.0 lanes=4.8 ddraw=27.7 pts=23
+  Self-play: 65W/63L/0D | score=7.7±30.8 inv=1.6 played=16.9 lanes=4.7 ddraw=24.7 pts=8
+Step: 6881280  SPS: 1828  ε=0.050  ret=0.069  score=20.9  buf=100%  updates=53682
+  vs Random: 122W/5L/1D | score=21.8±27.3 inv=1.5 played=19.0 lanes=4.8 ddraw=28.4 pts=22
+  Self-play: 60W/68L/0D | score=2.5±29.7 inv=1.6 played=16.4 lanes=4.8 ddraw=25.2 pts=2
+Step: 6963200  SPS: 1827  ε=0.050  ret=0.096  score=22.9  buf=100%  updates=54322
+  vs Random: 126W/2L/0D | score=28.0±27.9 inv=1.9 played=19.2 lanes=4.7 ddraw=28.1 pts=28
+  Self-play: 54W/74L/0D | score=5.3±30.8 inv=1.9 played=16.4 lanes=4.6 ddraw=24.9 pts=5
+Step: 7045120  SPS: 1826  ε=0.050  ret=0.084  score=25.4  buf=100%  updates=54962
+  vs Random: 126W/1L/1D | score=30.0±28.5 inv=1.8 played=19.2 lanes=4.8 ddraw=27.9 pts=30
+  Self-play: 64W/64L/0D | score=6.6±31.8 inv=1.7 played=16.8 lanes=4.7 ddraw=25.5 pts=7
+Step: 7127040  SPS: 1824  ε=0.050  ret=0.111  score=20.8  buf=100%  updates=55602
+  vs Random: 128W/0L/0D | score=23.1±27.6 inv=1.8 played=18.8 lanes=4.8 ddraw=27.4 pts=23
+  Self-play: 74W/51L/3D | score=13.4±27.8 inv=1.7 played=17.3 lanes=4.7 ddraw=24.7 pts=13
+Step: 7208960  SPS: 1823  ε=0.050  ret=0.124  score=22.6  buf=100%  updates=56242
+  vs Random: 126W/2L/0D | score=26.4±27.4 inv=1.7 played=19.2 lanes=4.8 ddraw=28.1 pts=26
+  Self-play: 68W/58L/2D | score=8.4±31.5 inv=1.6 played=16.8 lanes=4.7 ddraw=25.2 pts=8
+Step: 7290880  SPS: 1822  ε=0.050  ret=0.079  score=21.8  buf=100%  updates=56882
+  vs Random: 125W/3L/0D | score=27.5±27.0 inv=1.8 played=19.1 lanes=4.7 ddraw=27.8 pts=27
+  Self-play: 59W/69L/0D | score=3.8±26.6 inv=1.8 played=17.1 lanes=4.8 ddraw=25.0 pts=4
+Step: 7372800  SPS: 1821  ε=0.050  ret=0.091  score=21.9  buf=100%  updates=57522
+  vs Random: 123W/5L/0D | score=21.4±25.3 inv=1.8 played=18.7 lanes=4.7 ddraw=28.1 pts=21
+  Self-play: 62W/66L/0D | score=7.3±28.9 inv=1.8 played=16.8 lanes=4.7 ddraw=25.2 pts=7
+Step: 7454720  SPS: 1821  ε=0.050  ret=0.061  score=27.0  buf=100%  updates=58162
+  vs Random: 125W/3L/0D | score=30.3±27.7 inv=1.6 played=19.4 lanes=4.8 ddraw=27.8 pts=30
+  Self-play: 67W/61L/0D | score=11.1±30.8 inv=1.8 played=16.9 lanes=4.6 ddraw=24.2 pts=11
+Step: 7536640  SPS: 1820  ε=0.050  ret=0.091  score=15.7  buf=100%  updates=58802
+  vs Random: 126W/2L/0D | score=26.9±25.5 inv=1.7 played=18.9 lanes=4.7 ddraw=27.7 pts=27
+  Self-play: 72W/55L/1D | score=11.0±28.1 inv=1.6 played=17.0 lanes=4.7 ddraw=24.4 pts=11
+Step: 7618560  SPS: 1819  ε=0.050  ret=0.088  score=22.9  buf=100%  updates=59442
+  vs Random: 126W/2L/0D | score=26.2±24.9 inv=1.6 played=19.3 lanes=4.8 ddraw=27.6 pts=26
+  Self-play: 65W/61L/2D | score=11.3±27.5 inv=1.6 played=17.0 lanes=4.7 ddraw=24.5 pts=11
+Step: 7700480  SPS: 1818  ε=0.050  ret=0.118  score=24.1  buf=100%  updates=60082
+  vs Random: 125W/3L/0D | score=26.5±27.4 inv=2.0 played=19.2 lanes=4.7 ddraw=28.4 pts=27
+  Self-play: 64W/63L/1D | score=12.5±33.4 inv=2.1 played=17.2 lanes=4.7 ddraw=24.8 pts=12
+Step: 7782400  SPS: 1817  ε=0.050  ret=0.102  score=21.2  buf=100%  updates=60722
+  vs Random: 127W/1L/0D | score=23.6±27.0 inv=1.8 played=19.1 lanes=4.8 ddraw=28.4 pts=24
+  Self-play: 63W/64L/1D | score=10.6±30.8 inv=1.8 played=17.0 lanes=4.7 ddraw=25.1 pts=11
+Step: 7864320  SPS: 1816  ε=0.050  ret=0.080  score=21.3  buf=100%  updates=61362
+  vs Random: 124W/4L/0D | score=27.5±31.5 inv=2.2 played=19.3 lanes=4.7 ddraw=27.8 pts=28
+  Self-play: 61W/65L/2D | score=7.5±32.3 inv=2.2 played=17.4 lanes=4.8 ddraw=25.2 pts=7
+Step: 7946240  SPS: 1816  ε=0.050  ret=0.119  score=28.2  buf=100%  updates=62002
+  vs Random: 124W/4L/0D | score=29.9±30.9 inv=1.8 played=19.8 lanes=4.8 ddraw=27.2 pts=30
+  Self-play: 62W/64L/2D | score=12.5±29.7 inv=1.9 played=17.2 lanes=4.7 ddraw=24.7 pts=12
+Step: 8028160  SPS: 1815  ε=0.050  ret=0.082  score=26.2  buf=100%  updates=62642
+  vs Random: 122W/6L/0D | score=31.0±31.0 inv=1.8 played=20.1 lanes=4.9 ddraw=27.4 pts=31
+  Self-play: 58W/69L/1D | score=7.3±31.9 inv=1.9 played=17.6 lanes=4.8 ddraw=25.5 pts=7
+Step: 8110080  SPS: 1815  ε=0.050  ret=0.097  score=24.0  buf=100%  updates=63282
+  vs Random: 124W/4L/0D | score=29.7±32.0 inv=2.0 played=19.7 lanes=4.8 ddraw=27.6 pts=30
+  Self-play: 59W/67L/2D | score=8.5±28.6 inv=2.2 played=17.4 lanes=4.8 ddraw=24.9 pts=8
+Step: 8192000  SPS: 1814  ε=0.050  ret=0.085  score=29.5  buf=100%  updates=63922
+  vs Random: 125W/3L/0D | score=26.5±27.9 inv=2.2 played=19.9 lanes=4.8 ddraw=28.2 pts=26
+  Self-play: 59W/69L/0D | score=8.2±31.8 inv=2.1 played=17.6 lanes=4.8 ddraw=25.1 pts=8
+Step: 8273920  SPS: 1813  ε=0.050  ret=0.053  score=23.9  buf=100%  updates=64562
+  vs Random: 125W/3L/0D | score=30.6±30.2 inv=2.3 played=20.2 lanes=4.8 ddraw=28.0 pts=31
+  Self-play: 63W/65L/0D | score=11.9±35.3 inv=2.3 played=17.7 lanes=4.7 ddraw=24.5 pts=12
+Step: 8355840  SPS: 1812  ε=0.050  ret=0.088  score=27.5  buf=100%  updates=65202
+  vs Random: 124W/4L/0D | score=32.8±31.1 inv=2.4 played=20.1 lanes=4.8 ddraw=27.4 pts=33
+  Self-play: 56W/72L/0D | score=8.4±29.5 inv=2.3 played=17.2 lanes=4.7 ddraw=24.9 pts=8
+Step: 8437760  SPS: 1812  ε=0.050  ret=0.099  score=27.4  buf=100%  updates=65842
+  vs Random: 124W/4L/0D | score=29.0±28.9 inv=2.1 played=19.8 lanes=4.8 ddraw=27.5 pts=29
+  Self-play: 61W/65L/2D | score=9.9±35.4 inv=2.2 played=17.4 lanes=4.7 ddraw=25.1 pts=10
+Step: 8519680  SPS: 1811  ε=0.050  ret=0.126  score=31.3  buf=100%  updates=66482
+  vs Random: 125W/2L/1D | score=30.4±27.4 inv=2.2 played=19.9 lanes=4.8 ddraw=28.7 pts=30
+  Self-play: 58W/68L/2D | score=10.0±30.5 inv=2.2 played=17.5 lanes=4.7 ddraw=25.2 pts=10
+Step: 8601600  SPS: 1810  ε=0.050  ret=0.137  score=24.6  buf=100%  updates=67122
+  vs Random: 122W/6L/0D | score=28.4±32.3 inv=2.4 played=19.9 lanes=4.8 ddraw=27.7 pts=28
+  Self-play: 61W/67L/0D | score=8.8±26.0 inv=2.2 played=17.1 lanes=4.8 ddraw=24.9 pts=9
+Step: 8683520  SPS: 1810  ε=0.050  ret=0.091  score=27.1  buf=100%  updates=67762
+  vs Random: 126W/2L/0D | score=33.4±28.8 inv=2.1 played=19.9 lanes=4.8 ddraw=27.7 pts=33
+  Self-play: 63W/64L/1D | score=9.6±31.2 inv=2.1 played=17.7 lanes=4.8 ddraw=25.7 pts=10
+Step: 8765440  SPS: 1810  ε=0.050  ret=0.124  score=28.6  buf=100%  updates=68402
+  vs Random: 123W/5L/0D | score=32.2±30.2 inv=2.3 played=20.5 lanes=4.9 ddraw=28.4 pts=32
+  Self-play: 77W/51L/0D | score=20.6±33.2 inv=2.5 played=18.9 lanes=4.8 ddraw=24.3 pts=21
+Step: 8847360  SPS: 1810  ε=0.050  ret=0.139  score=26.9  buf=100%  updates=69042
+  vs Random: 125W/3L/0D | score=33.8±28.4 inv=2.2 played=20.6 lanes=4.9 ddraw=28.1 pts=34
+  Self-play: 49W/77L/2D | score=8.5±37.1 inv=2.2 played=17.9 lanes=4.9 ddraw=24.8 pts=8
+Step: 8929280  SPS: 1809  ε=0.050  ret=0.111  score=26.0  buf=100%  updates=69682
+  vs Random: 121W/7L/0D | score=28.4±30.7 inv=2.2 played=20.1 lanes=4.9 ddraw=28.7 pts=28
+  Self-play: 50W/78L/0D | score=5.8±32.9 inv=2.4 played=17.5 lanes=4.8 ddraw=24.9 pts=6
+Step: 9011200  SPS: 1808  ε=0.050  ret=0.119  score=26.0  buf=100%  updates=70322
+  vs Random: 125W/3L/0D | score=28.0±32.5 inv=2.6 played=20.0 lanes=4.8 ddraw=28.5 pts=28
+  Self-play: 58W/69L/1D | score=13.7±35.1 inv=2.4 played=18.1 lanes=4.7 ddraw=24.7 pts=14
+Step: 9093120  SPS: 1807  ε=0.050  ret=0.149  score=27.0  buf=100%  updates=70962
+  vs Random: 124W/4L/0D | score=34.8±29.7 inv=2.5 played=20.5 lanes=4.9 ddraw=27.8 pts=35
+  Self-play: 65W/61L/2D | score=12.1±30.9 inv=2.5 played=18.0 lanes=4.8 ddraw=25.1 pts=12
+Step: 9175040  SPS: 1805  ε=0.050  ret=0.130  score=27.7  buf=100%  updates=71602
+  vs Random: 127W/1L/0D | score=31.5±29.0 inv=2.5 played=20.1 lanes=4.8 ddraw=28.2 pts=32
+  Self-play: 62W/64L/2D | score=11.8±33.0 inv=2.5 played=17.9 lanes=4.8 ddraw=25.0 pts=12
+Step: 9256960  SPS: 1805  ε=0.050  ret=0.164  score=27.2  buf=100%  updates=72242
+  vs Random: 122W/5L/1D | score=26.4±35.3 inv=2.5 played=20.0 lanes=4.8 ddraw=28.3 pts=26
+  Self-play: 57W/71L/0D | score=10.3±29.8 inv=2.6 played=18.2 lanes=4.8 ddraw=24.7 pts=10
+Step: 9338880  SPS: 1804  ε=0.050  ret=0.120  score=30.3  buf=100%  updates=72882
+  vs Random: 124W/4L/0D | score=35.1±29.2 inv=2.5 played=21.0 lanes=4.9 ddraw=28.2 pts=35
+  Self-play: 53W/47L/0D | score=16.9±34.5 inv=2.9 played=19.1 lanes=4.8 ddraw=24.6 pts=17
+Step: 9420800  SPS: 1804  ε=0.050  ret=0.107  score=31.8  buf=100%  updates=73522
+  vs Random: 121W/5L/2D | score=39.7±29.4 inv=2.6 played=21.1 lanes=4.9 ddraw=28.4 pts=40
+  Self-play: 54W/46L/0D | score=14.3±32.8 inv=2.7 played=18.5 lanes=4.8 ddraw=24.8 pts=14
+Step: 9502720  SPS: 1803  ε=0.050  ret=0.120  score=23.4  buf=100%  updates=74162
+  vs Random: 123W/5L/0D | score=33.6±35.1 inv=2.7 played=20.8 lanes=4.9 ddraw=28.8 pts=34
+  Self-play: 46W/53L/1D | score=10.2±32.6 inv=2.8 played=18.3 lanes=4.8 ddraw=24.5 pts=10
+Step: 9584640  SPS: 1802  ε=0.050  ret=0.121  score=28.0  buf=100%  updates=74802
+  vs Random: 124W/4L/0D | score=33.9±31.6 inv=2.7 played=20.7 lanes=4.8 ddraw=28.7 pts=34
+  Self-play: 46W/53L/1D | score=17.8±32.3 inv=2.5 played=18.2 lanes=4.7 ddraw=24.6 pts=18
+Step: 9666560  SPS: 1802  ε=0.050  ret=0.128  score=31.4  buf=100%  updates=75442
+  vs Random: 120W/8L/0D | score=27.2±33.1 inv=2.7 played=20.4 lanes=4.8 ddraw=28.2 pts=27
+  Self-play: 60W/66L/2D | score=17.1±34.0 inv=2.7 played=18.7 lanes=4.7 ddraw=24.5 pts=17
+Step: 9748480  SPS: 1801  ε=0.050  ret=0.124  score=29.4  buf=100%  updates=76082
+  vs Random: 127W/1L/0D | score=31.5±29.6 inv=2.6 played=20.3 lanes=4.8 ddraw=28.3 pts=31
+  Self-play: 68W/58L/2D | score=16.5±35.0 inv=2.7 played=18.3 lanes=4.7 ddraw=24.5 pts=16
+Step: 9830400  SPS: 1800  ε=0.050  ret=0.129  score=27.2  buf=100%  updates=76722
+  vs Random: 127W/1L/0D | score=37.4±29.4 inv=2.6 played=20.9 lanes=4.9 ddraw=27.9 pts=37
+  Self-play: 70W/58L/0D | score=19.0±27.3 inv=2.6 played=18.4 lanes=4.7 ddraw=24.5 pts=19
+Step: 9912320  SPS: 1800  ε=0.050  ret=0.107  score=29.8  buf=100%  updates=77362
+  vs Random: 123W/5L/0D | score=28.2±31.0 inv=2.6 played=20.1 lanes=4.8 ddraw=28.4 pts=28
+  Self-play: 41W/59L/0D | score=11.6±32.6 inv=2.8 played=18.2 lanes=4.7 ddraw=24.5 pts=12
+Step: 9994240  SPS: 1799  ε=0.050  ret=0.155  score=33.2  buf=100%  updates=78002
+  vs Random: 119W/9L/0D | score=31.6±34.5 inv=2.7 played=20.3 lanes=4.8 ddraw=27.7 pts=32
+  Self-play: 51W/47L/2D | score=16.7±35.6 inv=2.6 played=18.5 lanes=4.8 ddraw=24.6 pts=17
+Step: 10076160  SPS: 1798  ε=0.050  ret=0.138  score=30.8  buf=100%  updates=78642
+  vs Random: 126W/2L/0D | score=31.7±30.6 inv=2.6 played=20.5 lanes=4.8 ddraw=27.6 pts=32
+  Self-play: 51W/50L/0D | score=15.9±31.2 inv=2.4 played=18.4 lanes=4.7 ddraw=24.1 pts=16
+Step: 10158080  SPS: 1798  ε=0.050  ret=0.169  score=24.1  buf=100%  updates=79282
+  vs Random: 121W/7L/0D | score=31.2±29.3 inv=2.8 played=20.4 lanes=4.7 ddraw=28.3 pts=31
+  Self-play: 44W/55L/1D | score=16.1±30.3 inv=2.9 played=19.1 lanes=4.9 ddraw=24.7 pts=16
+Step: 10240000  SPS: 1797  ε=0.050  ret=0.108  score=29.9  buf=100%  updates=79922
+  vs Random: 124W/4L/0D | score=28.6±33.0 inv=2.9 played=20.6 lanes=4.9 ddraw=27.5 pts=29
+  Self-play: 43W/55L/2D | score=13.6±33.9 inv=2.7 played=18.5 lanes=4.8 ddraw=24.0 pts=14
+Step: 10321920  SPS: 1797  ε=0.050  ret=0.128  score=23.0  buf=100%  updates=80562
+  vs Random: 122W/6L/0D | score=30.9±35.7 inv=2.8 played=20.5 lanes=4.8 ddraw=28.3 pts=31
+  Self-play: 51W/48L/1D | score=21.2±35.2 inv=2.7 played=18.5 lanes=4.6 ddraw=24.4 pts=21
+Step: 10403840  SPS: 1796  ε=0.050  ret=0.108  score=20.2  buf=100%  updates=81202
+  vs Random: 121W/7L/0D | score=24.5±34.4 inv=2.8 played=19.8 lanes=4.7 ddraw=28.4 pts=25
+  Self-play: 49W/51L/0D | score=21.3±35.5 inv=2.7 played=19.0 lanes=4.8 ddraw=24.4 pts=21
+Step: 10485760  SPS: 1795  ε=0.050  ret=0.098  score=32.8  buf=100%  updates=81842
+  vs Random: 121W/7L/0D | score=28.6±33.8 inv=3.0 played=20.3 lanes=4.8 ddraw=28.2 pts=29
+  Self-play: 40W/60L/0D | score=13.9±35.1 inv=2.9 played=18.4 lanes=4.7 ddraw=24.5 pts=14
+Step: 10567680  SPS: 1795  ε=0.050  ret=0.177  score=22.7  buf=100%  updates=82482
+  vs Random: 123W/5L/0D | score=31.8±36.1 inv=3.0 played=19.9 lanes=4.7 ddraw=28.3 pts=32
+  Self-play: 56W/44L/0D | score=25.0±35.4 inv=3.0 played=19.4 lanes=4.7 ddraw=24.3 pts=25
+Step: 10649600  SPS: 1794  ε=0.050  ret=0.102  score=22.9  buf=100%  updates=83122
+  vs Random: 123W/5L/0D | score=30.3±33.7 inv=2.9 played=20.5 lanes=4.7 ddraw=28.9 pts=30
+  Self-play: 47W/54L/0D | score=17.7±33.9 inv=3.0 played=18.6 lanes=4.7 ddraw=24.6 pts=18
+Step: 10731520  SPS: 1794  ε=0.050  ret=0.113  score=24.7  buf=100%  updates=83762
+  vs Random: 123W/5L/0D | score=31.1±38.9 inv=2.9 played=20.2 lanes=4.8 ddraw=28.4 pts=31
+  Self-play: 49W/49L/2D | score=13.4±35.8 inv=2.9 played=18.3 lanes=4.7 ddraw=24.1 pts=13
+Step: 10813440  SPS: 1793  ε=0.050  ret=0.160  score=29.9  buf=100%  updates=84402
+  vs Random: 122W/6L/0D | score=33.5±39.4 inv=3.0 played=20.9 lanes=4.8 ddraw=28.8 pts=34
+  Self-play: 44W/56L/0D | score=12.3±33.3 inv=3.1 played=19.0 lanes=4.8 ddraw=23.4 pts=12
+Step: 10895360  SPS: 1793  ε=0.050  ret=0.119  score=28.3  buf=100%  updates=85042
+  vs Random: 122W/6L/0D | score=29.9±34.8 inv=2.9 played=20.3 lanes=4.8 ddraw=28.1 pts=30
+  Self-play: 52W/48L/1D | score=22.0±38.4 inv=2.8 played=19.1 lanes=4.8 ddraw=24.5 pts=22
+Step: 10977280  SPS: 1793  ε=0.050  ret=0.128  score=31.6  buf=100%  updates=85682
+  vs Random: 126W/1L/1D | score=31.5±34.5 inv=3.0 played=20.7 lanes=4.8 ddraw=27.9 pts=32
+  Self-play: 53W/47L/0D | score=19.7±33.0 inv=2.9 played=18.9 lanes=4.8 ddraw=23.8 pts=20
+Step: 11059200  SPS: 1792  ε=0.050  ret=0.147  score=25.4  buf=100%  updates=86322
+  vs Random: 123W/5L/0D | score=35.4±33.0 inv=3.2 played=20.8 lanes=4.7 ddraw=28.4 pts=35
+  Self-play: 47W/52L/2D | score=20.4±35.0 inv=3.1 played=19.3 lanes=4.7 ddraw=23.5 pts=20
+Step: 11141120  SPS: 1791  ε=0.050  ret=0.143  score=28.3  buf=100%  updates=86962
+  vs Random: 117W/11L/0D | score=31.6±35.8 inv=3.0 played=20.3 lanes=4.7 ddraw=28.7 pts=32
+  Self-play: 50W/50L/0D | score=26.6±37.5 inv=3.2 played=19.4 lanes=4.6 ddraw=23.4 pts=27
+Step: 11223040  SPS: 1791  ε=0.050  ret=0.120  score=24.4  buf=100%  updates=87602
+  vs Random: 124W/4L/0D | score=34.3±34.8 inv=3.2 played=20.6 lanes=4.7 ddraw=27.8 pts=34
+  Self-play: 53W/46L/1D | score=23.9±35.2 inv=3.4 played=19.2 lanes=4.6 ddraw=23.6 pts=24
+Step: 11304960  SPS: 1791  ε=0.050  ret=0.138  score=34.4  buf=100%  updates=88242
+  vs Random: 123W/4L/1D | score=36.3±36.3 inv=3.1 played=20.2 lanes=4.6 ddraw=28.4 pts=36
+  Self-play: 49W/54L/0D | score=17.3±39.8 inv=3.2 played=18.9 lanes=4.7 ddraw=24.3 pts=17
+Step: 11386880  SPS: 1791  ε=0.050  ret=0.114  score=24.9  buf=100%  updates=88882
+  vs Random: 124W/4L/0D | score=33.6±35.9 inv=3.1 played=20.1 lanes=4.6 ddraw=27.8 pts=34
+  Self-play: 44W/56L/1D | score=14.4±33.7 inv=3.1 played=18.5 lanes=4.6 ddraw=23.8 pts=14
+Step: 11468800  SPS: 1790  ε=0.050  ret=0.134  score=23.4  buf=100%  updates=89522
+  vs Random: 123W/4L/1D | score=28.4±37.7 inv=3.1 played=20.5 lanes=4.7 ddraw=28.6 pts=28
+  Self-play: 47W/52L/1D | score=18.2±42.1 inv=3.0 played=19.0 lanes=4.7 ddraw=25.0 pts=18
+Step: 11550720  SPS: 1790  ε=0.050  ret=0.145  score=30.9  buf=100%  updates=90162
+  vs Random: 122W/6L/0D | score=29.0±33.3 inv=3.2 played=20.2 lanes=4.7 ddraw=28.3 pts=29
+  Self-play: 55W/46L/0D | score=27.8±39.4 inv=3.4 played=19.5 lanes=4.6 ddraw=23.8 pts=28
+Step: 11632640  SPS: 1789  ε=0.050  ret=0.180  score=28.8  buf=100%  updates=90802
+  vs Random: 124W/4L/0D | score=29.6±32.2 inv=3.4 played=20.4 lanes=4.7 ddraw=29.0 pts=30
+  Self-play: 52W/48L/0D | score=25.2±36.2 inv=3.1 played=18.8 lanes=4.6 ddraw=23.7 pts=25
+Step: 11714560  SPS: 1789  ε=0.050  ret=0.125  score=27.1  buf=100%  updates=91442
+  vs Random: 115W/12L/1D | score=20.6±37.7 inv=3.2 played=19.4 lanes=4.6 ddraw=28.3 pts=21
+  Self-play: 42W/57L/1D | score=14.8±39.1 inv=3.2 played=18.6 lanes=4.7 ddraw=24.4 pts=15
+Step: 11796480  SPS: 1788  ε=0.050  ret=0.128  score=15.3  buf=100%  updates=92082
+  vs Random: 122W/6L/0D | score=31.2±35.6 inv=3.1 played=20.6 lanes=4.8 ddraw=28.8 pts=31
+  Self-play: 47W/53L/0D | score=22.5±38.9 inv=3.0 played=19.4 lanes=4.8 ddraw=24.0 pts=22
+Step: 11878400  SPS: 1787  ε=0.050  ret=0.164  score=21.7  buf=100%  updates=92722
+  vs Random: 119W/8L/1D | score=34.2±37.9 inv=3.2 played=20.4 lanes=4.7 ddraw=27.9 pts=34
+  Self-play: 41W/59L/0D | score=16.8±37.6 inv=3.2 played=19.0 lanes=4.8 ddraw=23.8 pts=17
+Step: 11960320  SPS: 1787  ε=0.050  ret=0.177  score=28.5  buf=100%  updates=93362
+  vs Random: 117W/11L/0D | score=26.6±39.6 inv=3.2 played=20.0 lanes=4.7 ddraw=28.1 pts=27
+  Self-play: 53W/47L/1D | score=25.3±37.6 inv=3.2 played=19.4 lanes=4.6 ddraw=23.8 pts=25
+Step: 12042240  SPS: 1786  ε=0.050  ret=0.160  score=25.7  buf=100%  updates=94002
+  vs Random: 118W/9L/1D | score=31.6±37.9 inv=3.4 played=20.7 lanes=4.7 ddraw=28.1 pts=32
+  Self-play: 44W/55L/1D | score=20.4±35.0 inv=3.2 played=19.2 lanes=4.7 ddraw=23.8 pts=20
+Step: 12124160  SPS: 1786  ε=0.050  ret=0.159  score=26.8  buf=100%  updates=94642
+  vs Random: 122W/6L/0D | score=32.7±36.6 inv=3.3 played=20.6 lanes=4.7 ddraw=27.8 pts=33
+  Self-play: 51W/49L/0D | score=23.9±34.1 inv=3.1 played=19.1 lanes=4.7 ddraw=24.1 pts=24
+Step: 12206080  SPS: 1786  ε=0.050  ret=0.114  score=24.6  buf=100%  updates=95282
+  vs Random: 124W/2L/2D | score=35.9±33.4 inv=3.4 played=21.0 lanes=4.7 ddraw=28.8 pts=36
+  Self-play: 52W/48L/0D | score=25.0±37.3 inv=3.1 played=19.3 lanes=4.7 ddraw=24.1 pts=25
+Step: 12288000  SPS: 1785  ε=0.050  ret=0.103  score=25.4  buf=100%  updates=95922
+  vs Random: 122W/6L/0D | score=24.2±38.5 inv=3.3 played=20.5 lanes=4.8 ddraw=28.7 pts=24
+  Self-play: 43W/58L/0D | score=20.8±40.5 inv=3.3 played=19.3 lanes=4.7 ddraw=23.8 pts=21
+Step: 12369920  SPS: 1785  ε=0.050  ret=0.111  score=25.7  buf=100%  updates=96562
+  vs Random: 123W/5L/0D | score=33.9±35.4 inv=3.5 played=21.1 lanes=4.8 ddraw=28.7 pts=34
+  Self-play: 42W/57L/1D | score=16.3±32.2 inv=3.3 played=19.4 lanes=4.8 ddraw=22.7 pts=16
+Step: 12451840  SPS: 1784  ε=0.050  ret=0.123  score=28.3  buf=100%  updates=97202
+  vs Random: 123W/5L/0D | score=32.4±37.3 inv=3.2 played=20.8 lanes=4.7 ddraw=29.0 pts=32
+  Self-play: 39W/60L/1D | score=17.2±34.8 inv=3.4 played=19.1 lanes=4.7 ddraw=24.1 pts=17
+Step: 12533760  SPS: 1784  ε=0.050  ret=0.156  score=30.5  buf=100%  updates=97842
+  vs Random: 119W/9L/0D | score=26.9±43.2 inv=3.4 played=20.2 lanes=4.6 ddraw=28.2 pts=27
+  Self-play: 50W/50L/0D | score=28.9±37.7 inv=3.5 played=19.8 lanes=4.6 ddraw=22.3 pts=29
+Step: 12615680  SPS: 1784  ε=0.050  ret=0.171  score=31.5  buf=100%  updates=98482
+  vs Random: 123W/5L/0D | score=30.9±37.4 inv=3.4 played=20.7 lanes=4.7 ddraw=28.5 pts=31
+  Self-play: 53W/47L/0D | score=27.9±38.6 inv=3.4 played=19.8 lanes=4.7 ddraw=22.6 pts=28
+Step: 12697600  SPS: 1783  ε=0.050  ret=0.173  score=16.6  buf=100%  updates=99122
+  vs Random: 119W/9L/0D | score=26.0±34.9 inv=3.2 played=20.4 lanes=4.7 ddraw=28.7 pts=26
+  Self-play: 45W/56L/0D | score=20.7±32.2 inv=3.2 played=19.1 lanes=4.6 ddraw=24.0 pts=21
+Step: 12779520  SPS: 1783  ε=0.050  ret=0.128  score=25.4  buf=100%  updates=99762
+  vs Random: 119W/9L/0D | score=28.7±38.7 inv=3.4 played=20.7 lanes=4.7 ddraw=28.1 pts=29
+  Self-play: 53W/47L/1D | score=24.2±40.0 inv=3.2 played=19.6 lanes=4.7 ddraw=23.4 pts=24
+Step: 12861440  SPS: 1783  ε=0.050  ret=0.182  score=23.9  buf=100%  updates=100402
+  vs Random: 118W/10L/0D | score=35.0±41.6 inv=3.5 played=21.0 lanes=4.7 ddraw=28.6 pts=35
+  Self-play: 47W/54L/1D | score=20.8±28.8 inv=3.4 played=19.3 lanes=4.7 ddraw=23.6 pts=21
+Step: 12943360  SPS: 1782  ε=0.050  ret=0.133  score=26.2  buf=100%  updates=101042
+  vs Random: 117W/10L/1D | score=29.9±37.4 inv=3.8 played=20.4 lanes=4.6 ddraw=28.8 pts=30
+  Self-play: 43W/56L/1D | score=22.7±37.1 inv=3.5 played=19.4 lanes=4.7 ddraw=23.4 pts=23
+Step: 13025280  SPS: 1782  ε=0.050  ret=0.163  score=22.8  buf=100%  updates=101682
+  vs Random: 124W/4L/0D | score=28.7±35.3 inv=3.4 played=19.8 lanes=4.6 ddraw=27.8 pts=29
+  Self-play: 44W/56L/1D | score=19.8±36.8 inv=3.4 played=19.4 lanes=4.8 ddraw=23.7 pts=20
+Step: 13107200  SPS: 1782  ε=0.050  ret=0.110  score=18.7  buf=100%  updates=102322
+  vs Random: 115W/13L/0D | score=24.2±42.4 inv=3.7 played=20.2 lanes=4.6 ddraw=28.7 pts=24
+  Self-play: 53W/49L/0D | score=22.7±40.2 inv=3.4 played=19.8 lanes=4.8 ddraw=23.0 pts=23
+Step: 13189120  SPS: 1782  ε=0.050  ret=0.158  score=30.8  buf=100%  updates=102962
+  vs Random: 115W/13L/0D | score=28.8±41.8 inv=3.6 played=21.0 lanes=4.7 ddraw=29.2 pts=29
+  Self-play: 53W/46L/2D | score=23.0±41.7 inv=3.3 played=19.7 lanes=4.8 ddraw=22.9 pts=23
+Step: 13271040  SPS: 1781  ε=0.050  ret=0.188  score=26.6  buf=100%  updates=103602
+  vs Random: 117W/11L/0D | score=28.1±40.2 inv=3.6 played=20.3 lanes=4.7 ddraw=29.2 pts=28
+  Self-play: 58W/41L/1D | score=26.3±37.1 inv=3.6 played=20.1 lanes=4.8 ddraw=22.0 pts=26
+Step: 13352960  SPS: 1781  ε=0.050  ret=0.164  score=26.6  buf=100%  updates=104242
+  vs Random: 119W/9L/0D | score=25.1±42.4 inv=3.7 played=20.4 lanes=4.7 ddraw=28.3 pts=25
+  Self-play: 53W/46L/1D | score=26.2±42.9 inv=3.5 played=20.0 lanes=4.8 ddraw=23.5 pts=26
+Step: 13434880  SPS: 1781  ε=0.050  ret=0.159  score=26.2  buf=100%  updates=104882
+  vs Random: 112W/16L/0D | score=22.9±39.5 inv=3.8 played=19.9 lanes=4.7 ddraw=27.8 pts=23
+  Self-play: 39W/62L/0D | score=14.9±39.5 inv=3.5 played=19.2 lanes=4.8 ddraw=24.2 pts=15
+Step: 13516800  SPS: 1781  ε=0.050  ret=0.119  score=28.9  buf=100%  updates=105522
+  vs Random: 117W/11L/0D | score=30.2±42.4 inv=3.9 played=20.3 lanes=4.6 ddraw=28.0 pts=30
+  Self-play: 34W/65L/1D | score=14.0±36.7 inv=3.5 played=18.8 lanes=4.6 ddraw=23.7 pts=14
+Step: 13598720  SPS: 1781  ε=0.050  ret=0.150  score=22.0  buf=100%  updates=106162
+  vs Random: 119W/9L/0D | score=34.2±43.9 inv=3.8 played=20.8 lanes=4.6 ddraw=27.5 pts=34
+  Self-play: 51W/49L/0D | score=25.8±39.3 inv=3.7 played=19.9 lanes=4.7 ddraw=22.6 pts=26
+Step: 13680640  SPS: 1781  ε=0.050  ret=0.121  score=16.1  buf=100%  updates=106802
+  vs Random: 116W/11L/1D | score=27.3±40.4 inv=3.9 played=20.3 lanes=4.6 ddraw=28.4 pts=27
+  Self-play: 45W/54L/1D | score=20.2±34.5 inv=3.5 played=19.7 lanes=4.8 ddraw=23.0 pts=20
+Step: 13762560  SPS: 1781  ε=0.050  ret=0.177  score=15.8  buf=100%  updates=107442
+  vs Random: 114W/14L/0D | score=32.1±43.9 inv=3.9 played=20.8 lanes=4.6 ddraw=28.1 pts=32
+  Self-play: 51W/49L/0D | score=29.3±40.6 inv=3.6 played=20.1 lanes=4.7 ddraw=21.9 pts=29
+Step: 13844480  SPS: 1781  ε=0.050  ret=0.151  score=24.1  buf=100%  updates=108082
+  vs Random: 117W/11L/0D | score=28.3±41.2 inv=3.7 played=20.6 lanes=4.7 ddraw=28.3 pts=28
+  Self-play: 44W/55L/1D | score=20.3±37.4 inv=3.6 played=19.8 lanes=4.8 ddraw=22.5 pts=20
+Step: 13926400  SPS: 1781  ε=0.050  ret=0.178  score=21.7  buf=100%  updates=108722
+  vs Random: 120W/7L/1D | score=33.1±42.3 inv=3.7 played=21.0 lanes=4.7 ddraw=28.4 pts=33
+  Self-play: 42W/57L/1D | score=27.8±42.2 inv=3.8 played=20.2 lanes=4.8 ddraw=21.5 pts=28
+Step: 14008320  SPS: 1781  ε=0.050  ret=0.191  score=19.6  buf=100%  updates=109362
+  vs Random: 117W/11L/0D | score=30.0±41.1 inv=3.7 played=21.0 lanes=4.7 ddraw=28.8 pts=30
+  Self-play: 43W/54L/3D | score=21.6±41.9 inv=3.8 played=20.2 lanes=4.8 ddraw=20.8 pts=22
+Step: 14090240  SPS: 1781  ε=0.050  ret=0.188  score=23.5  buf=100%  updates=110002
+  vs Random: 120W/8L/0D | score=30.6±41.3 inv=3.8 played=20.5 lanes=4.6 ddraw=27.7 pts=31
+  Self-play: 53W/47L/1D | score=24.3±39.5 inv=3.8 played=20.3 lanes=4.9 ddraw=21.2 pts=24
+Step: 14172160  SPS: 1781  ε=0.050  ret=0.146  score=30.4  buf=100%  updates=110642
+  vs Random: 121W/7L/0D | score=33.2±45.3 inv=4.0 played=21.1 lanes=4.7 ddraw=28.5 pts=33
+  Self-play: 47W/52L/1D | score=21.4±39.8 inv=3.8 played=19.9 lanes=4.8 ddraw=22.3 pts=21
+Step: 14254080  SPS: 1781  ε=0.050  ret=0.177  score=21.3  buf=100%  updates=111282
+  vs Random: 121W/6L/1D | score=27.5±43.0 inv=4.1 played=20.5 lanes=4.7 ddraw=28.1 pts=28
+  Self-play: 40W/60L/0D | score=16.1±44.2 inv=3.8 played=19.5 lanes=4.7 ddraw=22.3 pts=16
+Step: 14336000  SPS: 1781  ε=0.050  ret=0.170  score=29.3  buf=100%  updates=111922
+  vs Random: 116W/12L/0D | score=33.8±45.1 inv=4.0 played=21.1 lanes=4.7 ddraw=27.8 pts=34
+  Self-play: 51W/47L/2D | score=22.0±42.6 inv=3.6 played=19.9 lanes=4.8 ddraw=23.3 pts=22
+Step: 14417920  SPS: 1781  ε=0.050  ret=0.195  score=27.8  buf=100%  updates=112562
+  vs Random: 118W/10L/0D | score=25.5±41.1 inv=3.8 played=20.4 lanes=4.6 ddraw=28.2 pts=26
+  Self-play: 48W/52L/1D | score=22.7±41.6 inv=3.7 played=20.2 lanes=4.8 ddraw=21.2 pts=23
+Step: 14499840  SPS: 1782  ε=0.050  ret=0.167  score=23.7  buf=100%  updates=113202
+  vs Random: 91W/7L/2D | score=33.7±44.1 inv=4.0 played=20.6 lanes=4.6 ddraw=28.1 pts=34
+  Self-play: 45W/54L/1D | score=26.5±44.1 inv=4.0 played=20.3 lanes=4.8 ddraw=21.5 pts=27
+Step: 14581760  SPS: 1782  ε=0.050  ret=0.129  score=31.9  buf=100%  updates=113842
+  vs Random: 113W/15L/0D | score=25.7±44.5 inv=3.9 played=20.3 lanes=4.6 ddraw=28.4 pts=26
+  Self-play: 47W/53L/1D | score=26.4±37.4 inv=3.6 played=20.1 lanes=4.8 ddraw=22.8 pts=26
+Step: 14663680  SPS: 1782  ε=0.050  ret=0.258  score=29.1  buf=100%  updates=114482
+  vs Random: 91W/9L/0D | score=29.5±42.3 inv=3.9 played=20.7 lanes=4.6 ddraw=28.2 pts=30
+  Self-play: 48W/52L/0D | score=24.4±39.4 inv=3.8 played=20.4 lanes=4.8 ddraw=19.8 pts=24
+Step: 14745600  SPS: 1782  ε=0.050  ret=0.207  score=22.5  buf=100%  updates=115122
+  vs Random: 122W/6L/0D | score=32.4±38.5 inv=4.2 played=20.7 lanes=4.5 ddraw=28.5 pts=32
+  Self-play: 40W/60L/0D | score=20.4±43.3 inv=4.1 played=20.1 lanes=4.7 ddraw=21.1 pts=20
+Step: 14827520  SPS: 1782  ε=0.050  ret=0.178  score=23.5  buf=100%  updates=115762
+  vs Random: 124W/4L/0D | score=40.8±41.4 inv=4.0 played=21.6 lanes=4.6 ddraw=28.4 pts=41
+  Self-play: 53W/46L/1D | score=36.3±35.6 inv=3.8 played=20.8 lanes=4.8 ddraw=21.1 pts=36
+Step: 14909440  SPS: 1782  ε=0.050  ret=0.184  score=29.0  buf=100%  updates=116402
+  vs Random: 97W/3L/0D | score=34.5±38.9 inv=3.9 played=21.0 lanes=4.6 ddraw=28.6 pts=34
+  Self-play: 51W/49L/0D | score=21.8±40.4 inv=4.1 played=20.5 lanes=4.8 ddraw=21.3 pts=22
+Step: 14991360  SPS: 1782  ε=0.050  ret=0.147  score=28.0  buf=100%  updates=117042
+  vs Random: 96W/4L/1D | score=39.2±41.6 inv=4.2 played=21.8 lanes=4.7 ddraw=28.4 pts=39
+  Self-play: 49W/50L/1D | score=26.3±40.3 inv=3.8 played=20.3 lanes=4.7 ddraw=21.6 pts=26
+Step: 15073280  SPS: 1782  ε=0.050  ret=0.162  score=26.2  buf=100%  updates=117682
+  vs Random: 117W/11L/0D | score=33.6±44.1 inv=4.1 played=21.4 lanes=4.7 ddraw=28.8 pts=34
+  Self-play: 54W/46L/0D | score=32.7±39.1 inv=3.8 played=20.2 lanes=4.7 ddraw=21.0 pts=33
+Step: 15155200  SPS: 1782  ε=0.050  ret=0.157  score=30.1  buf=100%  updates=118322
+  vs Random: 126W/2L/0D | score=42.4±40.0 inv=4.0 played=21.2 lanes=4.7 ddraw=28.3 pts=42
+  Self-play: 56W/44L/0D | score=31.7±38.6 inv=3.8 played=20.2 lanes=4.7 ddraw=21.3 pts=32
+Step: 15237120  SPS: 1782  ε=0.050  ret=0.172  score=30.9  buf=100%  updates=118962
+  vs Random: 93W/7L/0D | score=37.0±43.6 inv=4.3 played=21.2 lanes=4.6 ddraw=28.5 pts=37
+  Self-play: 62W/37L/1D | score=34.6±40.5 inv=3.9 played=21.1 lanes=4.8 ddraw=18.8 pts=35
+Step: 15319040  SPS: 1782  ε=0.050  ret=0.181  score=32.8  buf=100%  updates=119602
+  vs Random: 119W/9L/0D | score=34.0±46.0 inv=4.1 played=21.0 lanes=4.6 ddraw=28.6 pts=34
+  Self-play: 45W/55L/0D | score=25.9±39.4 inv=4.0 played=20.3 lanes=4.7 ddraw=21.3 pts=26
+Step: 15400960  SPS: 1782  ε=0.050  ret=0.204  score=33.0  buf=100%  updates=120242
+  vs Random: 90W/9L/1D | score=33.2±42.1 inv=4.3 played=20.8 lanes=4.5 ddraw=27.4 pts=33
+  Self-play: 47W/52L/1D | score=26.4±45.7 inv=4.2 played=20.4 lanes=4.8 ddraw=20.5 pts=26
+Step: 15482880  SPS: 1783  ε=0.050  ret=0.205  score=28.4  buf=100%  updates=120882
+  vs Random: 116W/12L/0D | score=34.0±44.6 inv=4.2 played=21.6 lanes=4.8 ddraw=28.4 pts=34
+  Self-play: 56W/44L/0D | score=28.0±37.1 inv=4.0 played=20.7 lanes=4.9 ddraw=20.2 pts=28
+Step: 15564800  SPS: 1782  ε=0.050  ret=0.095  score=24.7  buf=100%  updates=121522
+  vs Random: 119W/9L/0D | score=37.6±45.2 inv=4.3 played=21.3 lanes=4.6 ddraw=28.2 pts=38
+  Self-play: 45W/55L/0D | score=23.2±38.2 inv=3.8 played=20.2 lanes=4.8 ddraw=20.4 pts=23
+Step: 15646720  SPS: 1783  ε=0.050  ret=0.107  score=27.4  buf=100%  updates=122162
+  vs Random: 116W/11L/1D | score=37.1±48.7 inv=4.4 played=21.4 lanes=4.6 ddraw=28.7 pts=37
+  Self-play: 51W/49L/0D | score=28.2±40.5 inv=3.7 played=20.4 lanes=4.7 ddraw=20.5 pts=28
+Step: 15728640  SPS: 1783  ε=0.050  ret=0.173  score=35.6  buf=100%  updates=122802
+  vs Random: 118W/10L/0D | score=37.5±41.7 inv=4.4 played=21.5 lanes=4.6 ddraw=28.6 pts=38
+  Self-play: 56W/44L/1D | score=26.3±38.6 inv=4.0 played=20.8 lanes=4.8 ddraw=19.8 pts=26
+Step: 15810560  SPS: 1783  ε=0.050  ret=0.209  score=25.0  buf=100%  updates=123442
+  vs Random: 95W/5L/0D | score=43.8±46.8 inv=4.5 played=22.1 lanes=4.7 ddraw=28.4 pts=44
+  Self-play: 47W/52L/1D | score=24.9±33.5 inv=3.8 played=20.3 lanes=4.8 ddraw=20.8 pts=25
+Step: 15892480  SPS: 1784  ε=0.050  ret=0.186  score=32.9  buf=100%  updates=124082
+  vs Random: 123W/5L/0D | score=34.6±38.8 inv=4.3 played=21.3 lanes=4.6 ddraw=27.7 pts=35
+  Self-play: 47W/53L/0D | score=28.6±37.0 inv=3.9 played=19.7 lanes=4.5 ddraw=20.5 pts=29
+Step: 15974400  SPS: 1784  ε=0.050  ret=0.158  score=33.9  buf=100%  updates=124722
+  vs Random: 89W/10L/1D | score=34.0±47.8 inv=4.6 played=21.9 lanes=4.7 ddraw=27.8 pts=34
+  Self-play: 49W/51L/0D | score=26.9±40.5 inv=4.0 played=20.3 lanes=4.8 ddraw=18.9 pts=27
+Step: 16056320  SPS: 1785  ε=0.050  ret=0.172  score=25.0  buf=100%  updates=125362
+  vs Random: 96W/5L/0D | score=37.1±39.3 inv=4.4 played=22.0 lanes=4.7 ddraw=27.8 pts=37
+  Self-play: 49W/50L/1D | score=30.9±44.9 inv=3.9 played=20.6 lanes=4.8 ddraw=20.7 pts=31
+Step: 16138240  SPS: 1785  ε=0.050  ret=0.144  score=35.9  buf=100%  updates=126002
+  vs Random: 121W/7L/0D | score=31.9±43.9 inv=4.2 played=21.1 lanes=4.6 ddraw=28.8 pts=32
+  Self-play: 53W/45L/2D | score=33.6±40.4 inv=3.9 played=20.2 lanes=4.7 ddraw=21.8 pts=34
+Step: 16220160  SPS: 1785  ε=0.050  ret=0.153  score=34.0  buf=100%  updates=126642
+  vs Random: 91W/9L/0D | score=33.5±45.3 inv=4.3 played=21.1 lanes=4.6 ddraw=28.0 pts=34
+  Self-play: 50W/51L/0D | score=25.4±42.5 inv=3.8 played=20.2 lanes=4.7 ddraw=21.0 pts=25
+Step: 16302080  SPS: 1786  ε=0.050  ret=0.171  score=21.7  buf=100%  updates=127282
+  vs Random: 95W/5L/0D | score=44.2±48.4 inv=4.3 played=21.6 lanes=4.6 ddraw=27.9 pts=44
+  Self-play: 49W/51L/0D | score=28.2±43.4 inv=4.1 played=20.6 lanes=4.8 ddraw=18.4 pts=28
+Step: 16384000  SPS: 1787  ε=0.050  ret=0.194  score=27.9  buf=100%  updates=127922
+  vs Random: 124W/4L/0D | score=40.5±45.1 inv=4.5 played=21.5 lanes=4.6 ddraw=28.2 pts=41
+  Self-play: 55W/45L/0D | score=38.4±40.6 inv=4.0 played=20.4 lanes=4.6 ddraw=21.0 pts=38
+Step: 16465920  SPS: 1787  ε=0.050  ret=0.145  score=31.1  buf=100%  updates=128562
+  vs Random: 122W/6L/0D | score=43.0±40.3 inv=4.5 played=21.5 lanes=4.5 ddraw=27.6 pts=43
+  Self-play: 58W/39L/3D | score=36.2±43.8 inv=4.2 played=21.2 lanes=4.7 ddraw=18.1 pts=36
+Step: 16547840  SPS: 1788  ε=0.050  ret=0.173  score=28.9  buf=100%  updates=129202
+  vs Random: 116W/10L/2D | score=34.9±48.3 inv=4.8 played=21.8 lanes=4.7 ddraw=28.3 pts=35
+  Self-play: 45W/55L/0D | score=24.6±42.0 inv=4.3 played=20.9 lanes=4.8 ddraw=19.5 pts=25
+Step: 16629760  SPS: 1788  ε=0.050  ret=0.200  score=29.9  buf=100%  updates=129842
+  vs Random: 92W/8L/0D | score=34.1±48.7 inv=4.5 played=21.7 lanes=4.8 ddraw=28.5 pts=34
+  Self-play: 52W/48L/1D | score=30.0±45.4 inv=4.1 played=21.2 lanes=4.8 ddraw=19.1 pts=30
+Step: 16711680  SPS: 1788  ε=0.050  ret=0.106  score=29.2  buf=100%  updates=130482
+  vs Random: 93W/7L/0D | score=40.1±45.5 inv=4.6 played=21.9 lanes=4.7 ddraw=27.3 pts=40
+  Self-play: 52W/48L/0D | score=32.0±40.4 inv=4.0 played=20.6 lanes=4.7 ddraw=19.4 pts=32
+Step: 16793600  SPS: 1788  ε=0.050  ret=0.217  score=32.0  buf=100%  updates=131122
+  vs Random: 121W/6L/1D | score=39.4±45.8 inv=4.3 played=21.6 lanes=4.6 ddraw=27.7 pts=39
+  Self-play: 51W/49L/0D | score=31.6±46.8 inv=4.3 played=21.1 lanes=4.8 ddraw=17.5 pts=32
+Step: 16875520  SPS: 1789  ε=0.050  ret=0.156  score=30.9  buf=100%  updates=131762
+  vs Random: 96W/4L/0D | score=42.2±50.8 inv=4.6 played=22.2 lanes=4.7 ddraw=28.1 pts=42
+  Self-play: 44W/54L/2D | score=32.2±44.1 inv=4.2 played=20.7 lanes=4.8 ddraw=19.5 pts=32
+Step: 16957440  SPS: 1789  ε=0.050  ret=0.210  score=32.8  buf=100%  updates=132402
+  vs Random: 95W/5L/0D | score=44.4±46.3 inv=4.4 played=21.8 lanes=4.6 ddraw=28.1 pts=44
+  Self-play: 40W/60L/1D | score=18.0±43.5 inv=4.2 played=20.5 lanes=4.8 ddraw=18.7 pts=18
+Step: 17039360  SPS: 1790  ε=0.050  ret=0.203  score=38.6  buf=100%  updates=133042
+  vs Random: 120W/8L/0D | score=42.6±45.1 inv=4.6 played=21.3 lanes=4.5 ddraw=28.4 pts=43
+  Self-play: 53W/45L/2D | score=40.6±46.9 inv=4.2 played=20.7 lanes=4.6 ddraw=18.3 pts=41
+Step: 17121280  SPS: 1790  ε=0.050  ret=0.185  score=28.9  buf=100%  updates=133682
+  vs Random: 97W/3L/1D | score=48.4±45.6 inv=4.7 played=22.3 lanes=4.6 ddraw=28.1 pts=48
+  Self-play: 43W/57L/0D | score=27.7±43.7 inv=4.2 played=20.8 lanes=4.8 ddraw=19.4 pts=28
+Step: 17203200  SPS: 1790  ε=0.050  ret=0.221  score=37.1  buf=100%  updates=134322
+  vs Random: 93W/6L/1D | score=40.1±44.8 inv=4.6 played=22.4 lanes=4.7 ddraw=28.5 pts=40
+  Self-play: 52W/48L/1D | score=28.6±43.0 inv=3.9 played=20.7 lanes=4.7 ddraw=20.0 pts=29
+Step: 17285120  SPS: 1790  ε=0.050  ret=0.217  score=33.5  buf=100%  updates=134962
+  vs Random: 94W/8L/0D | score=41.2±50.8 inv=4.6 played=22.0 lanes=4.7 ddraw=28.4 pts=41
+  Self-play: 44W/56L/0D | score=29.4±36.5 inv=4.0 played=20.8 lanes=4.7 ddraw=18.7 pts=29
+Step: 17367040  SPS: 1790  ε=0.050  ret=0.147  score=40.1  buf=100%  updates=135602
+  vs Random: 121W/6L/1D | score=45.5±46.8 inv=4.7 played=21.8 lanes=4.6 ddraw=28.0 pts=46
+  Self-play: 45W/55L/0D | score=25.6±41.2 inv=4.2 played=20.3 lanes=4.7 ddraw=19.2 pts=26
+Step: 17448960  SPS: 1790  ε=0.050  ret=0.177  score=38.7  buf=100%  updates=136242
+  vs Random: 93W/7L/1D | score=40.2±48.7 inv=4.8 played=21.5 lanes=4.6 ddraw=28.0 pts=40
+  Self-play: 55W/45L/1D | score=34.2±39.0 inv=4.1 played=20.6 lanes=4.7 ddraw=19.7 pts=34
+Step: 17530880  SPS: 1790  ε=0.050  ret=0.160  score=32.0  buf=100%  updates=136882
+  vs Random: 123W/5L/0D | score=47.8±44.9 inv=4.7 played=22.2 lanes=4.6 ddraw=28.2 pts=48
+  Self-play: 60W/39L/1D | score=38.3±42.8 inv=4.4 played=21.4 lanes=4.7 ddraw=17.6 pts=38
+Step: 17612800  SPS: 1790  ε=0.050  ret=0.159  score=28.7  buf=100%  updates=137522
+  vs Random: 95W/5L/0D | score=37.0±45.3 inv=4.7 played=21.4 lanes=4.5 ddraw=27.4 pts=37
+  Self-play: 50W/48L/2D | score=28.9±40.9 inv=4.2 played=20.5 lanes=4.8 ddraw=17.6 pts=29
+Step: 17694720  SPS: 1791  ε=0.050  ret=0.224  score=36.1  buf=100%  updates=138162
+  vs Random: 95W/4L/1D | score=47.5±46.7 inv=4.8 played=22.1 lanes=4.5 ddraw=27.1 pts=47
+  Self-play: 54W/47L/0D | score=29.3±48.5 inv=4.4 played=20.7 lanes=4.8 ddraw=19.5 pts=29
+Step: 17776640  SPS: 1791  ε=0.050  ret=0.210  score=36.9  buf=100%  updates=138802
+  vs Random: 96W/5L/0D | score=45.6±47.6 inv=4.8 played=21.8 lanes=4.6 ddraw=27.6 pts=46
+  Self-play: 38W/62L/0D | score=19.0±39.8 inv=4.4 played=19.7 lanes=4.6 ddraw=20.2 pts=19
+Step: 17858560  SPS: 1791  ε=0.050  ret=0.208  score=34.3  buf=100%  updates=139442
+  vs Random: 92W/8L/0D | score=42.3±51.4 inv=4.9 played=21.8 lanes=4.6 ddraw=26.6 pts=42
+  Self-play: 53W/47L/0D | score=38.1±46.5 inv=4.5 played=21.6 lanes=4.7 ddraw=19.1 pts=38
+Step: 17940480  SPS: 1791  ε=0.050  ret=0.210  score=38.4  buf=100%  updates=140082
+  vs Random: 120W/8L/0D | score=38.0±43.4 inv=4.9 played=21.9 lanes=4.6 ddraw=27.9 pts=38
+  Self-play: 44W/56L/0D | score=25.0±40.3 inv=4.4 played=20.7 lanes=4.8 ddraw=17.0 pts=25
+Step: 18022400  SPS: 1791  ε=0.050  ret=0.240  score=38.4  buf=100%  updates=140722
+  vs Random: 97W/4L/0D | score=47.5±47.0 inv=4.6 played=22.0 lanes=4.6 ddraw=27.3 pts=47
+  Self-play: 52W/47L/1D | score=30.0±40.4 inv=4.2 played=20.9 lanes=4.8 ddraw=17.6 pts=30
+Step: 18104320  SPS: 1791  ε=0.050  ret=0.198  score=38.0  buf=100%  updates=141362
+  vs Random: 97W/3L/0D | score=47.4±43.2 inv=5.0 played=22.7 lanes=4.7 ddraw=28.2 pts=47
+  Self-play: 40W/59L/1D | score=27.5±42.4 inv=4.2 played=20.5 lanes=4.8 ddraw=18.6 pts=28
+Step: 18186240  SPS: 1791  ε=0.050  ret=0.249  score=25.6  buf=100%  updates=142002
+  vs Random: 94W/6L/0D | score=45.3±51.8 inv=5.0 played=22.0 lanes=4.6 ddraw=28.0 pts=45
+  Self-play: 44W/55L/1D | score=29.5±47.3 inv=4.2 played=20.8 lanes=4.8 ddraw=19.3 pts=30
+Step: 18268160  SPS: 1791  ε=0.050  ret=0.240  score=33.4  buf=100%  updates=142642
+  vs Random: 121W/7L/0D | score=47.2±45.3 inv=5.1 played=22.4 lanes=4.6 ddraw=27.9 pts=47
+  Self-play: 49W/50L/1D | score=35.5±41.4 inv=4.3 played=20.7 lanes=4.6 ddraw=19.9 pts=35
+Step: 18350080  SPS: 1792  ε=0.050  ret=0.229  score=34.8  buf=100%  updates=143282
+  vs Random: 96W/5L/0D | score=50.8±46.3 inv=5.1 played=22.5 lanes=4.6 ddraw=28.0 pts=51
+  Self-play: 52W/48L/1D | score=34.2±52.1 inv=4.5 played=20.9 lanes=4.7 ddraw=18.6 pts=34
+Step: 18432000  SPS: 1792  ε=0.050  ret=0.197  score=33.0  buf=100%  updates=143922
+  vs Random: 95W/5L/0D | score=48.4±52.1 inv=5.2 played=22.8 lanes=4.7 ddraw=27.6 pts=48
+  Self-play: 48W/53L/0D | score=31.3±45.6 inv=4.2 played=21.0 lanes=4.8 ddraw=18.9 pts=31
+Step: 18513920  SPS: 1792  ε=0.050  ret=0.149  score=30.0  buf=100%  updates=144562
+  vs Random: 119W/9L/0D | score=34.2±46.8 inv=5.2 played=21.7 lanes=4.6 ddraw=28.0 pts=34
+  Self-play: 55W/44L/1D | score=39.3±50.1 inv=4.6 played=21.2 lanes=4.7 ddraw=18.1 pts=39
+Step: 18595840  SPS: 1792  ε=0.050  ret=0.190  score=37.7  buf=100%  updates=145202
+  vs Random: 95W/5L/0D | score=51.1±53.1 inv=4.9 played=22.4 lanes=4.6 ddraw=27.1 pts=51
+  Self-play: 46W/53L/1D | score=30.8±43.7 inv=4.7 played=21.3 lanes=4.8 ddraw=17.1 pts=31
+Step: 18677760  SPS: 1792  ε=0.050  ret=0.202  score=35.5  buf=100%  updates=145842
+  vs Random: 91W/9L/0D | score=45.6±49.1 inv=5.2 played=22.2 lanes=4.6 ddraw=28.3 pts=46
+  Self-play: 48W/52L/0D | score=31.5±42.7 inv=4.3 played=20.8 lanes=4.7 ddraw=17.6 pts=32
+Step: 18759680  SPS: 1792  ε=0.050  ret=0.194  score=40.0  buf=100%  updates=146482
+  vs Random: 119W/9L/0D | score=41.7±47.2 inv=4.9 played=21.6 lanes=4.6 ddraw=27.6 pts=42
+  Self-play: 45W/55L/0D | score=26.8±49.8 inv=4.7 played=21.0 lanes=4.8 ddraw=17.4 pts=27
+Step: 18841600  SPS: 1792  ε=0.050  ret=0.202  score=40.0  buf=100%  updates=147122
+  vs Random: 115W/13L/0D | score=43.2±55.0 inv=5.2 played=22.3 lanes=4.6 ddraw=28.3 pts=43
+  Self-play: 52W/48L/0D | score=31.6±42.9 inv=4.3 played=20.8 lanes=4.8 ddraw=18.7 pts=32
+Step: 18923520  SPS: 1792  ε=0.050  ret=0.192  score=30.2  buf=100%  updates=147762
+  vs Random: 94W/6L/0D | score=45.8±51.8 inv=5.3 played=22.3 lanes=4.6 ddraw=27.4 pts=46
+  Self-play: 58W/42L/0D | score=41.6±47.8 inv=4.8 played=21.6 lanes=4.7 ddraw=17.5 pts=42
+Step: 19005440  SPS: 1792  ε=0.050  ret=0.188  score=44.9  buf=100%  updates=148402
+  vs Random: 95W/5L/0D | score=44.7±50.7 inv=5.1 played=22.1 lanes=4.6 ddraw=27.9 pts=45
+  Self-play: 51W/48L/1D | score=30.2±39.0 inv=4.4 played=21.2 lanes=4.7 ddraw=18.5 pts=30
+Step: 19087360  SPS: 1791  ε=0.050  ret=0.206  score=27.2  buf=100%  updates=149042
+  vs Random: 94W/7L/0D | score=47.0±48.8 inv=5.2 played=22.7 lanes=4.7 ddraw=28.1 pts=47
+  Self-play: 58W/42L/0D | score=36.6±46.0 inv=4.5 played=21.2 lanes=4.8 ddraw=17.9 pts=37
+Step: 19169280  SPS: 1791  ε=0.050  ret=0.288  score=41.4  buf=100%  updates=149682
+  vs Random: 97W/3L/0D | score=49.8±46.6 inv=5.2 played=22.6 lanes=4.5 ddraw=27.1 pts=50
+  Self-play: 48W/53L/0D | score=33.5±44.5 inv=4.4 played=21.0 lanes=4.7 ddraw=16.4 pts=33
+Step: 19251200  SPS: 1791  ε=0.050  ret=0.217  score=32.0  buf=100%  updates=150322
+  vs Random: 96W/5L/0D | score=44.7±42.1 inv=5.2 played=22.5 lanes=4.6 ddraw=27.7 pts=45
+  Self-play: 45W/56L/1D | score=23.2±47.8 inv=4.6 played=20.7 lanes=4.7 ddraw=19.8 pts=23
+Step: 19333120  SPS: 1791  ε=0.050  ret=0.155  score=48.2  buf=100%  updates=150962
+  vs Random: 93W/7L/0D | score=43.4±51.0 inv=5.0 played=22.3 lanes=4.7 ddraw=27.9 pts=43
+  Self-play: 47W/52L/1D | score=29.9±40.1 inv=4.7 played=21.0 lanes=4.7 ddraw=17.4 pts=30
+Step: 19415040  SPS: 1791  ε=0.050  ret=0.202  score=35.5  buf=100%  updates=151602
+  vs Random: 93W/7L/0D | score=47.2±51.4 inv=5.3 played=22.6 lanes=4.6 ddraw=28.3 pts=47
+  Self-play: 42W/56L/2D | score=31.3±46.7 inv=4.4 played=20.6 lanes=4.6 ddraw=18.5 pts=31
+Step: 19496960  SPS: 1791  ε=0.050  ret=0.260  score=29.4  buf=100%  updates=152242
+  vs Random: 96W/5L/0D | score=52.5±51.7 inv=5.3 played=22.7 lanes=4.5 ddraw=27.6 pts=52
+  Self-play: 45W/55L/0D | score=30.7±43.5 inv=4.5 played=21.0 lanes=4.8 ddraw=17.5 pts=31
+Step: 19578880  SPS: 1791  ε=0.050  ret=0.192  score=38.0  buf=100%  updates=152882
+  vs Random: 91W/9L/0D | score=44.3±49.6 inv=5.5 played=22.8 lanes=4.7 ddraw=28.3 pts=44
+  Self-play: 40W/62L/0D | score=31.3±48.4 inv=4.4 played=20.9 lanes=4.7 ddraw=17.5 pts=31
+Step: 19660800  SPS: 1791  ε=0.050  ret=0.239  score=33.8  buf=100%  updates=153522
+  vs Random: 95W/5L/0D | score=45.8±46.1 inv=5.2 played=22.3 lanes=4.6 ddraw=27.4 pts=46
+  Self-play: 50W/49L/1D | score=35.5±38.0 inv=4.5 played=21.0 lanes=4.7 ddraw=18.4 pts=35
+Step: 19742720  SPS: 1791  ε=0.050  ret=0.202  score=40.2  buf=100%  updates=154162
+  vs Random: 96W/3L/1D | score=54.5±47.2 inv=5.2 played=23.4 lanes=4.7 ddraw=28.4 pts=55
+  Self-play: 49W/53L/0D | score=36.5±52.4 inv=4.7 played=21.1 lanes=4.5 ddraw=17.0 pts=36
+Step: 19824640  SPS: 1791  ε=0.050  ret=0.215  score=40.5  buf=100%  updates=154802
+  vs Random: 121W/7L/0D | score=47.5±49.2 inv=5.2 played=22.4 lanes=4.6 ddraw=27.9 pts=47
+  Self-play: 53W/48L/0D | score=46.4±51.3 inv=4.3 played=20.9 lanes=4.5 ddraw=19.3 pts=46
+Step: 19906560  SPS: 1792  ε=0.050  ret=0.234  score=35.2  buf=100%  updates=155442
+  vs Random: 92W/8L/0D | score=41.2±49.9 inv=5.0 played=22.2 lanes=4.6 ddraw=27.6 pts=41
+  Self-play: 55W/45L/0D | score=41.6±52.8 inv=4.7 played=21.4 lanes=4.6 ddraw=16.9 pts=42
+Step: 19988480  SPS: 1792  ε=0.050  ret=0.238  score=37.2  buf=100%  updates=156082
+  vs Random: 90W/10L/0D | score=51.2±57.4 inv=5.4 played=22.4 lanes=4.5 ddraw=27.6 pts=51
+  Self-play: 45W/53L/2D | score=33.1±50.1 inv=4.7 played=21.0 lanes=4.5 ddraw=18.3 pts=33
+Step: 20070400  SPS: 1792  ε=0.050  ret=0.195  score=35.1  buf=100%  updates=156722
+  vs Random: 97W/3L/0D | score=58.5±49.0 inv=5.2 played=22.9 lanes=4.5 ddraw=27.4 pts=58
+  Self-play: 51W/48L/1D | score=35.4±42.9 inv=4.8 played=20.6 lanes=4.5 ddraw=18.8 pts=35
+Step: 20152320  SPS: 1792  ε=0.050  ret=0.223  score=31.0  buf=100%  updates=157362
+  vs Random: 97W/4L/0D | score=56.9±48.8 inv=5.2 played=22.6 lanes=4.5 ddraw=26.8 pts=57
+  Self-play: 49W/50L/1D | score=45.3±53.3 inv=4.6 played=21.6 lanes=4.7 ddraw=17.9 pts=45
+Step: 20234240  SPS: 1792  ε=0.050  ret=0.302  score=40.6  buf=100%  updates=158002
+  vs Random: 95W/4L/1D | score=55.2±51.2 inv=5.2 played=22.7 lanes=4.5 ddraw=27.4 pts=55
+  Self-play: 45W/52L/3D | score=32.4±46.0 inv=4.6 played=20.7 lanes=4.6 ddraw=18.9 pts=32
+Step: 20316160  SPS: 1792  ε=0.050  ret=0.236  score=30.7  buf=100%  updates=158642
+  vs Random: 95W/5L/0D | score=51.6±52.2 inv=5.6 played=22.7 lanes=4.5 ddraw=27.6 pts=52
+  Self-play: 40W/59L/1D | score=31.5±49.0 inv=4.5 played=20.8 lanes=4.6 ddraw=19.9 pts=32
+Step: 20398080  SPS: 1792  ε=0.050  ret=0.221  score=36.6  buf=100%  updates=159282
+  vs Random: 87W/13L/0D | score=35.0±57.8 inv=5.4 played=22.4 lanes=4.6 ddraw=27.6 pts=35
+  Self-play: 61W/39L/0D | score=43.5±50.2 inv=4.8 played=21.8 lanes=4.7 ddraw=17.2 pts=43
+Step: 20480000  SPS: 1792  ε=0.050  ret=0.272  score=33.9  buf=100%  updates=159922
+  vs Random: 100W/2L/0D | score=52.3±49.4 inv=5.3 played=22.6 lanes=4.5 ddraw=28.0 pts=52
+  Self-play: 45W/55L/0D | score=35.9±53.3 inv=4.6 played=20.8 lanes=4.5 ddraw=19.8 pts=36
+Step: 20561920  SPS: 1792  ε=0.050  ret=0.289  score=36.0  buf=100%  updates=160562
+  vs Random: 94W/6L/0D | score=48.2±56.4 inv=5.5 played=22.8 lanes=4.6 ddraw=26.9 pts=48
+  Self-play: 50W/50L/0D | score=40.8±47.5 inv=4.7 played=21.3 lanes=4.6 ddraw=18.5 pts=41
+Step: 20643840  SPS: 1792  ε=0.050  ret=0.294  score=38.5  buf=100%  updates=161202
+  vs Random: 96W/7L/0D | score=43.2±46.3 inv=5.4 played=23.2 lanes=4.7 ddraw=27.7 pts=43
+  Self-play: 51W/48L/1D | score=31.1±41.3 inv=4.7 played=20.9 lanes=4.6 ddraw=17.6 pts=31
+Step: 20725760  SPS: 1792  ε=0.050  ret=0.232  score=38.5  buf=100%  updates=161842
+  vs Random: 121W/5L/2D | score=45.1±46.7 inv=5.5 played=22.5 lanes=4.5 ddraw=27.0 pts=45
+  Self-play: 44W/55L/1D | score=31.6±46.7 inv=4.6 played=20.7 lanes=4.6 ddraw=19.7 pts=32
+Step: 20807680  SPS: 1792  ε=0.050  ret=0.246  score=30.4  buf=100%  updates=162482
+  vs Random: 94W/6L/0D | score=40.4±46.3 inv=5.7 played=22.8 lanes=4.7 ddraw=27.6 pts=40
+  Self-play: 48W/51L/1D | score=36.0±49.5 inv=4.6 played=20.8 lanes=4.5 ddraw=19.5 pts=36
+Step: 20889600  SPS: 1792  ε=0.050  ret=0.281  score=38.2  buf=100%  updates=163122
+  vs Random: 91W/9L/0D | score=49.6±51.0 inv=5.8 played=23.1 lanes=4.6 ddraw=27.9 pts=50
+  Self-play: 49W/50L/1D | score=37.1±46.5 inv=4.7 played=21.1 lanes=4.5 ddraw=19.7 pts=37
+Step: 20971520  SPS: 1792  ε=0.050  ret=0.234  score=41.1  buf=100%  updates=163762
+  vs Random: 93W/8L/0D | score=52.2±50.6 inv=5.5 played=22.8 lanes=4.6 ddraw=27.6 pts=52
+  Self-play: 51W/48L/1D | score=37.5±44.2 inv=4.6 played=21.2 lanes=4.6 ddraw=19.3 pts=37
+Step: 21053440  SPS: 1792  ε=0.050  ret=0.236  score=39.5  buf=100%  updates=164402
+  vs Random: 95W/4L/1D | score=52.0±53.0 inv=5.9 played=23.6 lanes=4.7 ddraw=27.4 pts=52
+  Self-play: 46W/54L/0D | score=38.5±49.4 inv=4.9 played=21.2 lanes=4.6 ddraw=18.3 pts=38
+Step: 21135360  SPS: 1792  ε=0.050  ret=0.271  score=41.0  buf=100%  updates=165042
+  vs Random: 92W/8L/0D | score=44.5±51.3 inv=5.8 played=22.9 lanes=4.7 ddraw=27.4 pts=45
+  Self-play: 49W/51L/0D | score=41.4±53.6 inv=4.8 played=21.0 lanes=4.5 ddraw=19.1 pts=41
+Step: 21217280  SPS: 1792  ε=0.050  ret=0.246  score=38.8  buf=100%  updates=165682
+  vs Random: 92W/8L/0D | score=38.0±50.2 inv=5.6 played=22.1 lanes=4.5 ddraw=27.6 pts=38
+  Self-play: 48W/53L/0D | score=35.5±51.6 inv=4.9 played=20.9 lanes=4.6 ddraw=19.5 pts=35
+Step: 21299200  SPS: 1793  ε=0.050  ret=0.311  score=25.0  buf=100%  updates=166322
+  vs Random: 120W/8L/0D | score=46.0±46.9 inv=5.5 played=22.3 lanes=4.5 ddraw=26.8 pts=46
+  Self-play: 57W/43L/0D | score=37.9±47.5 inv=4.5 played=20.9 lanes=4.6 ddraw=19.4 pts=38
+Step: 21381120  SPS: 1793  ε=0.050  ret=0.225  score=37.5  buf=100%  updates=166962
+  vs Random: 88W/12L/0D | score=37.3±53.7 inv=5.7 played=22.7 lanes=4.6 ddraw=27.4 pts=37
+  Self-play: 42W/57L/1D | score=32.0±52.3 inv=4.9 played=21.2 lanes=4.6 ddraw=18.6 pts=32
+Step: 21463040  SPS: 1793  ε=0.050  ret=0.247  score=36.3  buf=100%  updates=167602
+  vs Random: 86W/15L/0D | score=36.4±56.5 inv=5.7 played=22.4 lanes=4.6 ddraw=27.5 pts=36
+  Self-play: 49W/52L/2D | score=44.4±54.1 inv=4.8 played=21.0 lanes=4.4 ddraw=18.5 pts=44
+Step: 21544960  SPS: 1792  ε=0.050  ret=0.276  score=48.0  buf=100%  updates=168242
+  vs Random: 91W/9L/0D | score=45.2±54.6 inv=5.8 played=22.6 lanes=4.5 ddraw=27.4 pts=45
+  Self-play: 47W/50L/3D | score=38.3±50.7 inv=4.7 played=20.4 lanes=4.3 ddraw=19.3 pts=38
+Step: 21626880  SPS: 1792  ε=0.050  ret=0.265  score=40.0  buf=100%  updates=168882
+  vs Random: 90W/10L/0D | score=43.0±58.1 inv=5.8 played=22.8 lanes=4.6 ddraw=26.5 pts=43
+  Self-play: 48W/50L/2D | score=47.1±47.2 inv=4.9 played=20.9 lanes=4.4 ddraw=18.4 pts=47
+Step: 21708800  SPS: 1793  ε=0.050  ret=0.264  score=36.6  buf=100%  updates=169522
+  vs Random: 92W/9L/0D | score=50.2±51.3 inv=5.9 played=22.9 lanes=4.5 ddraw=27.2 pts=50
+  Self-play: 42W/58L/0D | score=34.0±49.2 inv=4.9 played=20.8 lanes=4.5 ddraw=19.3 pts=34
+Step: 21790720  SPS: 1793  ε=0.050  ret=0.282  score=33.7  buf=100%  updates=170162
+  vs Random: 115W/13L/0D | score=37.1±58.1 inv=5.9 played=22.3 lanes=4.5 ddraw=27.5 pts=37
+  Self-play: 46W/54L/0D | score=39.9±44.7 inv=4.8 played=20.5 lanes=4.4 ddraw=19.5 pts=40
+Step: 21872640  SPS: 1793  ε=0.050  ret=0.291  score=33.9  buf=100%  updates=170802
+  vs Random: 94W/6L/0D | score=44.7±53.1 inv=5.8 played=22.4 lanes=4.5 ddraw=27.0 pts=45
+  Self-play: 51W/50L/1D | score=41.5±51.1 inv=4.9 played=21.1 lanes=4.4 ddraw=18.7 pts=41
+Step: 21954560  SPS: 1793  ε=0.050  ret=0.262  score=24.7  buf=100%  updates=171442
+  vs Random: 93W/6L/1D | score=49.0±60.4 inv=5.8 played=22.6 lanes=4.5 ddraw=27.2 pts=49
+  Self-play: 38W/61L/1D | score=31.6±51.6 inv=5.0 played=20.8 lanes=4.5 ddraw=19.6 pts=32
+Step: 22036480  SPS: 1793  ε=0.050  ret=0.311  score=31.9  buf=100%  updates=172082
+  vs Random: 94W/8L/0D | score=48.5±55.5 inv=6.1 played=23.5 lanes=4.7 ddraw=27.2 pts=48
+  Self-play: 48W/52L/0D | score=41.2±53.4 inv=5.1 played=20.7 lanes=4.5 ddraw=17.6 pts=41
+Step: 22118400  SPS: 1793  ε=0.050  ret=0.299  score=35.7  buf=100%  updates=172722
+  vs Random: 91W/9L/0D | score=37.1±51.2 inv=6.1 played=23.1 lanes=4.6 ddraw=27.2 pts=37
+  Self-play: 47W/52L/2D | score=44.3±52.1 inv=5.0 played=21.5 lanes=4.5 ddraw=19.0 pts=44
+Step: 22200320  SPS: 1793  ε=0.050  ret=0.296  score=34.8  buf=100%  updates=173362
+  vs Random: 89W/11L/0D | score=45.4±56.6 inv=5.9 played=22.8 lanes=4.5 ddraw=27.4 pts=45
+  Self-play: 56W/45L/0D | score=47.4±48.9 inv=5.2 played=21.9 lanes=4.6 ddraw=18.9 pts=47
+Step: 22282240  SPS: 1793  ε=0.050  ret=0.313  score=34.2  buf=100%  updates=174002
+  vs Random: 84W/16L/0D | score=41.1±63.0 inv=6.1 played=22.6 lanes=4.6 ddraw=28.1 pts=41
+  Self-play: 45W/55L/0D | score=39.2±48.6 inv=5.2 played=21.1 lanes=4.5 ddraw=18.1 pts=39
+Step: 22364160  SPS: 1793  ε=0.050  ret=0.247  score=29.8  buf=100%  updates=174642
+  vs Random: 116W/11L/1D | score=36.5±55.7 inv=5.7 played=21.5 lanes=4.4 ddraw=27.2 pts=36
+  Self-play: 47W/53L/0D | score=40.7±46.5 inv=4.6 played=20.3 lanes=4.5 ddraw=19.5 pts=41
+Step: 22446080  SPS: 1793  ε=0.050  ret=0.212  score=29.1  buf=100%  updates=175282
+  vs Random: 117W/11L/0D | score=38.6±53.3 inv=6.0 played=22.5 lanes=4.6 ddraw=26.3 pts=39
+  Self-play: 36W/64L/0D | score=42.2±50.3 inv=4.9 played=20.7 lanes=4.4 ddraw=17.7 pts=42
+Step: 22528000  SPS: 1794  ε=0.050  ret=0.363  score=25.1  buf=100%  updates=175922
+  vs Random: 88W/12L/0D | score=46.2±57.1 inv=6.1 played=23.0 lanes=4.6 ddraw=27.1 pts=46
+  Self-play: 48W/52L/0D | score=40.6±49.8 inv=5.2 played=21.1 lanes=4.5 ddraw=19.0 pts=41
+Step: 22609920  SPS: 1794  ε=0.050  ret=0.248  score=33.5  buf=100%  updates=176562
+  vs Random: 93W/7L/0D | score=55.6±59.6 inv=6.1 played=23.4 lanes=4.5 ddraw=27.5 pts=56
+  Self-play: 54W/46L/0D | score=49.0±54.9 inv=5.0 played=21.5 lanes=4.5 ddraw=17.9 pts=49
+Step: 22691840  SPS: 1794  ε=0.050  ret=0.262  score=33.6  buf=100%  updates=177202
+  vs Random: 89W/11L/0D | score=43.4±58.9 inv=6.0 played=22.5 lanes=4.5 ddraw=26.6 pts=43
+  Self-play: 41W/58L/1D | score=35.8±51.2 inv=5.1 played=21.1 lanes=4.6 ddraw=19.7 pts=36
+Step: 22773760  SPS: 1793  ε=0.050  ret=0.322  score=20.9  buf=100%  updates=177842
+  vs Random: 111W/17L/0D | score=38.5±53.2 inv=6.1 played=22.1 lanes=4.5 ddraw=27.3 pts=39
+  Self-play: 58W/41L/1D | score=43.5±46.6 inv=5.0 played=21.0 lanes=4.5 ddraw=19.4 pts=44
+Step: 22855680  SPS: 1793  ε=0.050  ret=0.234  score=26.7  buf=100%  updates=178482
+  vs Random: 114W/14L/0D | score=45.2±57.0 inv=6.2 played=22.7 lanes=4.5 ddraw=27.2 pts=45
+  Self-play: 48W/52L/0D | score=44.5±56.4 inv=5.0 played=20.7 lanes=4.3 ddraw=18.8 pts=45
+Step: 22937600  SPS: 1793  ε=0.050  ret=0.266  score=34.8  buf=100%  updates=179122
+  vs Random: 110W/18L/0D | score=28.1±49.3 inv=6.1 played=21.5 lanes=4.4 ddraw=27.2 pts=28
+  Self-play: 49W/48L/3D | score=46.3±45.8 inv=4.7 played=20.4 lanes=4.3 ddraw=20.3 pts=46
+Step: 23019520  SPS: 1793  ε=0.050  ret=0.263  score=40.9  buf=100%  updates=179762
+  vs Random: 91W/9L/0D | score=43.6±61.2 inv=6.1 played=22.1 lanes=4.4 ddraw=27.2 pts=44
+  Self-play: 41W/56L/3D | score=35.4±46.6 inv=5.2 played=20.9 lanes=4.5 ddraw=19.3 pts=35
+Step: 23101440  SPS: 1794  ε=0.050  ret=0.346  score=26.5  buf=100%  updates=180402
+  vs Random: 84W/16L/0D | score=40.2±60.9 inv=6.3 played=22.7 lanes=4.6 ddraw=27.6 pts=40
+  Self-play: 43W/56L/1D | score=32.6±46.9 inv=5.1 played=20.6 lanes=4.5 ddraw=20.0 pts=33
+Step: 23183360  SPS: 1794  ε=0.050  ret=0.339  score=37.8  buf=100%  updates=181042
+  vs Random: 110W/18L/0D | score=31.0±60.3 inv=6.1 played=21.6 lanes=4.4 ddraw=27.8 pts=31
+  Self-play: 44W/55L/1D | score=43.5±52.4 inv=4.9 played=20.4 lanes=4.3 ddraw=19.5 pts=44
+Step: 23265280  SPS: 1794  ε=0.050  ret=0.265  score=31.3  buf=100%  updates=181682
+  vs Random: 120W/6L/2D | score=46.7±53.4 inv=6.1 played=22.3 lanes=4.4 ddraw=27.1 pts=47
+  Self-play: 50W/50L/0D | score=46.6±49.7 inv=4.8 played=20.6 lanes=4.4 ddraw=19.8 pts=47
+Step: 23347200  SPS: 1794  ε=0.050  ret=0.298  score=36.7  buf=100%  updates=182322
+  vs Random: 94W/5L/1D | score=54.9±57.4 inv=6.1 played=23.0 lanes=4.5 ddraw=27.0 pts=55
+  Self-play: 52W/46L/3D | score=51.2±53.8 inv=5.3 played=21.6 lanes=4.6 ddraw=17.3 pts=51
+Step: 23429120  SPS: 1794  ε=0.050  ret=0.310  score=28.8  buf=100%  updates=182962
+  vs Random: 92W/8L/0D | score=40.3±56.8 inv=6.2 played=22.6 lanes=4.6 ddraw=27.0 pts=40
+  Self-play: 45W/57L/0D | score=51.3±50.1 inv=4.8 played=21.1 lanes=4.5 ddraw=18.2 pts=51
+Step: 23511040  SPS: 1794  ε=0.050  ret=0.293  score=29.1  buf=100%  updates=183602
+  vs Random: 88W/12L/0D | score=36.2±56.0 inv=6.2 played=22.3 lanes=4.5 ddraw=26.0 pts=36
+  Self-play: 49W/51L/0D | score=48.6±52.9 inv=5.2 played=21.4 lanes=4.5 ddraw=17.2 pts=49
+Step: 23592960  SPS: 1794  ε=0.050  ret=0.290  score=26.6  buf=100%  updates=184242
+  vs Random: 88W/12L/0D | score=42.4±56.0 inv=6.4 played=22.5 lanes=4.5 ddraw=26.7 pts=42
+  Self-play: 53W/47L/0D | score=51.5±44.6 inv=5.2 played=21.5 lanes=4.5 ddraw=18.0 pts=51
+Step: 23674880  SPS: 1794  ε=0.050  ret=0.246  score=34.0  buf=100%  updates=184882
+  vs Random: 83W/17L/0D | score=35.0±65.9 inv=6.3 played=22.2 lanes=4.5 ddraw=27.6 pts=35
+  Self-play: 53W/47L/0D | score=57.2±48.4 inv=5.0 played=21.1 lanes=4.3 ddraw=19.1 pts=57
+Step: 23756800  SPS: 1795  ε=0.050  ret=0.287  score=36.4  buf=100%  updates=185522
+  vs Random: 107W/21L/0D | score=32.7±58.8 inv=6.2 played=21.8 lanes=4.4 ddraw=27.4 pts=33
+  Self-play: 45W/55L/0D | score=43.9±48.8 inv=5.2 played=20.9 lanes=4.5 ddraw=19.7 pts=44
+Step: 23838720  SPS: 1795  ε=0.050  ret=0.325  score=33.0  buf=100%  updates=186162
+  vs Random: 84W/16L/0D | score=34.8±60.7 inv=6.4 played=22.6 lanes=4.6 ddraw=26.8 pts=35
+  Self-play: 54W/45L/1D | score=52.4±48.5 inv=5.2 played=21.6 lanes=4.5 ddraw=18.5 pts=52
+Step: 23920640  SPS: 1795  ε=0.050  ret=0.265  score=29.7  buf=100%  updates=186802
+  vs Random: 83W/18L/0D | score=37.4±58.9 inv=6.3 played=22.0 lanes=4.4 ddraw=27.3 pts=37
+  Self-play: 44W/57L/1D | score=49.0±44.0 inv=5.0 played=21.2 lanes=4.5 ddraw=17.6 pts=49
+Step: 24002560  SPS: 1795  ε=0.050  ret=0.350  score=26.0  buf=100%  updates=187442
+  vs Random: 94W/6L/0D | score=42.4±48.8 inv=6.2 played=22.5 lanes=4.5 ddraw=27.1 pts=42
+  Self-play: 48W/52L/0D | score=54.3±48.7 inv=5.1 played=21.1 lanes=4.4 ddraw=18.1 pts=54
+Step: 24084480  SPS: 1795  ε=0.050  ret=0.260  score=25.2  buf=100%  updates=188082
+  vs Random: 92W/8L/0D | score=43.5±50.4 inv=6.5 played=22.9 lanes=4.5 ddraw=27.1 pts=44
+  Self-play: 38W/60L/2D | score=40.8±42.3 inv=5.0 played=20.8 lanes=4.5 ddraw=18.4 pts=41
+Step: 24166400  SPS: 1795  ε=0.050  ret=0.322  score=21.0  buf=100%  updates=188722
+  vs Random: 91W/9L/0D | score=51.0±63.6 inv=6.3 played=23.0 lanes=4.5 ddraw=27.1 pts=51
+  Self-play: 48W/52L/0D | score=47.9±51.1 inv=4.9 played=20.8 lanes=4.4 ddraw=19.8 pts=48
+Step: 24248320  SPS: 1795  ε=0.050  ret=0.282  score=29.8  buf=100%  updates=189362
+  vs Random: 89W/9L/2D | score=39.2±53.3 inv=6.3 played=22.0 lanes=4.4 ddraw=27.1 pts=39
+  Self-play: 36W/64L/1D | score=39.2±48.0 inv=5.0 played=20.6 lanes=4.4 ddraw=20.0 pts=39
+Step: 24330240  SPS: 1795  ε=0.050  ret=0.306  score=24.8  buf=100%  updates=190002
+  vs Random: 93W/8L/0D | score=40.9±53.2 inv=6.6 played=22.8 lanes=4.5 ddraw=27.0 pts=41
+  Self-play: 45W/54L/1D | score=53.0±53.2 inv=5.0 played=21.4 lanes=4.5 ddraw=17.9 pts=53
+Step: 24412160  SPS: 1795  ε=0.050  ret=0.258  score=31.4  buf=100%  updates=190642
+  vs Random: 89W/11L/0D | score=31.6±56.8 inv=6.3 played=21.9 lanes=4.4 ddraw=27.1 pts=32
+  Self-play: 46W/54L/0D | score=48.8±48.9 inv=5.2 played=20.6 lanes=4.3 ddraw=19.6 pts=49
+Step: 24494080  SPS: 1795  ε=0.050  ret=0.290  score=30.1  buf=100%  updates=191282
+  vs Random: 106W/22L/0D | score=34.6±59.7 inv=6.4 played=21.8 lanes=4.4 ddraw=27.3 pts=35
+  Self-play: 48W/52L/0D | score=49.4±44.9 inv=5.2 played=21.1 lanes=4.3 ddraw=19.4 pts=49
+Step: 24576000  SPS: 1795  ε=0.050  ret=0.291  score=19.9  buf=100%  updates=191922
+  vs Random: 113W/15L/0D | score=39.7±58.8 inv=6.3 played=22.2 lanes=4.4 ddraw=27.5 pts=40
+  Self-play: 44W/56L/0D | score=38.0±44.8 inv=4.9 played=20.7 lanes=4.4 ddraw=20.3 pts=38
+Step: 24657920  SPS: 1795  ε=0.050  ret=0.273  score=19.5  buf=100%  updates=192562
+  vs Random: 89W/10L/2D | score=44.4±60.9 inv=6.3 played=22.3 lanes=4.4 ddraw=27.3 pts=44
+  Self-play: 51W/49L/0D | score=54.9±52.6 inv=5.0 played=20.5 lanes=4.2 ddraw=21.0 pts=55
+Step: 24739840  SPS: 1796  ε=0.050  ret=0.329  score=14.7  buf=100%  updates=193202
+  vs Random: 109W/18L/1D | score=35.1±62.8 inv=6.5 played=21.5 lanes=4.4 ddraw=27.1 pts=35
+  Self-play: 44W/58L/0D | score=36.4±51.1 inv=5.1 played=20.2 lanes=4.4 ddraw=20.6 pts=36
+Step: 24821760  SPS: 1796  ε=0.050  ret=0.369  score=29.1  buf=100%  updates=193842
+  vs Random: 114W/14L/0D | score=41.5±58.4 inv=6.4 played=22.5 lanes=4.5 ddraw=27.7 pts=42
+  Self-play: 48W/51L/1D | score=50.8±53.6 inv=5.1 played=21.1 lanes=4.4 ddraw=20.1 pts=51
+Step: 24903680  SPS: 1796  ε=0.050  ret=0.328  score=30.6  buf=100%  updates=194482
+  vs Random: 110W/17L/1D | score=40.9±60.5 inv=6.4 played=22.1 lanes=4.4 ddraw=27.0 pts=41
+  Self-play: 46W/54L/1D | score=47.8±50.3 inv=5.1 played=20.8 lanes=4.4 ddraw=20.6 pts=48
+Step: 24985600  SPS: 1796  ε=0.050  ret=0.260  score=26.3  buf=100%  updates=195122
+  vs Random: 91W/9L/0D | score=40.0±56.2 inv=6.2 played=22.1 lanes=4.4 ddraw=27.1 pts=40
+  Self-play: 44W/57L/0D | score=52.0±49.0 inv=4.9 played=20.5 lanes=4.3 ddraw=19.8 pts=52
+Step: 25067520  SPS: 1796  ε=0.050  ret=0.306  score=38.1  buf=100%  updates=195762
+  vs Random: 112W/14L/2D | score=39.6±61.5 inv=6.5 played=21.6 lanes=4.4 ddraw=27.2 pts=40
+  Self-play: 41W/59L/1D | score=47.0±49.8 inv=5.1 played=20.7 lanes=4.3 ddraw=19.9 pts=47
+Step: 25149440  SPS: 1796  ε=0.050  ret=0.261  score=20.6  buf=100%  updates=196402
+  vs Random: 89W/12L/0D | score=36.6±63.9 inv=6.1 played=21.1 lanes=4.3 ddraw=27.2 pts=37
+  Self-play: 54W/46L/0D | score=60.1±52.6 inv=5.0 played=20.7 lanes=4.1 ddraw=20.9 pts=60
+Step: 25231360  SPS: 1797  ε=0.050  ret=0.247  score=33.8  buf=100%  updates=197042
+  vs Random: 84W/16L/0D | score=36.9±54.4 inv=6.4 played=21.6 lanes=4.3 ddraw=26.9 pts=37
+  Self-play: 45W/55L/1D | score=54.9±47.1 inv=5.1 played=21.1 lanes=4.3 ddraw=20.4 pts=55
+Step: 25313280  SPS: 1797  ε=0.050  ret=0.282  score=27.2  buf=100%  updates=197682
+  vs Random: 83W/16L/1D | score=35.9±56.5 inv=6.2 played=21.6 lanes=4.4 ddraw=28.1 pts=36
+  Self-play: 53W/47L/1D | score=56.4±54.2 inv=5.0 played=21.1 lanes=4.3 ddraw=21.0 pts=56
+Step: 25395200  SPS: 1796  ε=0.050  ret=0.331  score=23.4  buf=100%  updates=198322
+  vs Random: 113W/15L/0D | score=38.0±59.5 inv=6.0 played=20.9 lanes=4.2 ddraw=28.1 pts=38
+  Self-play: 38W/61L/1D | score=50.1±55.7 inv=4.8 played=20.4 lanes=4.2 ddraw=21.7 pts=50
+Step: 25477120  SPS: 1796  ε=0.050  ret=0.272  score=22.7  buf=100%  updates=198962
+  vs Random: 87W/13L/0D | score=35.0±60.0 inv=6.4 played=21.6 lanes=4.4 ddraw=27.5 pts=35
+  Self-play: 54W/44L/2D | score=65.4±52.8 inv=5.1 played=20.8 lanes=4.1 ddraw=21.6 pts=65
+Step: 25559040  SPS: 1797  ε=0.050  ret=0.277  score=17.8  buf=100%  updates=199602
+  vs Random: 114W/14L/0D | score=45.3±60.4 inv=6.6 played=22.2 lanes=4.3 ddraw=28.0 pts=45
+  Self-play: 58W/41L/1D | score=57.6±48.2 inv=5.0 played=21.0 lanes=4.2 ddraw=21.3 pts=58
+Step: 25640960  SPS: 1797  ε=0.050  ret=0.282  score=31.2  buf=100%  updates=200242
+  vs Random: 110W/18L/0D | score=40.9±55.4 inv=6.2 played=21.4 lanes=4.3 ddraw=27.1 pts=41
+  Self-play: 50W/50L/0D | score=64.7±54.4 inv=5.0 played=20.9 lanes=4.2 ddraw=19.6 pts=65
+Step: 25722880  SPS: 1797  ε=0.050  ret=0.242  score=29.1  buf=100%  updates=200882
+  vs Random: 106W/22L/0D | score=32.8±60.6 inv=6.2 played=20.9 lanes=4.2 ddraw=28.3 pts=33
+  Self-play: 49W/50L/1D | score=48.1±54.8 inv=4.7 played=19.7 lanes=4.1 ddraw=22.5 pts=48
+Step: 25804800  SPS: 1797  ε=0.050  ret=0.227  score=39.0  buf=100%  updates=201522
+  vs Random: 111W/16L/1D | score=33.8±56.9 inv=6.4 played=21.5 lanes=4.4 ddraw=27.7 pts=34
+  Self-play: 56W/45L/0D | score=54.7±53.5 inv=5.1 played=20.3 lanes=4.1 ddraw=21.6 pts=55
+Step: 25886720  SPS: 1797  ε=0.050  ret=0.300  score=26.2  buf=100%  updates=202162
+  vs Random: 100W/27L/1D | score=27.7±62.1 inv=6.1 played=20.7 lanes=4.3 ddraw=28.0 pts=28
+  Self-play: 50W/49L/1D | score=42.6±57.5 inv=5.0 played=19.8 lanes=4.2 ddraw=22.4 pts=43
+Step: 25968640  SPS: 1797  ε=0.050  ret=0.290  score=25.4  buf=100%  updates=202802
+  vs Random: 107W/20L/1D | score=26.5±61.9 inv=6.3 played=20.6 lanes=4.2 ddraw=27.8 pts=27
+  Self-play: 45W/54L/1D | score=50.5±55.5 inv=5.0 played=20.0 lanes=4.2 ddraw=21.5 pts=50
+Step: 26050560  SPS: 1797  ε=0.050  ret=0.286  score=17.1  buf=100%  updates=203442
+  vs Random: 87W/13L/0D | score=43.9±52.8 inv=6.0 played=21.2 lanes=4.2 ddraw=28.3 pts=44
+  Self-play: 51W/50L/0D | score=42.5±51.6 inv=4.9 played=20.3 lanes=4.2 ddraw=21.0 pts=43
+Step: 26132480  SPS: 1797  ε=0.050  ret=0.222  score=22.9  buf=100%  updates=204082
+  vs Random: 108W/20L/0D | score=37.7±57.9 inv=6.1 played=21.1 lanes=4.2 ddraw=27.8 pts=38
+  Self-play: 47W/53L/0D | score=50.7±58.1 inv=4.6 played=20.3 lanes=4.2 ddraw=21.1 pts=51
+Step: 26214400  SPS: 1796  ε=0.050  ret=0.238  score=22.0  buf=100%  updates=204722
+  vs Random: 117W/11L/0D | score=33.8±55.6 inv=6.2 played=21.4 lanes=4.3 ddraw=27.9 pts=34
+  Self-play: 48W/51L/1D | score=50.7±51.7 inv=4.8 played=20.1 lanes=4.2 ddraw=20.6 pts=51
+Step: 26296320  SPS: 1796  ε=0.050  ret=0.226  score=28.4  buf=100%  updates=205362
+  vs Random: 85W/15L/0D | score=35.7±62.1 inv=6.3 played=21.4 lanes=4.3 ddraw=27.4 pts=36
+  Self-play: 52W/49L/0D | score=48.3±52.8 inv=5.0 played=20.2 lanes=4.2 ddraw=21.5 pts=48
+Step: 26378240  SPS: 1796  ε=0.050  ret=0.245  score=29.6  buf=100%  updates=206002
+  vs Random: 90W/8L/2D | score=47.6±55.7 inv=6.2 played=21.7 lanes=4.2 ddraw=28.1 pts=48
+  Self-play: 47W/52L/1D | score=50.9±53.0 inv=4.9 played=20.4 lanes=4.2 ddraw=20.0 pts=51
+Step: 26460160  SPS: 1796  ε=0.050  ret=0.289  score=28.9  buf=100%  updates=206642
+  vs Random: 111W/17L/0D | score=38.0±56.9 inv=6.0 played=20.9 lanes=4.2 ddraw=27.6 pts=38
+  Self-play: 38W/61L/1D | score=51.7±53.0 inv=5.0 played=20.8 lanes=4.3 ddraw=20.8 pts=52
+Step: 26542080  SPS: 1797  ε=0.050  ret=0.270  score=25.1  buf=100%  updates=207282
+  vs Random: 112W/15L/1D | score=41.4±60.7 inv=6.2 played=21.0 lanes=4.1 ddraw=27.9 pts=41
+  Self-play: 51W/49L/0D | score=57.2±58.2 inv=4.9 played=20.1 lanes=4.0 ddraw=21.5 pts=57
+Step: 26624000  SPS: 1797  ε=0.050  ret=0.187  score=29.9  buf=100%  updates=207922
+  vs Random: 111W/16L/1D | score=31.0±51.4 inv=5.9 played=20.8 lanes=4.3 ddraw=27.7 pts=31
+  Self-play: 40W/58L/2D | score=58.2±52.0 inv=4.9 played=20.4 lanes=4.1 ddraw=20.1 pts=58
+Step: 26705920  SPS: 1797  ε=0.050  ret=0.252  score=35.9  buf=100%  updates=208562
+  vs Random: 117W/11L/0D | score=45.0±48.1 inv=6.2 played=21.4 lanes=4.1 ddraw=28.1 pts=45
+  Self-play: 48W/52L/0D | score=52.6±51.5 inv=5.0 played=20.9 lanes=4.2 ddraw=19.8 pts=53
+Step: 26787840  SPS: 1797  ε=0.050  ret=0.242  score=26.6  buf=100%  updates=209202
+  vs Random: 112W/15L/1D | score=29.4±51.9 inv=6.2 played=20.8 lanes=4.2 ddraw=27.8 pts=29
+  Self-play: 46W/54L/0D | score=56.2±50.2 inv=4.8 played=20.4 lanes=4.2 ddraw=21.0 pts=56
+Step: 26869760  SPS: 1797  ε=0.050  ret=0.251  score=26.5  buf=100%  updates=209842
+  vs Random: 119W/9L/0D | score=48.2±58.7 inv=5.8 played=20.7 lanes=4.1 ddraw=27.7 pts=48
+  Self-play: 47W/53L/1D | score=57.7±46.3 inv=4.7 played=20.5 lanes=4.2 ddraw=21.1 pts=58
+Step: 26951680  SPS: 1797  ε=0.050  ret=0.238  score=42.3  buf=100%  updates=210482
+  vs Random: 114W/14L/0D | score=42.5±56.5 inv=6.3 played=21.7 lanes=4.3 ddraw=27.8 pts=42
+  Self-play: 49W/51L/0D | score=56.8±46.1 inv=4.9 played=20.1 lanes=4.1 ddraw=20.8 pts=57
+Step: 27033600  SPS: 1797  ε=0.050  ret=0.246  score=28.8  buf=100%  updates=211122
+  vs Random: 111W/17L/0D | score=39.0±57.2 inv=6.0 played=20.8 lanes=4.2 ddraw=27.6 pts=39
+  Self-play: 59W/41L/0D | score=63.9±46.4 inv=4.8 played=20.7 lanes=4.2 ddraw=22.0 pts=64
+Step: 27115520  SPS: 1797  ε=0.050  ret=0.239  score=35.4  buf=100%  updates=211762
+  vs Random: 90W/11L/0D | score=51.9±58.9 inv=6.1 played=21.1 lanes=4.1 ddraw=27.0 pts=52
+  Self-play: 46W/54L/0D | score=53.0±51.0 inv=4.9 played=20.7 lanes=4.2 ddraw=20.4 pts=53
+Step: 27197440  SPS: 1797  ε=0.050  ret=0.211  score=26.2  buf=100%  updates=212402
+  vs Random: 111W/17L/0D | score=39.4±62.2 inv=6.1 played=20.7 lanes=4.1 ddraw=27.9 pts=39
+  Self-play: 54W/46L/0D | score=59.8±53.5 inv=4.9 played=20.1 lanes=4.0 ddraw=22.2 pts=60
+Step: 27279360  SPS: 1797  ε=0.050  ret=0.301  score=25.3  buf=100%  updates=213042
+  vs Random: 115W/12L/1D | score=42.8±53.3 inv=6.0 played=20.8 lanes=4.1 ddraw=28.2 pts=43
+  Self-play: 38W/62L/0D | score=51.5±51.4 inv=4.7 played=20.0 lanes=4.1 ddraw=21.8 pts=52
+Step: 27361280  SPS: 1797  ε=0.050  ret=0.212  score=34.1  buf=100%  updates=213682
+  vs Random: 116W/11L/1D | score=43.9±59.5 inv=6.1 played=21.2 lanes=4.2 ddraw=27.7 pts=44
+  Self-play: 55W/44L/2D | score=54.9±56.8 inv=4.8 played=20.2 lanes=4.1 ddraw=21.7 pts=55
+Step: 27443200  SPS: 1797  ε=0.050  ret=0.200  score=33.3  buf=100%  updates=214322
+  vs Random: 114W/14L/0D | score=49.0±61.5 inv=6.0 played=20.9 lanes=4.1 ddraw=27.2 pts=49
+  Self-play: 55W/45L/0D | score=63.2±61.7 inv=4.8 played=21.1 lanes=4.2 ddraw=20.8 pts=63
+Step: 27525120  SPS: 1797  ε=0.050  ret=0.211  score=37.5  buf=100%  updates=214962
+  vs Random: 86W/14L/0D | score=38.2±57.0 inv=6.2 played=21.0 lanes=4.1 ddraw=27.7 pts=38
+  Self-play: 46W/54L/1D | score=52.6±53.2 inv=4.6 played=19.9 lanes=4.1 ddraw=22.2 pts=53
+Step: 27607040  SPS: 1797  ε=0.050  ret=0.222  score=39.2  buf=100%  updates=215602
+  vs Random: 91W/10L/0D | score=49.0±58.3 inv=6.0 played=21.6 lanes=4.2 ddraw=27.3 pts=49
+  Self-play: 49W/51L/0D | score=58.3±56.3 inv=4.9 played=20.3 lanes=4.2 ddraw=21.4 pts=58
+Step: 27688960  SPS: 1797  ε=0.050  ret=0.255  score=29.9  buf=100%  updates=216242
+  vs Random: 91W/9L/0D | score=39.7±53.3 inv=6.2 played=21.7 lanes=4.2 ddraw=28.0 pts=40
+  Self-play: 47W/51L/2D | score=62.5±55.5 inv=4.9 played=21.2 lanes=4.2 ddraw=20.1 pts=63
+Step: 27770880  SPS: 1797  ε=0.050  ret=0.280  score=40.7  buf=100%  updates=216882
+  vs Random: 88W/14L/0D | score=42.9±56.9 inv=6.3 played=21.5 lanes=4.3 ddraw=26.8 pts=43
+  Self-play: 49W/52L/0D | score=54.6±57.8 inv=4.9 played=20.3 lanes=4.2 ddraw=20.1 pts=55
+Step: 27852800  SPS: 1797  ε=0.050  ret=0.304  score=42.0  buf=100%  updates=217522
+  vs Random: 116W/11L/1D | score=52.1±60.9 inv=6.1 played=21.1 lanes=4.0 ddraw=27.5 pts=52
+  Self-play: 53W/46L/1D | score=65.5±45.7 inv=4.6 played=20.9 lanes=4.2 ddraw=21.6 pts=66
+Step: 27934720  SPS: 1797  ε=0.050  ret=0.190  score=31.8  buf=100%  updates=218162
+  vs Random: 90W/9L/1D | score=41.7±52.7 inv=6.0 played=20.8 lanes=4.2 ddraw=27.5 pts=42
+  Self-play: 48W/51L/1D | score=57.3±54.9 inv=4.7 played=21.2 lanes=4.3 ddraw=19.8 pts=57
+Step: 28016640  SPS: 1797  ε=0.050  ret=0.271  score=29.4  buf=100%  updates=218802
+  vs Random: 119W/9L/0D | score=50.5±59.0 inv=6.3 played=21.7 lanes=4.2 ddraw=27.3 pts=50
+  Self-play: 40W/59L/1D | score=62.9±57.6 inv=4.7 played=19.8 lanes=4.0 ddraw=21.6 pts=63
+Step: 28098560  SPS: 1797  ε=0.050  ret=0.282  score=30.8  buf=100%  updates=219442
+  vs Random: 111W/17L/0D | score=32.1±57.8 inv=6.3 played=20.6 lanes=4.2 ddraw=27.5 pts=32
+  Self-play: 35W/65L/1D | score=57.3±57.9 inv=4.8 played=20.6 lanes=4.1 ddraw=22.5 pts=57
+Step: 28180480  SPS: 1798  ε=0.050  ret=0.160  score=35.8  buf=100%  updates=220082
+  vs Random: 92W/11L/0D | score=38.5±54.4 inv=6.2 played=21.1 lanes=4.2 ddraw=27.8 pts=39
+  Self-play: 42W/59L/0D | score=42.6±47.6 inv=4.6 played=20.2 lanes=4.3 ddraw=21.4 pts=43
+Step: 28262400  SPS: 1798  ε=0.050  ret=0.275  score=25.1  buf=100%  updates=220722
+  vs Random: 114W/13L/1D | score=46.5±61.7 inv=5.9 played=20.7 lanes=4.1 ddraw=27.3 pts=47
+  Self-play: 46W/54L/0D | score=55.4±54.6 inv=4.7 played=20.6 lanes=4.3 ddraw=19.9 pts=55
+Step: 28344320  SPS: 1798  ε=0.050  ret=0.210  score=34.6  buf=100%  updates=221362
+  vs Random: 114W/14L/0D | score=44.4±61.8 inv=5.9 played=20.5 lanes=4.1 ddraw=27.5 pts=44
+  Self-play: 56W/43L/1D | score=70.6±51.6 inv=4.6 played=20.7 lanes=4.1 ddraw=21.8 pts=71
+Step: 28426240  SPS: 1798  ε=0.050  ret=0.273  score=30.2  buf=100%  updates=222002
+  vs Random: 113W/15L/0D | score=44.6±63.8 inv=6.2 played=20.6 lanes=4.1 ddraw=27.4 pts=45
+  Self-play: 43W/56L/1D | score=63.8±62.0 inv=4.8 played=20.4 lanes=4.1 ddraw=21.7 pts=64
+Step: 28508160  SPS: 1798  ε=0.050  ret=0.236  score=27.4  buf=100%  updates=222642
+  vs Random: 90W/11L/1D | score=43.4±64.2 inv=6.0 played=20.4 lanes=3.9 ddraw=26.7 pts=43
+  Self-play: 52W/48L/0D | score=65.2±60.5 inv=4.9 played=20.9 lanes=4.1 ddraw=21.2 pts=65
+Step: 28590080  SPS: 1798  ε=0.050  ret=0.248  score=38.4  buf=100%  updates=223282
+  vs Random: 121W/7L/0D | score=52.8±52.1 inv=6.1 played=21.3 lanes=4.0 ddraw=27.4 pts=53
+  Self-play: 49W/52L/0D | score=65.4±53.3 inv=4.7 played=20.1 lanes=4.0 ddraw=22.3 pts=65
+Step: 28672000  SPS: 1798  ε=0.050  ret=0.297  score=40.0  buf=100%  updates=223922
+  vs Random: 115W/13L/0D | score=44.4±60.6 inv=6.1 played=21.1 lanes=4.1 ddraw=28.1 pts=44
+  Self-play: 50W/51L/0D | score=60.0±55.3 inv=4.6 played=20.4 lanes=4.1 ddraw=20.1 pts=60
+Step: 28753920  SPS: 1798  ε=0.050  ret=0.259  score=32.2  buf=100%  updates=224562
+  vs Random: 121W/6L/1D | score=52.3±59.3 inv=6.0 played=21.2 lanes=4.2 ddraw=27.6 pts=52
+  Self-play: 44W/56L/0D | score=62.0±57.3 inv=4.7 played=20.7 lanes=4.2 ddraw=20.4 pts=62
+Step: 28835840  SPS: 1798  ε=0.050  ret=0.290  score=34.5  buf=100%  updates=225202
+  vs Random: 91W/9L/0D | score=47.7±56.8 inv=6.0 played=21.6 lanes=4.3 ddraw=27.8 pts=48
+  Self-play: 41W/59L/0D | score=60.6±51.4 inv=4.9 played=20.8 lanes=4.2 ddraw=19.7 pts=61
+Step: 28917760  SPS: 1798  ε=0.050  ret=0.273  score=37.4  buf=100%  updates=225842
+  vs Random: 111W/17L/0D | score=38.8±55.0 inv=6.1 played=21.2 lanes=4.3 ddraw=27.5 pts=39
+  Self-play: 47W/53L/0D | score=68.6±48.1 inv=4.9 played=20.7 lanes=4.1 ddraw=21.8 pts=69
+Step: 28999680  SPS: 1798  ε=0.050  ret=0.244  score=29.7  buf=100%  updates=226482
+  vs Random: 94W/7L/0D | score=49.9±54.7 inv=6.3 played=21.8 lanes=4.2 ddraw=27.5 pts=50
+  Self-play: 56W/45L/0D | score=65.8±61.6 inv=5.0 played=21.0 lanes=4.2 ddraw=21.4 pts=66
+Step: 29081600  SPS: 1799  ε=0.050  ret=0.238  score=39.5  buf=100%  updates=227122
+  vs Random: 91W/9L/0D | score=55.6±64.4 inv=6.3 played=22.0 lanes=4.2 ddraw=27.3 pts=56
+  Self-play: 46W/53L/1D | score=65.7±59.5 inv=5.0 played=21.0 lanes=4.1 ddraw=20.0 pts=66
+Step: 29163520  SPS: 1798  ε=0.050  ret=0.249  score=33.4  buf=100%  updates=227762
+  vs Random: 89W/9L/2D | score=56.4±60.9 inv=6.2 played=22.5 lanes=4.3 ddraw=27.6 pts=56
+  Self-play: 41W/59L/0D | score=61.8±54.8 inv=4.8 played=20.6 lanes=4.1 ddraw=20.2 pts=62
+Step: 29245440  SPS: 1799  ε=0.050  ret=0.215  score=34.2  buf=100%  updates=228402
+  vs Random: 97W/3L/0D | score=58.0±55.3 inv=6.1 played=21.8 lanes=4.1 ddraw=26.8 pts=58
+  Self-play: 45W/53L/2D | score=57.6±58.9 inv=5.2 played=20.7 lanes=4.1 ddraw=20.1 pts=58
+Step: 29327360  SPS: 1799  ε=0.050  ret=0.247  score=30.4  buf=100%  updates=229042
+  vs Random: 92W/6L/2D | score=63.0±61.4 inv=6.1 played=21.9 lanes=4.2 ddraw=27.6 pts=63
+  Self-play: 55W/45L/0D | score=67.4±59.1 inv=4.7 played=21.0 lanes=4.2 ddraw=20.3 pts=67
+Step: 29409280  SPS: 1799  ε=0.050  ret=0.250  score=36.5  buf=100%  updates=229682
+  vs Random: 121W/7L/0D | score=48.6±48.2 inv=6.1 played=21.5 lanes=4.2 ddraw=27.4 pts=49
+  Self-play: 52W/48L/0D | score=74.5±51.5 inv=4.7 played=20.9 lanes=4.1 ddraw=20.4 pts=75
+Step: 29491200  SPS: 1799  ε=0.050  ret=0.285  score=48.6  buf=100%  updates=230322
+  vs Random: 90W/10L/0D | score=46.1±56.9 inv=6.1 played=21.1 lanes=4.1 ddraw=26.9 pts=46
+  Self-play: 46W/54L/0D | score=60.8±45.7 inv=4.8 played=20.8 lanes=4.1 ddraw=19.5 pts=61
+Step: 29573120  SPS: 1799  ε=0.050  ret=0.211  score=46.3  buf=100%  updates=230962
+  vs Random: 120W/8L/0D | score=58.8±56.2 inv=6.0 played=22.1 lanes=4.3 ddraw=27.4 pts=59
+  Self-play: 46W/54L/0D | score=63.7±59.0 inv=4.7 played=20.7 lanes=4.1 ddraw=20.8 pts=64
+Step: 29655040  SPS: 1799  ε=0.050  ret=0.201  score=36.7  buf=100%  updates=231602
+  vs Random: 93W/7L/0D | score=59.4±56.2 inv=6.5 played=22.6 lanes=4.3 ddraw=27.5 pts=59
+  Self-play: 54W/47L/0D | score=59.0±53.0 inv=4.8 played=20.0 lanes=4.1 ddraw=21.8 pts=59
+Step: 29736960  SPS: 1799  ε=0.050  ret=0.245  score=45.2  buf=100%  updates=232242
+  vs Random: 91W/10L/0D | score=50.8±57.8 inv=6.1 played=21.6 lanes=4.2 ddraw=26.6 pts=51
+  Self-play: 47W/53L/0D | score=67.0±57.2 inv=4.7 played=20.1 lanes=3.9 ddraw=21.1 pts=67
+Step: 29818880  SPS: 1799  ε=0.050  ret=0.214  score=40.6  buf=100%  updates=232882
+  vs Random: 117W/9L/2D | score=54.5±59.7 inv=6.1 played=21.8 lanes=4.2 ddraw=27.4 pts=54
+  Self-play: 42W/57L/1D | score=56.4±49.0 inv=4.8 played=20.4 lanes=4.1 ddraw=20.3 pts=56
+Step: 29900800  SPS: 1799  ε=0.050  ret=0.246  score=39.7  buf=100%  updates=233522
+  vs Random: 117W/11L/0D | score=46.9±50.5 inv=6.1 played=21.8 lanes=4.3 ddraw=27.7 pts=47
+  Self-play: 56W/43L/1D | score=53.7±55.8 inv=4.7 played=20.7 lanes=4.2 ddraw=21.1 pts=54
+Step: 29982720  SPS: 1799  ε=0.050  ret=0.169  score=35.5  buf=100%  updates=234162
+  vs Random: 92W/9L/0D | score=52.3±55.5 inv=6.3 played=22.4 lanes=4.3 ddraw=27.2 pts=52
+  Self-play: 51W/49L/0D | score=60.5±56.6 inv=5.0 played=21.2 lanes=4.2 ddraw=20.4 pts=60
+Step: 30064640  SPS: 1799  ε=0.050  ret=0.217  score=44.2  buf=100%  updates=234802
+  vs Random: 95W/4L/1D | score=61.4±53.7 inv=6.3 played=22.5 lanes=4.2 ddraw=27.7 pts=61
+  Self-play: 56W/44L/0D | score=73.3±59.0 inv=5.2 played=21.6 lanes=4.2 ddraw=19.7 pts=73
+Step: 30146560  SPS: 1799  ε=0.050  ret=0.193  score=42.8  buf=100%  updates=235442
+  vs Random: 86W/14L/1D | score=35.5±63.2 inv=6.2 played=21.3 lanes=4.3 ddraw=26.9 pts=36
+  Self-play: 49W/51L/0D | score=57.4±53.3 inv=4.9 played=20.9 lanes=4.2 ddraw=20.0 pts=57
+Step: 30228480  SPS: 1799  ε=0.050  ret=0.238  score=44.8  buf=100%  updates=236082
+  vs Random: 92W/9L/0D | score=52.6±60.6 inv=6.0 played=21.4 lanes=4.2 ddraw=27.6 pts=53
+  Self-play: 51W/49L/0D | score=56.9±57.2 inv=4.8 played=20.3 lanes=4.2 ddraw=20.8 pts=57
+Step: 30310400  SPS: 1799  ε=0.050  ret=0.261  score=42.6  buf=100%  updates=236722
+  vs Random: 94W/7L/0D | score=57.6±56.2 inv=6.2 played=22.3 lanes=4.2 ddraw=26.4 pts=58
+  Self-play: 55W/44L/2D | score=68.3±55.6 inv=4.7 played=20.9 lanes=4.2 ddraw=19.9 pts=68
+Step: 30392320  SPS: 1800  ε=0.050  ret=0.205  score=36.6  buf=100%  updates=237362
+  vs Random: 93W/8L/0D | score=54.2±62.0 inv=6.6 played=22.7 lanes=4.4 ddraw=27.7 pts=54
+  Self-play: 44W/56L/0D | score=61.9±54.5 inv=5.0 played=20.9 lanes=4.2 ddraw=20.9 pts=62
+Step: 30474240  SPS: 1800  ε=0.050  ret=0.248  score=31.8  buf=100%  updates=238002
+  vs Random: 88W/11L/1D | score=57.0±64.7 inv=6.3 played=22.3 lanes=4.3 ddraw=26.8 pts=57
+  Self-play: 50W/51L/0D | score=70.1±53.2 inv=4.5 played=20.7 lanes=4.0 ddraw=20.9 pts=70
+Step: 30556160  SPS: 1800  ε=0.050  ret=0.208  score=36.8  buf=100%  updates=238642
+  vs Random: 93W/7L/0D | score=53.7±57.4 inv=6.1 played=21.8 lanes=4.2 ddraw=27.4 pts=54
+  Self-play: 52W/50L/0D | score=68.5±57.4 inv=5.0 played=21.2 lanes=4.1 ddraw=20.6 pts=68
+Step: 30638080  SPS: 1800  ε=0.050  ret=0.227  score=34.5  buf=100%  updates=239282
+  vs Random: 121W/7L/0D | score=48.2±55.6 inv=6.3 played=21.6 lanes=4.1 ddraw=27.6 pts=48
+  Self-play: 51W/51L/0D | score=71.5±56.5 inv=5.0 played=21.1 lanes=4.1 ddraw=20.9 pts=71
+Step: 30720000  SPS: 1800  ε=0.050  ret=0.231  score=43.1  buf=100%  updates=239922
+  vs Random: 118W/10L/0D | score=52.2±60.9 inv=6.3 played=21.3 lanes=4.1 ddraw=27.1 pts=52
+  Self-play: 48W/51L/1D | score=68.8±65.5 inv=4.7 played=20.5 lanes=4.0 ddraw=20.9 pts=69
+Step: 30801920  SPS: 1800  ε=0.050  ret=0.304  score=36.4  buf=100%  updates=240562
+  vs Random: 97W/3L/0D | score=64.5±60.2 inv=6.7 played=22.5 lanes=4.2 ddraw=27.4 pts=64
+  Self-play: 54W/45L/1D | score=75.3±60.4 inv=4.6 played=20.8 lanes=3.9 ddraw=21.3 pts=75
+Step: 30883840  SPS: 1800  ε=0.050  ret=0.259  score=41.5  buf=100%  updates=241202
+  vs Random: 117W/11L/0D | score=54.0±59.6 inv=6.2 played=21.7 lanes=4.2 ddraw=27.1 pts=54
+  Self-play: 55W/45L/0D | score=70.0±59.5 inv=4.9 played=20.9 lanes=4.1 ddraw=19.9 pts=70
+Step: 30965760  SPS: 1800  ε=0.050  ret=0.235  score=41.2  buf=100%  updates=241842
+  vs Random: 117W/10L/1D | score=46.0±52.4 inv=6.4 played=21.3 lanes=4.1 ddraw=27.1 pts=46
+  Self-play: 51W/49L/0D | score=65.3±53.9 inv=4.9 played=20.4 lanes=4.1 ddraw=20.7 pts=65
+Step: 31047680  SPS: 1800  ε=0.050  ret=0.259  score=34.9  buf=100%  updates=242482
+  vs Random: 89W/11L/1D | score=44.9±62.5 inv=6.2 played=21.7 lanes=4.3 ddraw=27.2 pts=45
+  Self-play: 54W/47L/0D | score=69.1±59.3 inv=5.0 played=21.1 lanes=4.2 ddraw=20.1 pts=69
+Step: 31129600  SPS: 1800  ε=0.050  ret=0.214  score=52.4  buf=100%  updates=243122
+  vs Random: 117W/11L/0D | score=45.2±59.8 inv=6.1 played=21.1 lanes=4.2 ddraw=26.9 pts=45
+  Self-play: 51W/49L/0D | score=64.5±49.6 inv=4.7 played=20.5 lanes=4.0 ddraw=21.3 pts=64
+Step: 31211520  SPS: 1800  ε=0.050  ret=0.273  score=47.9  buf=100%  updates=243762
+  vs Random: 120W/8L/0D | score=65.4±55.5 inv=6.2 played=22.2 lanes=4.2 ddraw=26.9 pts=65
+  Self-play: 45W/54L/1D | score=73.4±52.3 inv=5.0 played=20.8 lanes=4.0 ddraw=20.9 pts=73
+Step: 31293440  SPS: 1800  ε=0.050  ret=0.256  score=37.8  buf=100%  updates=244402
+  vs Random: 94W/6L/0D | score=60.2±56.9 inv=6.3 played=21.9 lanes=4.1 ddraw=26.8 pts=60
+  Self-play: 57W/43L/0D | score=72.7±68.7 inv=4.7 played=20.1 lanes=3.9 ddraw=21.7 pts=73
+Step: 31375360  SPS: 1800  ε=0.050  ret=0.291  score=45.9  buf=100%  updates=245042
+  vs Random: 118W/9L/1D | score=50.8±56.7 inv=6.4 played=21.8 lanes=4.2 ddraw=27.7 pts=51
+  Self-play: 47W/54L/1D | score=75.0±56.6 inv=5.0 played=21.1 lanes=3.9 ddraw=20.9 pts=75
+Step: 31457280  SPS: 1800  ε=0.050  ret=0.224  score=35.8  buf=100%  updates=245682
+  vs Random: 115W/13L/0D | score=50.2±58.4 inv=6.2 played=21.2 lanes=4.1 ddraw=27.0 pts=50
+  Self-play: 49W/51L/0D | score=71.8±54.4 inv=4.8 played=21.3 lanes=4.1 ddraw=21.6 pts=72
+Step: 31539200  SPS: 1800  ε=0.050  ret=0.201  score=43.2  buf=100%  updates=246322
+  vs Random: 93W/8L/0D | score=60.3±58.2 inv=6.4 played=22.2 lanes=4.2 ddraw=27.0 pts=60
+  Self-play: 57W/42L/1D | score=74.8±50.0 inv=4.8 played=21.0 lanes=4.0 ddraw=21.8 pts=75
+Step: 31621120  SPS: 1800  ε=0.050  ret=0.285  score=44.1  buf=100%  updates=246962
+  vs Random: 96W/4L/0D | score=60.6±53.9 inv=5.9 played=21.6 lanes=4.1 ddraw=27.0 pts=61
+  Self-play: 50W/46L/4D | score=75.1±57.5 inv=4.8 played=20.9 lanes=4.0 ddraw=20.1 pts=75
+Step: 31703040  SPS: 1800  ε=0.050  ret=0.277  score=43.9  buf=100%  updates=247602
+  vs Random: 95W/5L/0D | score=70.4±62.9 inv=6.5 played=22.8 lanes=4.2 ddraw=28.0 pts=70
+  Self-play: 43W/56L/1D | score=67.3±51.5 inv=5.0 played=21.3 lanes=4.2 ddraw=19.9 pts=67
+Step: 31784960  SPS: 1800  ε=0.050  ret=0.231  score=50.8  buf=100%  updates=248242
+  vs Random: 90W/10L/0D | score=58.4±61.9 inv=6.2 played=22.4 lanes=4.2 ddraw=27.3 pts=58
+  Self-play: 44W/55L/1D | score=73.1±54.7 inv=4.7 played=20.5 lanes=3.9 ddraw=21.3 pts=73
+Step: 31866880  SPS: 1800  ε=0.050  ret=0.259  score=46.3  buf=100%  updates=248882
+  vs Random: 92W/8L/0D | score=64.9±64.4 inv=6.2 played=21.9 lanes=4.2 ddraw=26.6 pts=65
+  Self-play: 51W/48L/1D | score=76.3±54.4 inv=4.6 played=20.8 lanes=4.0 ddraw=20.8 pts=76
+Step: 31948800  SPS: 1800  ε=0.050  ret=0.314  score=52.8  buf=100%  updates=249522
+  vs Random: 95W/8L/0D | score=60.7±65.2 inv=6.2 played=22.4 lanes=4.2 ddraw=27.0 pts=61
+  Self-play: 52W/47L/1D | score=67.9±56.9 inv=4.6 played=21.0 lanes=4.0 ddraw=18.4 pts=68
+Step: 32030720  SPS: 1800  ε=0.050  ret=0.252  score=40.5  buf=100%  updates=250162
+  vs Random: 93W/7L/1D | score=58.0±61.2 inv=6.3 played=22.0 lanes=4.2 ddraw=26.7 pts=58
+  Self-play: 50W/52L/0D | score=68.4±55.6 inv=4.9 played=20.5 lanes=4.1 ddraw=18.6 pts=68
+Step: 32112640  SPS: 1800  ε=0.050  ret=0.186  score=42.3  buf=100%  updates=250802
+  vs Random: 117W/11L/0D | score=55.7±60.5 inv=5.9 played=21.1 lanes=4.0 ddraw=27.0 pts=56
+  Self-play: 50W/50L/0D | score=65.9±49.9 inv=4.7 played=20.8 lanes=4.0 ddraw=20.0 pts=66
+Step: 32194560  SPS: 1800  ε=0.050  ret=0.169  score=55.0  buf=100%  updates=251442
+  vs Random: 92W/8L/0D | score=63.4±62.1 inv=6.3 played=22.3 lanes=4.1 ddraw=27.0 pts=63
+  Self-play: 52W/49L/0D | score=78.1±45.5 inv=4.5 played=20.8 lanes=3.9 ddraw=21.7 pts=78
+Step: 32276480  SPS: 1800  ε=0.050  ret=0.238  score=43.0  buf=100%  updates=252082
+  vs Random: 95W/6L/0D | score=59.9±55.9 inv=6.2 played=22.4 lanes=4.3 ddraw=27.2 pts=60
+  Self-play: 43W/57L/0D | score=76.4±53.5 inv=4.7 played=20.6 lanes=3.9 ddraw=20.4 pts=76
+Step: 32358400  SPS: 1800  ε=0.050  ret=0.242  score=47.4  buf=100%  updates=252722
+  vs Random: 85W/15L/0D | score=47.0±62.9 inv=6.3 played=21.9 lanes=4.2 ddraw=27.7 pts=47
+  Self-play: 54W/48L/1D | score=76.2±62.5 inv=4.8 played=20.6 lanes=3.9 ddraw=21.4 pts=76
+Step: 32440320  SPS: 1800  ε=0.050  ret=0.237  score=45.8  buf=100%  updates=253362
+  vs Random: 124W/4L/0D | score=63.8±57.6 inv=6.1 played=22.1 lanes=4.2 ddraw=26.9 pts=64
+  Self-play: 56W/44L/0D | score=84.5±64.5 inv=4.6 played=20.8 lanes=4.0 ddraw=20.2 pts=85
+Step: 32522240  SPS: 1800  ε=0.050  ret=0.193  score=41.9  buf=100%  updates=254002
+  vs Random: 123W/5L/0D | score=61.5±60.5 inv=6.3 played=22.5 lanes=4.2 ddraw=26.8 pts=62
+  Self-play: 48W/51L/1D | score=71.3±53.4 inv=4.7 played=20.6 lanes=4.0 ddraw=18.8 pts=71
+Step: 32604160  SPS: 1800  ε=0.050  ret=0.208  score=44.3  buf=100%  updates=254642
+  vs Random: 94W/6L/0D | score=58.9±57.1 inv=6.4 played=22.1 lanes=4.1 ddraw=26.5 pts=59
+  Self-play: 52W/48L/0D | score=66.4±66.0 inv=4.9 played=20.5 lanes=4.1 ddraw=20.0 pts=66
+Step: 32686080  SPS: 1800  ε=0.050  ret=0.249  score=47.1  buf=100%  updates=255282
+  vs Random: 88W/12L/0D | score=45.3±58.7 inv=6.4 played=21.9 lanes=4.3 ddraw=26.8 pts=45
+  Self-play: 50W/49L/1D | score=71.5±54.4 inv=4.7 played=20.7 lanes=4.1 ddraw=18.9 pts=71
+Step: 32768000  SPS: 1800  ε=0.050  ret=0.172  score=57.0  buf=100%  updates=255922
+  vs Random: 114W/14L/0D | score=57.9±63.6 inv=6.0 played=21.6 lanes=4.0 ddraw=27.2 pts=58
+  Self-play: 46W/55L/0D | score=75.9±56.3 inv=4.6 played=20.7 lanes=4.0 ddraw=21.1 pts=76
+Step: 32849920  SPS: 1800  ε=0.050  ret=0.222  score=51.1  buf=100%  updates=256562
+  vs Random: 120W/8L/0D | score=69.8±58.0 inv=6.2 played=22.4 lanes=4.2 ddraw=27.4 pts=70
+  Self-play: 43W/57L/0D | score=79.0±59.7 inv=4.7 played=20.3 lanes=3.9 ddraw=21.2 pts=79
+Step: 32931840  SPS: 1800  ε=0.050  ret=0.241  score=55.2  buf=100%  updates=257202
+  vs Random: 120W/7L/1D | score=73.2±56.5 inv=6.1 played=22.2 lanes=4.1 ddraw=26.2 pts=73
+  Self-play: 51W/49L/0D | score=88.4±50.8 inv=4.8 played=21.1 lanes=3.9 ddraw=20.2 pts=88
+Step: 33013760  SPS: 1800  ε=0.050  ret=0.287  score=44.4  buf=100%  updates=257842
+  vs Random: 88W/12L/0D | score=55.0±61.1 inv=6.2 played=21.4 lanes=4.1 ddraw=26.6 pts=55
+  Self-play: 48W/52L/0D | score=78.9±53.0 inv=4.8 played=21.4 lanes=4.1 ddraw=19.4 pts=79
+Step: 33095680  SPS: 1800  ε=0.050  ret=0.229  score=52.4  buf=100%  updates=258482
+  vs Random: 121W/7L/0D | score=72.3±58.2 inv=6.2 played=22.2 lanes=4.1 ddraw=26.9 pts=72
+  Self-play: 41W/59L/1D | score=77.8±51.9 inv=4.7 played=21.0 lanes=4.1 ddraw=19.8 pts=78
+Step: 33177600  SPS: 1800  ε=0.050  ret=0.213  score=54.0  buf=100%  updates=259122
+  vs Random: 118W/10L/0D | score=54.4±62.3 inv=6.2 played=21.9 lanes=4.1 ddraw=27.2 pts=54
+  Self-play: 55W/45L/0D | score=84.7±59.9 inv=4.9 played=21.0 lanes=3.9 ddraw=20.2 pts=85
+Step: 33259520  SPS: 1800  ε=0.050  ret=0.246  score=39.4  buf=100%  updates=259762
+  vs Random: 92W/7L/1D | score=61.6±61.0 inv=6.1 played=21.4 lanes=4.0 ddraw=26.9 pts=62
+  Self-play: 39W/60L/1D | score=70.5±55.8 inv=4.7 played=20.6 lanes=4.0 ddraw=20.4 pts=70
+Step: 33341440  SPS: 1800  ε=0.050  ret=0.176  score=53.8  buf=100%  updates=260402
+  vs Random: 119W/9L/0D | score=57.3±60.4 inv=6.1 played=21.8 lanes=4.1 ddraw=26.7 pts=57
+  Self-play: 44W/56L/0D | score=79.0±52.8 inv=4.8 played=20.6 lanes=3.9 ddraw=18.8 pts=79
+Step: 33423360  SPS: 1800  ε=0.050  ret=0.175  score=42.8  buf=100%  updates=261042
+  vs Random: 95W/6L/0D | score=54.0±54.1 inv=6.0 played=21.6 lanes=4.1 ddraw=26.6 pts=54
+  Self-play: 37W/63L/0D | score=77.8±60.9 inv=4.8 played=20.7 lanes=4.0 ddraw=19.9 pts=78
+Step: 33505280  SPS: 1800  ε=0.050  ret=0.197  score=48.0  buf=100%  updates=261682
+  vs Random: 94W/6L/0D | score=63.0±58.4 inv=6.3 played=22.3 lanes=4.1 ddraw=26.2 pts=63
+  Self-play: 42W/59L/0D | score=77.2±52.5 inv=4.6 played=20.8 lanes=4.0 ddraw=19.2 pts=77
+Step: 33587200  SPS: 1800  ε=0.050  ret=0.252  score=48.3  buf=100%  updates=262322
+  vs Random: 96W/4L/0D | score=59.4±59.1 inv=6.2 played=21.8 lanes=4.0 ddraw=26.7 pts=59
+  Self-play: 47W/55L/0D | score=77.3±58.5 inv=5.0 played=20.7 lanes=3.9 ddraw=20.6 pts=77
+Step: 33669120  SPS: 1800  ε=0.050  ret=0.237  score=47.4  buf=100%  updates=262962
+  vs Random: 123W/5L/0D | score=68.9±56.6 inv=6.5 played=22.5 lanes=4.1 ddraw=26.7 pts=69
+  Self-play: 52W/48L/0D | score=77.9±51.1 inv=4.9 played=21.0 lanes=4.0 ddraw=19.7 pts=78
+Step: 33751040  SPS: 1800  ε=0.050  ret=0.226  score=51.9  buf=100%  updates=263602
+  vs Random: 90W/10L/0D | score=55.7±60.5 inv=6.7 played=22.4 lanes=4.2 ddraw=26.3 pts=56
+  Self-play: 50W/50L/0D | score=80.7±58.1 inv=5.2 played=20.9 lanes=4.0 ddraw=20.3 pts=81
+Step: 33832960  SPS: 1800  ε=0.050  ret=0.200  score=49.3  buf=100%  updates=264242
+  vs Random: 85W/14L/1D | score=47.2±68.6 inv=6.6 played=21.9 lanes=4.2 ddraw=26.6 pts=47
+  Self-play: 53W/47L/1D | score=80.4±57.0 inv=4.7 played=20.9 lanes=4.0 ddraw=20.1 pts=80
+Step: 33914880  SPS: 1800  ε=0.050  ret=0.244  score=55.6  buf=100%  updates=264882
+  vs Random: 93W/8L/0D | score=60.9±62.8 inv=6.5 played=22.1 lanes=4.1 ddraw=27.2 pts=61
+  Self-play: 50W/50L/0D | score=78.5±53.0 inv=5.0 played=20.9 lanes=4.0 ddraw=19.8 pts=78
+Step: 33996800  SPS: 1800  ε=0.050  ret=0.262  score=47.6  buf=100%  updates=265522
+  vs Random: 92W/8L/0D | score=72.4±66.7 inv=6.4 played=22.6 lanes=4.1 ddraw=26.6 pts=72
+  Self-play: 50W/50L/0D | score=85.2±58.7 inv=4.7 played=20.9 lanes=3.9 ddraw=20.3 pts=85
+Step: 34078720  SPS: 1800  ε=0.050  ret=0.284  score=39.5  buf=100%  updates=266162
+  vs Random: 95W/5L/0D | score=59.1±64.8 inv=6.7 played=22.1 lanes=4.1 ddraw=26.3 pts=59
+  Self-play: 54W/47L/0D | score=88.2±59.1 inv=5.0 played=21.3 lanes=4.0 ddraw=19.6 pts=88
+Step: 34160640  SPS: 1800  ε=0.050  ret=0.270  score=50.8  buf=100%  updates=266802
+  vs Random: 92W/7L/1D | score=51.8±56.0 inv=6.5 played=21.9 lanes=4.2 ddraw=26.8 pts=52
+  Self-play: 39W/60L/1D | score=74.5±57.2 inv=4.5 played=19.8 lanes=3.8 ddraw=21.2 pts=74
+Step: 34242560  SPS: 1800  ε=0.050  ret=0.349  score=49.2  buf=100%  updates=267442
+  vs Random: 115W/13L/0D | score=53.5±62.5 inv=6.2 played=21.5 lanes=4.1 ddraw=26.9 pts=54
+  Self-play: 36W/64L/0D | score=80.2±44.8 inv=5.1 played=20.9 lanes=4.0 ddraw=20.3 pts=80
+Step: 34324480  SPS: 1800  ε=0.050  ret=0.272  score=49.6  buf=100%  updates=268082
+  vs Random: 117W/11L/0D | score=57.9±72.7 inv=6.6 played=21.9 lanes=4.2 ddraw=26.0 pts=58
+  Self-play: 48W/52L/0D | score=80.2±59.0 inv=5.0 played=20.8 lanes=3.9 ddraw=19.9 pts=80
+Step: 34406400  SPS: 1800  ε=0.050  ret=0.292  score=37.5  buf=100%  updates=268722
+  vs Random: 91W/9L/0D | score=68.8±66.3 inv=6.6 played=22.0 lanes=4.0 ddraw=26.2 pts=69
+  Self-play: 49W/52L/0D | score=86.0±60.7 inv=5.0 played=20.8 lanes=3.8 ddraw=20.2 pts=86
+Step: 34488320  SPS: 1800  ε=0.050  ret=0.279  score=45.2  buf=100%  updates=269362
+  vs Random: 118W/9L/1D | score=64.2±61.7 inv=6.5 played=22.4 lanes=4.2 ddraw=27.2 pts=64
+  Self-play: 46W/55L/0D | score=77.0±56.9 inv=4.8 played=20.4 lanes=3.9 ddraw=21.8 pts=77
+Step: 34570240  SPS: 1800  ε=0.050  ret=0.228  score=47.1  buf=100%  updates=270002
+  vs Random: 92W/8L/1D | score=55.0±63.3 inv=6.6 played=22.0 lanes=4.1 ddraw=27.0 pts=55
+  Self-play: 48W/52L/0D | score=83.3±54.8 inv=4.6 played=20.6 lanes=3.9 ddraw=19.7 pts=83
+Step: 34652160  SPS: 1800  ε=0.050  ret=0.296  score=41.2  buf=100%  updates=270642
+  vs Random: 92W/7L/1D | score=57.3±61.8 inv=6.7 played=22.2 lanes=4.2 ddraw=26.4 pts=57
+  Self-play: 50W/49L/1D | score=80.6±46.5 inv=4.8 played=21.2 lanes=4.0 ddraw=19.1 pts=81
+Step: 34734080  SPS: 1800  ε=0.050  ret=0.303  score=36.5  buf=100%  updates=271282
+  vs Random: 105W/23L/0D | score=33.1±63.0 inv=6.7 played=21.2 lanes=4.2 ddraw=26.2 pts=33
+  Self-play: 48W/52L/1D | score=82.3±57.5 inv=5.0 played=21.3 lanes=4.0 ddraw=21.1 pts=82
+Step: 34816000  SPS: 1800  ε=0.050  ret=0.293  score=44.8  buf=100%  updates=271922
+  vs Random: 88W/13L/0D | score=43.9±64.5 inv=6.8 played=22.0 lanes=4.3 ddraw=26.1 pts=44
+  Self-play: 51W/49L/0D | score=89.3±63.0 inv=5.0 played=21.4 lanes=3.9 ddraw=19.9 pts=89
+Step: 34897920  SPS: 1800  ε=0.050  ret=0.294  score=39.9  buf=100%  updates=272562
+  vs Random: 119W/9L/0D | score=66.1±62.9 inv=6.7 played=22.2 lanes=4.1 ddraw=26.4 pts=66
+  Self-play: 51W/50L/0D | score=83.1±54.2 inv=4.9 played=20.9 lanes=4.0 ddraw=20.0 pts=83
+Step: 34979840  SPS: 1800  ε=0.050  ret=0.286  score=32.8  buf=100%  updates=273202
+  vs Random: 87W/13L/0D | score=42.7±67.9 inv=6.6 played=21.6 lanes=4.2 ddraw=26.6 pts=43
+  Self-play: 41W/59L/0D | score=80.2±60.2 inv=4.8 played=21.1 lanes=4.0 ddraw=19.7 pts=80
+Step: 35061760  SPS: 1800  ε=0.050  ret=0.293  score=38.5  buf=100%  updates=273842
+  vs Random: 114W/14L/0D | score=48.7±63.2 inv=6.7 played=21.9 lanes=4.2 ddraw=27.3 pts=49
+  Self-play: 46W/51L/3D | score=74.4±56.3 inv=4.7 played=20.4 lanes=3.9 ddraw=20.8 pts=74
+Step: 35143680  SPS: 1800  ε=0.050  ret=0.296  score=43.9  buf=100%  updates=274482
+  vs Random: 89W/10L/1D | score=61.6±70.5 inv=6.6 played=22.4 lanes=4.2 ddraw=27.3 pts=62
+  Self-play: 49W/50L/1D | score=80.0±57.1 inv=5.0 played=21.3 lanes=4.0 ddraw=20.3 pts=80
+Step: 35225600  SPS: 1800  ε=0.050  ret=0.247  score=41.2  buf=100%  updates=275122
+  vs Random: 95W/5L/0D | score=56.4±60.2 inv=6.5 played=21.9 lanes=4.2 ddraw=27.3 pts=56
+  Self-play: 51W/50L/0D | score=84.6±55.9 inv=4.8 played=20.7 lanes=3.8 ddraw=21.5 pts=85
+Step: 35307520  SPS: 1800  ε=0.050  ret=0.303  score=35.2  buf=100%  updates=275762
+  vs Random: 90W/10L/0D | score=48.7±64.9 inv=6.5 played=21.2 lanes=4.0 ddraw=27.0 pts=49
+  Self-play: 47W/52L/2D | score=82.6±64.7 inv=4.9 played=20.7 lanes=3.9 ddraw=22.1 pts=83
+Step: 35389440  SPS: 1800  ε=0.050  ret=0.323  score=42.3  buf=100%  updates=276402
+  vs Random: 120W/7L/1D | score=64.2±64.4 inv=6.8 played=22.6 lanes=4.2 ddraw=26.9 pts=64
+  Self-play: 47W/53L/0D | score=79.5±58.1 inv=4.9 played=20.8 lanes=4.0 ddraw=20.9 pts=80
+Step: 35471360  SPS: 1800  ε=0.050  ret=0.333  score=40.7  buf=100%  updates=277042
+  vs Random: 95W/5L/0D | score=57.6±64.9 inv=6.6 played=22.1 lanes=4.2 ddraw=26.6 pts=58
+  Self-play: 48W/52L/0D | score=77.3±57.6 inv=4.9 played=20.5 lanes=3.9 ddraw=20.9 pts=77
+Step: 35553280  SPS: 1800  ε=0.050  ret=0.301  score=33.9  buf=100%  updates=277682
+  vs Random: 119W/9L/0D | score=54.7±56.8 inv=6.8 played=21.7 lanes=4.1 ddraw=26.5 pts=55
+  Self-play: 46W/54L/0D | score=66.6±60.9 inv=5.0 played=20.2 lanes=4.0 ddraw=22.5 pts=67
+Step: 35635200  SPS: 1800  ε=0.050  ret=0.293  score=35.0  buf=100%  updates=278322
+  vs Random: 112W/15L/1D | score=40.5±58.0 inv=6.5 played=20.9 lanes=4.1 ddraw=26.6 pts=40
+  Self-play: 48W/52L/0D | score=75.6±59.0 inv=5.0 played=20.2 lanes=3.8 ddraw=22.4 pts=76
+Step: 35717120  SPS: 1800  ε=0.050  ret=0.330  score=37.2  buf=100%  updates=278962
+  vs Random: 110W/18L/0D | score=43.8±62.0 inv=6.6 played=21.3 lanes=4.1 ddraw=27.1 pts=44
+  Self-play: 46W/54L/0D | score=70.3±61.4 inv=5.1 played=21.0 lanes=4.1 ddraw=20.8 pts=70
+Step: 35799040  SPS: 1800  ε=0.050  ret=0.191  score=29.8  buf=100%  updates=279602
+  vs Random: 114W/13L/1D | score=49.2±61.4 inv=6.5 played=21.4 lanes=4.1 ddraw=26.4 pts=49
+  Self-play: 49W/51L/0D | score=84.4±58.6 inv=4.8 played=20.8 lanes=3.9 ddraw=20.8 pts=84
+Step: 35880960  SPS: 1800  ε=0.050  ret=0.272  score=36.5  buf=100%  updates=280242
+  vs Random: 113W/14L/1D | score=42.6±61.1 inv=6.4 played=21.2 lanes=4.2 ddraw=27.4 pts=43
+  Self-play: 55W/45L/0D | score=79.6±56.4 inv=4.9 played=21.0 lanes=4.0 ddraw=21.8 pts=80
+Step: 35962880  SPS: 1800  ε=0.050  ret=0.217  score=41.4  buf=100%  updates=280882
+  vs Random: 120W/7L/1D | score=62.1±64.6 inv=6.3 played=21.6 lanes=4.1 ddraw=26.6 pts=62
+  Self-play: 45W/55L/0D | score=83.9±57.0 inv=4.9 played=21.1 lanes=4.0 ddraw=20.2 pts=84
+Step: 36044800  SPS: 1800  ε=0.050  ret=0.292  score=37.0  buf=100%  updates=281522
+  vs Random: 109W/18L/1D | score=39.9±63.6 inv=6.5 played=20.7 lanes=4.1 ddraw=26.6 pts=40
+  Self-play: 48W/52L/0D | score=77.2±59.2 inv=4.7 played=20.1 lanes=3.9 ddraw=21.7 pts=77
+Step: 36126720  SPS: 1800  ε=0.050  ret=0.300  score=30.4  buf=100%  updates=282162
+  vs Random: 119W/8L/1D | score=50.7±56.0 inv=6.5 played=21.3 lanes=4.1 ddraw=26.7 pts=51
+  Self-play: 51W/48L/1D | score=84.3±63.2 inv=5.1 played=21.2 lanes=4.0 ddraw=20.8 pts=84
+Step: 36208640  SPS: 1800  ε=0.050  ret=0.298  score=46.1  buf=100%  updates=282802
+  vs Random: 113W/15L/0D | score=50.6±67.1 inv=6.7 played=21.7 lanes=4.2 ddraw=27.1 pts=51
+  Self-play: 53W/47L/0D | score=81.5±54.8 inv=5.0 played=20.8 lanes=3.8 ddraw=22.1 pts=82
+Step: 36290560  SPS: 1800  ε=0.050  ret=0.255  score=37.1  buf=100%  updates=283442
+  vs Random: 117W/10L/1D | score=52.8±62.8 inv=6.5 played=21.6 lanes=4.1 ddraw=26.7 pts=53
+  Self-play: 46W/54L/0D | score=83.1±60.1 inv=4.5 played=20.1 lanes=3.8 ddraw=22.5 pts=83
+Step: 36372480  SPS: 1800  ε=0.050  ret=0.270  score=52.3  buf=100%  updates=284082
+  vs Random: 87W/13L/0D | score=52.5±63.1 inv=6.4 played=21.1 lanes=4.1 ddraw=26.3 pts=52
+  Self-play: 50W/51L/0D | score=81.1±60.0 inv=5.2 played=20.6 lanes=3.9 ddraw=21.2 pts=81
+Step: 36454400  SPS: 1800  ε=0.050  ret=0.313  score=46.3  buf=100%  updates=284722
+  vs Random: 114W/14L/0D | score=49.0±66.7 inv=6.4 played=20.8 lanes=4.0 ddraw=26.1 pts=49
+  Self-play: 51W/50L/1D | score=89.5±68.9 inv=4.7 played=20.0 lanes=3.7 ddraw=21.7 pts=90
+Step: 36536320  SPS: 1800  ε=0.050  ret=0.307  score=32.7  buf=100%  updates=285362
+  vs Random: 110W/18L/0D | score=45.2±62.6 inv=6.5 played=20.8 lanes=4.1 ddraw=26.7 pts=45
+  Self-play: 53W/48L/0D | score=86.0±58.6 inv=4.8 played=21.0 lanes=3.9 ddraw=20.2 pts=86
+Step: 36618240  SPS: 1800  ε=0.050  ret=0.346  score=33.4  buf=100%  updates=286002
+  vs Random: 113W/15L/0D | score=36.1±59.0 inv=6.4 played=20.6 lanes=4.1 ddraw=26.4 pts=36
+  Self-play: 50W/50L/0D | score=78.1±65.3 inv=4.9 played=20.3 lanes=3.9 ddraw=21.8 pts=78
+Step: 36700160  SPS: 1800  ε=0.050  ret=0.282  score=33.9  buf=100%  updates=286642
+  vs Random: 87W/12L/1D | score=48.7±67.6 inv=6.6 played=20.9 lanes=4.0 ddraw=27.0 pts=49
+  Self-play: 55W/45L/0D | score=79.7±69.1 inv=4.9 played=20.3 lanes=3.8 ddraw=21.8 pts=80
+Step: 36782080  SPS: 1800  ε=0.050  ret=0.288  score=28.3  buf=100%  updates=287282
+  vs Random: 90W/10L/0D | score=57.2±65.1 inv=6.3 played=21.3 lanes=4.0 ddraw=26.9 pts=57
+  Self-play: 52W/48L/0D | score=75.0±56.6 inv=4.8 played=20.4 lanes=3.9 ddraw=21.4 pts=75
+Step: 36864000  SPS: 1800  ε=0.050  ret=0.266  score=30.3  buf=100%  updates=287922
+  vs Random: 110W/18L/0D | score=58.7±66.3 inv=6.2 played=21.3 lanes=4.1 ddraw=26.9 pts=59
+  Self-play: 54W/44L/2D | score=95.9±64.8 inv=5.0 played=20.9 lanes=3.8 ddraw=22.0 pts=96
+Step: 36945920  SPS: 1800  ε=0.050  ret=0.258  score=38.7  buf=100%  updates=288562
+  vs Random: 112W/16L/0D | score=46.2±69.7 inv=6.5 played=20.7 lanes=4.0 ddraw=26.9 pts=46
+  Self-play: 49W/51L/0D | score=77.4±60.9 inv=4.6 played=20.3 lanes=3.9 ddraw=22.2 pts=77
+Step: 37027840  SPS: 1800  ε=0.050  ret=0.260  score=36.4  buf=100%  updates=289202
+  vs Random: 92W/8L/0D | score=55.3±59.5 inv=6.4 played=21.1 lanes=4.0 ddraw=25.9 pts=55
+  Self-play: 35W/63L/2D | score=78.2±55.6 inv=5.0 played=20.7 lanes=3.9 ddraw=21.8 pts=78
+Step: 37109760  SPS: 1800  ε=0.050  ret=0.256  score=32.9  buf=100%  updates=289842
+  vs Random: 110W/18L/0D | score=45.1±61.8 inv=6.2 played=20.1 lanes=3.9 ddraw=26.9 pts=45
+  Self-play: 49W/50L/1D | score=78.3±63.6 inv=4.7 played=20.1 lanes=3.8 ddraw=23.0 pts=78
+Step: 37191680  SPS: 1800  ε=0.050  ret=0.247  score=30.0  buf=100%  updates=290482
+  vs Random: 111W/17L/0D | score=49.4±62.5 inv=6.4 played=21.0 lanes=4.0 ddraw=26.8 pts=49
+  Self-play: 40W/61L/0D | score=82.7±65.4 inv=5.0 played=20.3 lanes=3.7 ddraw=20.4 pts=83
+Step: 37273600  SPS: 1800  ε=0.050  ret=0.226  score=35.6  buf=100%  updates=291122
+  vs Random: 112W/16L/0D | score=45.7±58.3 inv=6.3 played=21.3 lanes=4.2 ddraw=26.8 pts=46
+  Self-play: 44W/57L/0D | score=81.8±54.0 inv=4.8 played=20.1 lanes=3.8 ddraw=21.8 pts=82
+Step: 37355520  SPS: 1800  ε=0.050  ret=0.208  score=37.2  buf=100%  updates=291762
+  vs Random: 111W/17L/0D | score=47.7±61.7 inv=6.2 played=20.5 lanes=4.0 ddraw=27.1 pts=48
+  Self-play: 40W/59L/1D | score=74.3±67.6 inv=4.6 played=19.8 lanes=3.9 ddraw=21.2 pts=74
+Step: 37437440  SPS: 1800  ε=0.050  ret=0.277  score=44.9  buf=100%  updates=292402
+  vs Random: 105W/23L/0D | score=46.1±67.9 inv=6.1 played=20.2 lanes=4.0 ddraw=27.2 pts=46
+  Self-play: 40W/60L/0D | score=82.8±61.6 inv=4.8 played=20.6 lanes=3.8 ddraw=22.0 pts=83
+Step: 37519360  SPS: 1800  ε=0.050  ret=0.180  score=34.2  buf=100%  updates=293042
+  vs Random: 91W/8L/1D | score=45.1±57.0 inv=6.1 played=20.8 lanes=4.0 ddraw=26.7 pts=45
+  Self-play: 45W/53L/2D | score=86.4±59.5 inv=4.8 played=20.9 lanes=3.9 ddraw=20.8 pts=86
+Step: 37601280  SPS: 1800  ε=0.050  ret=0.279  score=37.5  buf=100%  updates=293682
+  vs Random: 117W/10L/1D | score=43.6±56.4 inv=6.3 played=20.7 lanes=4.1 ddraw=27.1 pts=44
+  Self-play: 43W/58L/0D | score=72.4±66.1 inv=5.1 played=20.4 lanes=3.9 ddraw=20.7 pts=72
+Step: 37683200  SPS: 1800  ε=0.050  ret=0.241  score=39.3  buf=100%  updates=294322
+  vs Random: 109W/19L/0D | score=47.4±67.2 inv=6.1 played=20.4 lanes=3.9 ddraw=26.6 pts=47
+  Self-play: 56W/43L/1D | score=97.2±56.3 inv=4.9 played=20.8 lanes=3.7 ddraw=21.4 pts=97
+Step: 37765120  SPS: 1800  ε=0.050  ret=0.232  score=33.9  buf=100%  updates=294962
+  vs Random: 109W/17L/2D | score=41.0±61.0 inv=6.3 played=20.2 lanes=3.9 ddraw=27.0 pts=41
+  Self-play: 62W/38L/0D | score=96.5±60.2 inv=5.1 played=21.1 lanes=3.7 ddraw=21.6 pts=97
+Step: 37847040  SPS: 1800  ε=0.050  ret=0.201  score=44.0  buf=100%  updates=295602
+  vs Random: 92W/8L/0D | score=50.4±51.7 inv=6.2 played=20.4 lanes=3.8 ddraw=26.9 pts=50
+  Self-play: 50W/50L/0D | score=74.2±60.2 inv=4.8 played=20.3 lanes=3.9 ddraw=22.3 pts=74
+Step: 37928960  SPS: 1800  ε=0.050  ret=0.183  score=32.7  buf=100%  updates=296242
+  vs Random: 113W/15L/0D | score=42.8±55.6 inv=6.3 played=20.6 lanes=4.0 ddraw=26.7 pts=43
+  Self-play: 56W/45L/0D | score=99.0±58.4 inv=5.0 played=21.1 lanes=3.8 ddraw=22.0 pts=99
+Step: 38010880  SPS: 1800  ε=0.050  ret=0.239  score=35.8  buf=100%  updates=296882
+  vs Random: 115W/13L/0D | score=46.3±65.9 inv=6.5 played=21.0 lanes=4.1 ddraw=27.4 pts=46
+  Self-play: 44W/56L/0D | score=81.2±54.0 inv=4.8 played=20.5 lanes=3.9 ddraw=22.4 pts=81
+Step: 38092800  SPS: 1800  ε=0.050  ret=0.194  score=35.1  buf=100%  updates=297522
+  vs Random: 119W/9L/0D | score=55.4±59.8 inv=6.4 played=21.0 lanes=3.9 ddraw=26.9 pts=55
+  Self-play: 50W/50L/0D | score=81.6±59.2 inv=4.8 played=19.8 lanes=3.6 ddraw=22.0 pts=82
+Step: 38174720  SPS: 1801  ε=0.050  ret=0.202  score=47.5  buf=100%  updates=298162
+  vs Random: 122W/6L/0D | score=52.2±51.7 inv=6.2 played=21.2 lanes=4.1 ddraw=27.2 pts=52
+  Self-play: 50W/49L/1D | score=90.7±54.5 inv=4.9 played=20.9 lanes=3.8 ddraw=21.0 pts=91
+Step: 38256640  SPS: 1800  ε=0.050  ret=0.212  score=40.4  buf=100%  updates=298802
+  vs Random: 99W/1L/0D | score=65.4±54.8 inv=6.3 played=21.8 lanes=4.1 ddraw=27.7 pts=65
+  Self-play: 48W/50L/2D | score=81.6±59.3 inv=4.7 played=20.3 lanes=3.8 ddraw=21.6 pts=82
+Step: 38338560  SPS: 1801  ε=0.050  ret=0.260  score=43.3  buf=100%  updates=299442
+  vs Random: 117W/10L/1D | score=54.4±57.3 inv=6.1 played=20.6 lanes=4.0 ddraw=26.8 pts=54
+  Self-play: 54W/46L/0D | score=95.0±49.7 inv=4.9 played=21.0 lanes=3.8 ddraw=21.1 pts=95
+Step: 38420480  SPS: 1801  ε=0.050  ret=0.283  score=36.6  buf=100%  updates=300082
+  vs Random: 118W/10L/0D | score=52.5±60.6 inv=6.2 played=21.1 lanes=4.0 ddraw=27.3 pts=53
+  Self-play: 42W/56L/2D | score=85.3±53.5 inv=4.8 played=20.2 lanes=3.7 ddraw=21.3 pts=85
+Step: 38502400  SPS: 1801  ε=0.050  ret=0.206  score=47.0  buf=100%  updates=300722
+  vs Random: 115W/12L/1D | score=40.6±58.0 inv=5.7 played=19.6 lanes=4.0 ddraw=28.2 pts=41
+  Self-play: 44W/56L/0D | score=76.3±55.7 inv=4.6 played=20.0 lanes=3.8 ddraw=22.0 pts=76
+Step: 38584320  SPS: 1801  ε=0.050  ret=0.305  score=36.1  buf=100%  updates=301362
+  vs Random: 118W/9L/1D | score=53.7±60.8 inv=6.1 played=20.7 lanes=4.0 ddraw=27.0 pts=54
+  Self-play: 52W/48L/0D | score=87.4±51.3 inv=4.8 played=21.3 lanes=4.0 ddraw=20.0 pts=87
+Step: 38666240  SPS: 1801  ε=0.050  ret=0.307  score=48.6  buf=100%  updates=302002
+  vs Random: 114W/13L/1D | score=55.9±62.8 inv=6.4 played=21.3 lanes=4.0 ddraw=27.1 pts=56
+  Self-play: 47W/52L/1D | score=84.1±57.8 inv=4.5 played=20.3 lanes=3.8 ddraw=22.3 pts=84
+Step: 38748160  SPS: 1801  ε=0.050  ret=0.229  score=51.2  buf=100%  updates=302642
+  vs Random: 113W/14L/1D | score=48.8±63.4 inv=6.3 played=20.5 lanes=3.9 ddraw=27.4 pts=49
+  Self-play: 43W/57L/0D | score=88.2±57.8 inv=4.7 played=20.2 lanes=3.7 ddraw=21.2 pts=88
+Step: 38830080  SPS: 1801  ε=0.050  ret=0.216  score=44.6  buf=100%  updates=303282
+  vs Random: 111W/16L/1D | score=39.8±63.2 inv=6.0 played=20.0 lanes=3.9 ddraw=27.5 pts=40
+  Self-play: 41W/59L/0D | score=81.3±54.7 inv=4.8 played=20.5 lanes=3.8 ddraw=22.5 pts=81
+Step: 38912000  SPS: 1801  ε=0.050  ret=0.227  score=46.1  buf=100%  updates=303922
+  vs Random: 117W/11L/0D | score=52.9±61.7 inv=5.9 played=20.2 lanes=3.9 ddraw=27.1 pts=53
+  Self-play: 44W/55L/1D | score=78.0±63.1 inv=4.8 played=19.8 lanes=3.7 ddraw=21.8 pts=78
+Step: 38993920  SPS: 1801  ε=0.050  ret=0.235  score=44.2  buf=100%  updates=304562
+  vs Random: 89W/12L/0D | score=53.5±61.7 inv=6.0 played=20.8 lanes=4.0 ddraw=27.3 pts=54
+  Self-play: 54W/45L/1D | score=85.5±56.5 inv=4.9 played=21.3 lanes=3.9 ddraw=21.7 pts=86
+Step: 39075840  SPS: 1801  ε=0.050  ret=0.225  score=40.2  buf=100%  updates=305202
+  vs Random: 119W/9L/0D | score=51.7±61.7 inv=5.9 played=20.3 lanes=3.9 ddraw=27.0 pts=52
+  Self-play: 57W/43L/0D | score=98.3±51.3 inv=4.7 played=20.6 lanes=3.7 ddraw=22.5 pts=98
+Step: 39157760  SPS: 1802  ε=0.050  ret=0.169  score=38.9  buf=100%  updates=305842
+  vs Random: 113W/15L/0D | score=48.9±59.1 inv=6.2 played=20.7 lanes=4.0 ddraw=27.4 pts=49
+  Self-play: 44W/55L/1D | score=85.0±59.5 inv=4.8 played=20.6 lanes=3.8 ddraw=21.1 pts=85
+Step: 39239680  SPS: 1802  ε=0.050  ret=0.233  score=42.9  buf=100%  updates=306482
+  vs Random: 118W/9L/1D | score=54.1±61.3 inv=5.7 played=19.8 lanes=3.8 ddraw=27.1 pts=54
+  Self-play: 52W/50L/0D | score=88.0±57.4 inv=4.8 played=20.4 lanes=3.7 ddraw=21.5 pts=88
+Step: 39321600  SPS: 1802  ε=0.050  ret=0.333  score=54.5  buf=100%  updates=307122
+  vs Random: 118W/10L/0D | score=50.8±64.0 inv=6.0 played=20.1 lanes=3.9 ddraw=26.8 pts=51
+  Self-play: 44W/56L/0D | score=93.0±60.2 inv=4.6 played=20.0 lanes=3.6 ddraw=21.1 pts=93
+Step: 39403520  SPS: 1802  ε=0.050  ret=0.197  score=41.5  buf=100%  updates=307762
+  vs Random: 116W/12L/0D | score=58.5±60.7 inv=5.9 played=20.8 lanes=3.9 ddraw=26.9 pts=58
+  Self-play: 42W/58L/0D | score=78.6±63.9 inv=4.5 played=19.6 lanes=3.7 ddraw=21.5 pts=79
+Step: 39485440  SPS: 1802  ε=0.050  ret=0.240  score=40.6  buf=100%  updates=308402
+  vs Random: 117W/11L/0D | score=61.3±60.9 inv=6.1 played=21.2 lanes=4.0 ddraw=27.6 pts=61
+  Self-play: 44W/56L/0D | score=78.1±58.2 inv=4.7 played=19.9 lanes=3.8 ddraw=21.3 pts=78
+Step: 39567360  SPS: 1802  ε=0.050  ret=0.209  score=49.4  buf=100%  updates=309042
+  vs Random: 95W/4L/1D | score=49.6±54.9 inv=5.9 played=20.6 lanes=3.9 ddraw=26.8 pts=50
+  Self-play: 42W/59L/1D | score=78.1±56.1 inv=4.5 played=20.3 lanes=3.8 ddraw=21.5 pts=78
+Step: 39649280  SPS: 1802  ε=0.050  ret=0.261  score=50.5  buf=100%  updates=309682
+  vs Random: 119W/9L/0D | score=53.6±59.6 inv=6.1 played=20.8 lanes=4.0 ddraw=27.7 pts=54
+  Self-play: 52W/48L/0D | score=83.4±63.8 inv=4.8 played=20.5 lanes=3.8 ddraw=21.3 pts=83
+Step: 39731200  SPS: 1802  ε=0.050  ret=0.298  score=48.9  buf=100%  updates=310322
+  vs Random: 122W/6L/0D | score=62.1±55.6 inv=5.9 played=20.7 lanes=3.9 ddraw=28.4 pts=62
+  Self-play: 47W/54L/0D | score=95.9±56.7 inv=4.8 played=20.9 lanes=3.8 ddraw=21.8 pts=96
+Step: 39813120  SPS: 1802  ε=0.050  ret=0.269  score=35.6  buf=100%  updates=310962
+  vs Random: 115W/12L/1D | score=48.8±57.7 inv=5.9 played=20.2 lanes=3.9 ddraw=27.3 pts=49
+  Self-play: 52W/47L/1D | score=89.9±54.6 inv=5.0 played=20.7 lanes=3.8 ddraw=19.8 pts=90
+Step: 39895040  SPS: 1802  ε=0.050  ret=0.262  score=44.6  buf=100%  updates=311602
+  vs Random: 122W/6L/0D | score=54.8±55.5 inv=5.9 played=20.6 lanes=4.0 ddraw=27.5 pts=55
+  Self-play: 56W/43L/1D | score=84.8±57.1 inv=4.8 played=20.5 lanes=3.8 ddraw=21.7 pts=85
+Step: 39976960  SPS: 1802  ε=0.050  ret=0.197  score=44.8  buf=100%  updates=312242
+  vs Random: 115W/13L/0D | score=55.7±57.4 inv=5.9 played=20.3 lanes=3.9 ddraw=27.2 pts=56
+  Self-play: 42W/58L/0D | score=78.8±57.6 inv=4.6 played=20.3 lanes=3.8 ddraw=20.1 pts=79
+Step: 40058880  SPS: 1802  ε=0.050  ret=0.236  score=48.8  buf=100%  updates=312882
+  vs Random: 122W/6L/0D | score=51.1±60.7 inv=6.1 played=20.5 lanes=3.9 ddraw=27.7 pts=51
+  Self-play: 38W/61L/1D | score=74.7±54.7 inv=4.5 played=19.7 lanes=3.7 ddraw=22.3 pts=75
+Step: 40140800  SPS: 1802  ε=0.050  ret=0.258  score=44.6  buf=100%  updates=313522
+  vs Random: 94W/6L/0D | score=56.7±60.3 inv=6.0 played=21.6 lanes=4.1 ddraw=28.1 pts=57
+  Self-play: 49W/52L/0D | score=79.8±62.1 inv=4.9 played=20.7 lanes=3.9 ddraw=22.0 pts=80
+Step: 40222720  SPS: 1802  ε=0.050  ret=0.175  score=46.0  buf=100%  updates=314162
+  vs Random: 119W/9L/0D | score=55.4±59.3 inv=5.9 played=20.1 lanes=3.9 ddraw=27.2 pts=55
+  Self-play: 42W/56L/2D | score=88.8±61.1 inv=4.7 played=20.4 lanes=3.8 ddraw=21.4 pts=89
+Step: 40304640  SPS: 1802  ε=0.050  ret=0.236  score=47.6  buf=100%  updates=314802
+  vs Random: 118W/9L/1D | score=53.1±56.4 inv=5.9 played=20.4 lanes=3.9 ddraw=27.4 pts=53
+  Self-play: 41W/58L/1D | score=85.9±61.1 inv=4.7 played=20.4 lanes=3.7 ddraw=21.0 pts=86
+Step: 40386560  SPS: 1802  ε=0.050  ret=0.171  score=51.9  buf=100%  updates=315442
+  vs Random: 120W/8L/0D | score=55.2±55.5 inv=6.0 played=20.4 lanes=3.9 ddraw=27.8 pts=55
+  Self-play: 51W/48L/1D | score=91.7±65.9 inv=4.5 played=20.5 lanes=3.7 ddraw=21.9 pts=92
+Step: 40468480  SPS: 1802  ε=0.050  ret=0.223  score=57.4  buf=100%  updates=316082
+  vs Random: 114W/14L/0D | score=45.1±59.8 inv=5.8 played=19.5 lanes=3.8 ddraw=26.7 pts=45
+  Self-play: 53W/45L/2D | score=95.4±54.5 inv=4.7 played=20.9 lanes=3.7 ddraw=22.1 pts=95
+Step: 40550400  SPS: 1802  ε=0.050  ret=0.170  score=39.3  buf=100%  updates=316722
+  vs Random: 118W/10L/0D | score=68.7±61.1 inv=5.7 played=20.4 lanes=3.7 ddraw=26.5 pts=69
+  Self-play: 53W/45L/2D | score=108.3±57.8 inv=4.6 played=20.8 lanes=3.6 ddraw=21.2 pts=108
+Step: 40632320  SPS: 1802  ε=0.050  ret=0.177  score=54.6  buf=100%  updates=317362
+  vs Random: 124W/4L/0D | score=66.0±54.0 inv=5.8 played=20.9 lanes=3.9 ddraw=27.2 pts=66
+  Self-play: 47W/53L/1D | score=99.1±54.7 inv=4.7 played=20.6 lanes=3.6 ddraw=21.0 pts=99
+Step: 40714240  SPS: 1802  ε=0.050  ret=0.259  score=52.9  buf=100%  updates=318002
+  vs Random: 119W/9L/0D | score=68.7±56.0 inv=5.8 played=20.8 lanes=3.8 ddraw=27.8 pts=69
+  Self-play: 48W/53L/0D | score=89.4±61.8 inv=4.6 played=20.1 lanes=3.6 ddraw=22.5 pts=89
+Step: 40796160  SPS: 1802  ε=0.050  ret=0.189  score=59.9  buf=100%  updates=318642
+  vs Random: 125W/3L/0D | score=54.6±47.3 inv=5.7 played=20.7 lanes=3.9 ddraw=27.7 pts=55
+  Self-play: 52W/49L/0D | score=85.6±57.6 inv=4.4 played=20.3 lanes=3.7 ddraw=21.4 pts=86
+Step: 40878080  SPS: 1802  ε=0.050  ret=0.238  score=46.6  buf=100%  updates=319282
+  vs Random: 120W/8L/0D | score=59.1±55.4 inv=5.8 played=20.6 lanes=3.9 ddraw=27.7 pts=59
+  Self-play: 43W/58L/0D | score=72.0±66.5 inv=4.8 played=19.8 lanes=3.7 ddraw=22.0 pts=72
+Step: 40960000  SPS: 1803  ε=0.050  ret=0.280  score=52.7  buf=100%  updates=319922
+  vs Random: 117W/11L/0D | score=55.6±57.2 inv=5.8 played=20.4 lanes=3.8 ddraw=27.2 pts=56
+  Self-play: 41W/58L/1D | score=86.1±62.0 inv=4.5 played=19.7 lanes=3.6 ddraw=21.5 pts=86
+Step: 41041920  SPS: 1803  ε=0.050  ret=0.202  score=48.6  buf=100%  updates=320562
+  vs Random: 122W/6L/0D | score=62.0±55.1 inv=6.1 played=21.0 lanes=3.9 ddraw=27.0 pts=62
+  Self-play: 41W/58L/1D | score=92.8±64.6 inv=4.9 played=20.7 lanes=3.7 ddraw=21.0 pts=93
+Step: 41123840  SPS: 1803  ε=0.050  ret=0.171  score=52.9  buf=100%  updates=321202
+  vs Random: 123W/4L/1D | score=58.5±48.7 inv=6.1 played=21.7 lanes=4.0 ddraw=27.5 pts=59
+  Self-play: 36W/63L/1D | score=89.9±59.6 inv=4.7 played=20.2 lanes=3.6 ddraw=21.2 pts=90
+Step: 41205760  SPS: 1803  ε=0.050  ret=0.194  score=57.7  buf=100%  updates=321842
+  vs Random: 124W/3L/1D | score=67.3±51.4 inv=5.9 played=21.2 lanes=3.9 ddraw=27.6 pts=67
+  Self-play: 44W/56L/1D | score=90.6±60.1 inv=4.8 played=20.6 lanes=3.8 ddraw=21.3 pts=91
+Step: 41287680  SPS: 1803  ε=0.050  ret=0.154  score=46.2  buf=100%  updates=322482
+  vs Random: 117W/10L/1D | score=59.4±62.1 inv=6.0 played=20.4 lanes=3.8 ddraw=27.2 pts=59
+  Self-play: 43W/58L/0D | score=76.8±59.9 inv=4.5 played=19.4 lanes=3.6 ddraw=22.4 pts=77
+Step: 41369600  SPS: 1802  ε=0.050  ret=0.207  score=48.1  buf=100%  updates=323122
+  vs Random: 120W/8L/0D | score=62.1±54.6 inv=5.9 played=20.9 lanes=3.9 ddraw=27.1 pts=62
+  Self-play: 48W/52L/0D | score=95.9±61.4 inv=4.6 played=20.5 lanes=3.6 ddraw=22.4 pts=96
+Step: 41451520  SPS: 1803  ε=0.050  ret=0.209  score=43.8  buf=100%  updates=323762
+  vs Random: 120W/8L/0D | score=63.6±60.4 inv=5.8 played=20.8 lanes=3.8 ddraw=27.4 pts=64
+  Self-play: 47W/53L/0D | score=90.9±60.4 inv=4.5 played=20.2 lanes=3.7 ddraw=22.7 pts=91
+Step: 41533440  SPS: 1803  ε=0.050  ret=0.211  score=37.7  buf=100%  updates=324402
+  vs Random: 119W/9L/0D | score=61.2±57.3 inv=6.1 played=21.0 lanes=3.8 ddraw=27.0 pts=61
+  Self-play: 47W/53L/0D | score=89.8±59.2 inv=4.9 played=20.4 lanes=3.7 ddraw=21.3 pts=90
+Step: 41615360  SPS: 1803  ε=0.050  ret=0.223  score=40.9  buf=100%  updates=325042
+  vs Random: 117W/10L/1D | score=53.3±55.5 inv=5.9 played=20.5 lanes=3.9 ddraw=27.4 pts=53
+  Self-play: 45W/55L/0D | score=83.7±66.9 inv=4.9 played=20.6 lanes=3.9 ddraw=22.7 pts=84
+Step: 41697280  SPS: 1802  ε=0.050  ret=0.250  score=51.7  buf=100%  updates=325682
+  vs Random: 116W/12L/0D | score=61.9±61.5 inv=6.2 played=21.3 lanes=4.1 ddraw=27.5 pts=62
+  Self-play: 50W/50L/0D | score=92.6±53.5 inv=4.8 played=20.7 lanes=3.8 ddraw=22.1 pts=93
+Step: 41779200  SPS: 1803  ε=0.050  ret=0.202  score=51.7  buf=100%  updates=326322
+  vs Random: 117W/11L/0D | score=60.4±58.3 inv=6.1 played=21.3 lanes=4.0 ddraw=27.7 pts=60
+  Self-play: 43W/57L/0D | score=93.3±60.7 inv=5.0 played=20.2 lanes=3.7 ddraw=22.1 pts=93
+Step: 41861120  SPS: 1803  ε=0.050  ret=0.273  score=37.5  buf=100%  updates=326962
+  vs Random: 119W/9L/0D | score=65.4±60.9 inv=6.0 played=21.4 lanes=4.0 ddraw=27.4 pts=65
+  Self-play: 61W/38L/1D | score=89.2±67.1 inv=4.8 played=20.2 lanes=3.7 ddraw=22.0 pts=89
+Step: 41943040  SPS: 1803  ε=0.050  ret=0.182  score=44.7  buf=100%  updates=327602
+  vs Random: 90W/10L/0D | score=54.2±61.4 inv=6.0 played=20.9 lanes=4.0 ddraw=27.5 pts=54
+  Self-play: 54W/48L/0D | score=89.0±66.3 inv=4.7 played=19.8 lanes=3.5 ddraw=23.3 pts=89
+Step: 42024960  SPS: 1803  ε=0.050  ret=0.207  score=35.9  buf=100%  updates=328242
+  vs Random: 93W/7L/0D | score=61.9±59.6 inv=6.0 played=20.6 lanes=3.9 ddraw=26.9 pts=62
+  Self-play: 53W/45L/2D | score=99.1±57.4 inv=4.7 played=20.5 lanes=3.6 ddraw=21.8 pts=99
+Step: 42106880  SPS: 1803  ε=0.050  ret=0.206  score=46.1  buf=100%  updates=328882
+  vs Random: 123W/5L/0D | score=62.7±54.5 inv=5.9 played=20.9 lanes=3.9 ddraw=26.8 pts=63
+  Self-play: 57W/44L/0D | score=92.3±64.9 inv=4.9 played=20.8 lanes=3.8 ddraw=21.0 pts=92
+Step: 42188800  SPS: 1803  ε=0.050  ret=0.164  score=48.4  buf=100%  updates=329522
+  vs Random: 120W/7L/1D | score=57.1±57.6 inv=6.2 played=21.1 lanes=3.9 ddraw=26.6 pts=57
+  Self-play: 44W/56L/0D | score=84.8±63.3 inv=4.9 played=20.1 lanes=3.7 ddraw=21.0 pts=85
+Step: 42270720  SPS: 1803  ε=0.050  ret=0.184  score=40.7  buf=100%  updates=330162
+  vs Random: 124W/4L/0D | score=57.6±48.5 inv=6.1 played=21.1 lanes=4.0 ddraw=27.2 pts=58
+  Self-play: 49W/52L/0D | score=79.6±63.3 inv=4.7 played=20.3 lanes=3.9 ddraw=21.2 pts=80
+Step: 42352640  SPS: 1803  ε=0.050  ret=0.258  score=48.0  buf=100%  updates=330802
+  vs Random: 95W/5L/0D | score=62.6±57.1 inv=6.1 played=21.2 lanes=4.0 ddraw=27.4 pts=63
+  Self-play: 56W/44L/0D | score=97.0±60.2 inv=4.7 played=20.9 lanes=3.9 ddraw=20.1 pts=97
+Step: 42434560  SPS: 1803  ε=0.050  ret=0.148  score=35.6  buf=100%  updates=331442
+  vs Random: 96W/4L/0D | score=54.2±58.0 inv=5.9 played=20.5 lanes=3.8 ddraw=27.2 pts=54
+  Self-play: 44W/56L/0D | score=93.3±61.2 inv=4.5 played=20.0 lanes=3.6 ddraw=21.1 pts=93
+Step: 42516480  SPS: 1803  ε=0.050  ret=0.223  score=48.2  buf=100%  updates=332082
+  vs Random: 91W/9L/0D | score=63.5±65.6 inv=6.3 played=21.4 lanes=4.0 ddraw=27.3 pts=64
+  Self-play: 48W/51L/1D | score=92.9±61.7 inv=4.6 played=20.3 lanes=3.7 ddraw=21.4 pts=93
+Step: 42598400  SPS: 1803  ε=0.050  ret=0.224  score=49.8  buf=100%  updates=332722
+  vs Random: 120W/8L/0D | score=59.8±56.5 inv=6.3 played=21.1 lanes=3.9 ddraw=27.4 pts=60
+  Self-play: 50W/50L/2D | score=88.0±54.9 inv=4.7 played=20.8 lanes=3.8 ddraw=21.5 pts=88
+Step: 42680320  SPS: 1803  ε=0.050  ret=0.180  score=58.0  buf=100%  updates=333362
+  vs Random: 94W/6L/0D | score=67.5±55.9 inv=6.4 played=21.9 lanes=4.0 ddraw=26.9 pts=67
+  Self-play: 53W/47L/0D | score=98.7±52.5 inv=4.8 played=20.9 lanes=3.8 ddraw=21.7 pts=99
+Step: 42762240  SPS: 1803  ε=0.050  ret=0.236  score=42.9  buf=100%  updates=334002
+  vs Random: 115W/12L/1D | score=65.6±65.1 inv=6.3 played=21.3 lanes=3.9 ddraw=27.1 pts=66
+  Self-play: 47W/51L/2D | score=96.7±64.2 inv=4.4 played=20.1 lanes=3.5 ddraw=22.1 pts=97
+Step: 42844160  SPS: 1803  ε=0.050  ret=0.220  score=41.2  buf=100%  updates=334642
+  vs Random: 116W/12L/0D | score=57.1±59.7 inv=5.9 played=20.6 lanes=3.8 ddraw=27.3 pts=57
+  Self-play: 45W/54L/1D | score=94.3±59.4 inv=4.7 played=20.4 lanes=3.6 ddraw=21.0 pts=94
+Step: 42926080  SPS: 1803  ε=0.050  ret=0.273  score=52.3  buf=100%  updates=335282
+  vs Random: 120W/8L/0D | score=65.3±58.0 inv=5.8 played=21.0 lanes=3.9 ddraw=27.7 pts=65
+  Self-play: 51W/49L/0D | score=89.0±54.4 inv=4.7 played=20.4 lanes=3.7 ddraw=21.5 pts=89
+Step: 43008000  SPS: 1803  ε=0.050  ret=0.236  score=46.5  buf=100%  updates=335922
+  vs Random: 113W/14L/1D | score=51.8±64.4 inv=6.1 played=20.9 lanes=4.0 ddraw=27.6 pts=52
+  Self-play: 48W/52L/0D | score=95.9±66.8 inv=4.5 played=20.2 lanes=3.7 ddraw=22.6 pts=96
+Step: 43089920  SPS: 1803  ε=0.050  ret=0.224  score=53.3  buf=100%  updates=336562
+  vs Random: 118W/9L/1D | score=68.1±62.4 inv=6.2 played=21.8 lanes=4.0 ddraw=27.3 pts=68
+  Self-play: 42W/57L/1D | score=89.1±52.7 inv=4.6 played=20.2 lanes=3.6 ddraw=21.4 pts=89
+Step: 43171840  SPS: 1803  ε=0.050  ret=0.159  score=55.5  buf=100%  updates=337202
+  vs Random: 121W/7L/0D | score=54.8±59.5 inv=6.0 played=20.3 lanes=3.9 ddraw=27.2 pts=55
+  Self-play: 51W/47L/2D | score=99.8±49.0 inv=4.6 played=20.7 lanes=3.6 ddraw=22.3 pts=100
+Step: 43253760  SPS: 1803  ε=0.050  ret=0.257  score=39.3  buf=100%  updates=337842
+  vs Random: 114W/14L/0D | score=51.1±54.9 inv=6.1 played=20.9 lanes=4.1 ddraw=27.3 pts=51
+  Self-play: 56W/45L/1D | score=98.9±54.7 inv=4.5 played=20.9 lanes=3.7 ddraw=21.5 pts=99
+Step: 43335680  SPS: 1803  ε=0.050  ret=0.156  score=50.5  buf=100%  updates=338482
+  vs Random: 122W/6L/0D | score=66.2±55.2 inv=6.0 played=21.1 lanes=3.9 ddraw=26.8 pts=66
+  Self-play: 48W/52L/0D | score=100.9±57.2 inv=4.8 played=21.2 lanes=3.7 ddraw=20.6 pts=101
+Step: 43417600  SPS: 1803  ε=0.050  ret=0.265  score=46.4  buf=100%  updates=339122
+  vs Random: 115W/13L/0D | score=55.3±62.0 inv=5.8 played=20.2 lanes=3.8 ddraw=27.4 pts=55
+  Self-play: 44W/56L/0D | score=85.9±58.0 inv=4.8 played=20.4 lanes=3.7 ddraw=22.0 pts=86
+Step: 43499520  SPS: 1803  ε=0.050  ret=0.188  score=54.4  buf=100%  updates=339762
+  vs Random: 122W/6L/0D | score=55.6±60.5 inv=6.4 played=20.9 lanes=3.9 ddraw=27.1 pts=56
+  Self-play: 49W/52L/0D | score=88.6±61.9 inv=4.7 played=20.6 lanes=3.8 ddraw=21.2 pts=89
+Step: 43581440  SPS: 1803  ε=0.050  ret=0.167  score=46.0  buf=100%  updates=340402
+  vs Random: 119W/7L/2D | score=62.0±61.2 inv=5.9 played=21.1 lanes=4.0 ddraw=27.4 pts=62
+  Self-play: 47W/53L/0D | score=97.8±47.6 inv=4.4 played=20.9 lanes=3.7 ddraw=21.5 pts=98
+Step: 43663360  SPS: 1804  ε=0.050  ret=0.202  score=55.6  buf=100%  updates=341042
+  vs Random: 95W/5L/0D | score=67.0±57.6 inv=6.1 played=21.9 lanes=4.0 ddraw=27.1 pts=67
+  Self-play: 43W/54L/3D | score=90.7±50.2 inv=4.6 played=20.7 lanes=3.8 ddraw=20.7 pts=91
+Step: 43745280  SPS: 1804  ε=0.050  ret=0.208  score=46.1  buf=100%  updates=341682
+  vs Random: 118W/10L/0D | score=65.8±54.8 inv=5.8 played=21.5 lanes=4.0 ddraw=27.3 pts=66
+  Self-play: 40W/59L/1D | score=90.5±50.2 inv=4.7 played=20.5 lanes=3.7 ddraw=20.6 pts=90
+Step: 43827200  SPS: 1804  ε=0.050  ret=0.160  score=45.7  buf=100%  updates=342322
+  vs Random: 120W/7L/1D | score=66.9±56.6 inv=5.7 played=20.7 lanes=3.8 ddraw=27.1 pts=67
+  Self-play: 47W/52L/2D | score=99.0±57.3 inv=4.7 played=20.4 lanes=3.6 ddraw=20.7 pts=99
+Step: 43909120  SPS: 1804  ε=0.050  ret=0.194  score=49.3  buf=100%  updates=342962
+  vs Random: 123W/5L/0D | score=64.0±58.7 inv=5.8 played=21.2 lanes=4.0 ddraw=26.8 pts=64
+  Self-play: 45W/55L/0D | score=88.2±56.8 inv=4.4 played=20.2 lanes=3.7 ddraw=22.3 pts=88
+Step: 43991040  SPS: 1804  ε=0.050  ret=0.146  score=52.0  buf=100%  updates=343602
+  vs Random: 121W/7L/0D | score=68.0±56.9 inv=5.8 played=20.5 lanes=3.7 ddraw=27.1 pts=68
+  Self-play: 49W/51L/1D | score=93.5±60.4 inv=4.6 played=20.1 lanes=3.6 ddraw=22.2 pts=94
+Step: 44072960  SPS: 1804  ε=0.050  ret=0.206  score=57.0  buf=100%  updates=344242
+  vs Random: 99W/1L/0D | score=61.2±53.0 inv=5.8 played=20.4 lanes=3.7 ddraw=27.6 pts=61
+  Self-play: 54W/46L/0D | score=107.4±61.0 inv=4.8 played=21.2 lanes=3.6 ddraw=22.9 pts=107
+Step: 44154880  SPS: 1804  ε=0.050  ret=0.242  score=62.7  buf=100%  updates=344882
+  vs Random: 118W/10L/0D | score=54.5±57.9 inv=5.6 played=20.2 lanes=3.9 ddraw=27.6 pts=55
+  Self-play: 57W/42L/1D | score=100.9±51.6 inv=4.9 played=20.9 lanes=3.7 ddraw=20.8 pts=101
+Step: 44236800  SPS: 1804  ε=0.050  ret=0.129  score=64.3  buf=100%  updates=345522
+  vs Random: 120W/8L/0D | score=58.7±54.6 inv=5.9 played=20.8 lanes=3.8 ddraw=27.5 pts=59
+  Self-play: 50W/48L/2D | score=92.7±52.4 inv=4.4 played=20.0 lanes=3.6 ddraw=22.0 pts=93
+Step: 44318720  SPS: 1804  ε=0.050  ret=0.132  score=58.0  buf=100%  updates=346162
+  vs Random: 120W/8L/0D | score=63.8±55.4 inv=5.9 played=21.0 lanes=4.0 ddraw=26.9 pts=64
+  Self-play: 36W/65L/0D | score=89.5±49.3 inv=4.4 played=20.0 lanes=3.6 ddraw=21.4 pts=90
+Step: 44400640  SPS: 1804  ε=0.050  ret=0.193  score=53.5  buf=100%  updates=346802
+  vs Random: 118W/9L/1D | score=62.8±59.8 inv=5.9 played=21.5 lanes=4.0 ddraw=28.2 pts=63
+  Self-play: 52W/48L/0D | score=93.2±56.6 inv=4.6 played=20.6 lanes=3.7 ddraw=21.8 pts=93
+Step: 44482560  SPS: 1804  ε=0.050  ret=0.279  score=48.6  buf=100%  updates=347442
+  vs Random: 122W/6L/0D | score=64.2±53.5 inv=5.7 played=20.7 lanes=3.8 ddraw=26.8 pts=64
+  Self-play: 57W/44L/0D | score=104.8±53.4 inv=4.5 played=20.7 lanes=3.6 ddraw=23.3 pts=105
+Step: 44564480  SPS: 1804  ε=0.050  ret=0.227  score=53.7  buf=100%  updates=348082
+  vs Random: 122W/6L/0D | score=66.9±51.1 inv=5.8 played=21.6 lanes=4.0 ddraw=27.4 pts=67
+  Self-play: 49W/52L/0D | score=104.9±58.2 inv=4.3 played=20.8 lanes=3.6 ddraw=22.9 pts=105
+Step: 44646400  SPS: 1805  ε=0.050  ret=0.264  score=55.3  buf=100%  updates=348722
+  vs Random: 117W/11L/0D | score=61.3±59.3 inv=5.9 played=21.4 lanes=4.0 ddraw=27.9 pts=61
+  Self-play: 53W/47L/0D | score=97.5±57.0 inv=4.7 played=20.7 lanes=3.6 ddraw=22.2 pts=97
+Step: 44728320  SPS: 1805  ε=0.050  ret=0.188  score=49.8  buf=100%  updates=349362
+  vs Random: 118W/10L/0D | score=59.8±59.4 inv=5.9 played=20.5 lanes=3.8 ddraw=27.1 pts=60
+  Self-play: 49W/50L/1D | score=99.4±61.3 inv=4.7 played=20.4 lanes=3.6 ddraw=21.7 pts=99
+Step: 44810240  SPS: 1805  ε=0.050  ret=0.233  score=45.2  buf=100%  updates=350002
+  vs Random: 93W/7L/0D | score=59.1±64.2 inv=6.1 played=21.1 lanes=4.0 ddraw=27.3 pts=59
+  Self-play: 51W/49L/0D | score=106.4±50.4 inv=4.4 played=21.2 lanes=3.7 ddraw=22.2 pts=106
+Step: 44892160  SPS: 1805  ε=0.050  ret=0.207  score=53.3  buf=100%  updates=350642
+  vs Random: 121W/6L/1D | score=62.8±56.1 inv=5.9 played=21.2 lanes=3.9 ddraw=27.3 pts=63
+  Self-play: 40W/61L/0D | score=96.2±51.4 inv=4.5 played=20.6 lanes=3.7 ddraw=22.1 pts=96
+Step: 44974080  SPS: 1805  ε=0.050  ret=0.195  score=39.4  buf=100%  updates=351282
+  vs Random: 125W/3L/0D | score=76.7±53.8 inv=5.8 played=21.5 lanes=3.9 ddraw=26.9 pts=77
+  Self-play: 50W/50L/0D | score=96.2±54.3 inv=4.3 played=20.3 lanes=3.6 ddraw=20.9 pts=96
+Step: 45056000  SPS: 1805  ε=0.050  ret=0.223  score=53.6  buf=100%  updates=351922
+  vs Random: 123W/4L/1D | score=76.8±54.7 inv=5.9 played=21.5 lanes=3.9 ddraw=27.1 pts=77
+  Self-play: 51W/49L/0D | score=112.1±54.1 inv=4.7 played=20.6 lanes=3.5 ddraw=22.1 pts=112
+Step: 45137920  SPS: 1805  ε=0.050  ret=0.297  score=56.6  buf=100%  updates=352562
+  vs Random: 121W/7L/0D | score=68.4±55.6 inv=5.9 played=21.2 lanes=3.9 ddraw=27.4 pts=68
+  Self-play: 57W/43L/0D | score=104.0±55.9 inv=4.7 played=20.8 lanes=3.6 ddraw=22.1 pts=104
+Step: 45219840  SPS: 1805  ε=0.050  ret=0.284  score=60.6  buf=100%  updates=353202
+  vs Random: 124W/4L/0D | score=71.6±58.8 inv=5.7 played=21.5 lanes=3.9 ddraw=27.2 pts=72
+  Self-play: 56W/43L/1D | score=104.1±54.8 inv=4.5 played=20.6 lanes=3.5 ddraw=21.3 pts=104
+Step: 45301760  SPS: 1805  ε=0.050  ret=0.197  score=65.2  buf=100%  updates=353842
+  vs Random: 123W/5L/0D | score=78.0±55.7 inv=5.9 played=22.0 lanes=3.9 ddraw=27.2 pts=78
+  Self-play: 46W/53L/1D | score=97.8±60.0 inv=4.5 played=20.2 lanes=3.5 ddraw=22.5 pts=98
+Step: 45383680  SPS: 1805  ε=0.050  ret=0.258  score=59.6  buf=100%  updates=354482
+  vs Random: 98W/2L/0D | score=65.8±54.1 inv=6.0 played=21.8 lanes=4.0 ddraw=27.6 pts=66
+  Self-play: 41W/60L/0D | score=85.8±55.5 inv=4.5 played=20.3 lanes=3.7 ddraw=22.1 pts=86
+Step: 45465600  SPS: 1805  ε=0.050  ret=0.356  score=63.4  buf=100%  updates=355122
+  vs Random: 124W/4L/0D | score=80.9±54.2 inv=5.8 played=21.5 lanes=3.8 ddraw=27.0 pts=81
+  Self-play: 49W/51L/0D | score=103.4±50.4 inv=4.3 played=20.3 lanes=3.5 ddraw=21.5 pts=103
+Step: 45547520  SPS: 1805  ε=0.050  ret=0.168  score=56.7  buf=100%  updates=355762
+  vs Random: 125W/3L/0D | score=73.2±50.2 inv=5.7 played=21.1 lanes=3.8 ddraw=26.6 pts=73
+  Self-play: 52W/48L/0D | score=102.5±50.2 inv=4.5 played=20.4 lanes=3.4 ddraw=22.1 pts=103
+Step: 45629440  SPS: 1805  ε=0.050  ret=0.182  score=63.7  buf=100%  updates=356402
+  vs Random: 120W/8L/0D | score=73.3±59.4 inv=6.0 played=22.0 lanes=4.0 ddraw=27.1 pts=73
+  Self-play: 48W/51L/1D | score=97.1±59.1 inv=4.7 played=20.6 lanes=3.6 ddraw=19.6 pts=97
+Step: 45711360  SPS: 1805  ε=0.050  ret=0.302  score=51.8  buf=100%  updates=357042
+  vs Random: 120W/8L/0D | score=71.4±55.6 inv=5.7 played=21.4 lanes=3.9 ddraw=27.4 pts=71
+  Self-play: 51W/49L/0D | score=103.6±50.2 inv=4.5 played=20.5 lanes=3.5 ddraw=20.7 pts=104
+Step: 45793280  SPS: 1805  ε=0.050  ret=0.249  score=58.8  buf=100%  updates=357682
+  vs Random: 121W/7L/0D | score=76.9±56.8 inv=5.9 played=21.9 lanes=3.9 ddraw=27.4 pts=77
+  Self-play: 44W/57L/0D | score=94.9±65.4 inv=4.5 played=20.3 lanes=3.5 ddraw=21.1 pts=95
+Step: 45875200  SPS: 1806  ε=0.050  ret=0.240  score=50.5  buf=100%  updates=358322
+  vs Random: 122W/6L/0D | score=77.1±58.2 inv=6.0 played=21.6 lanes=3.8 ddraw=27.1 pts=77
+  Self-play: 47W/52L/1D | score=106.7±54.5 inv=4.3 played=20.3 lanes=3.4 ddraw=21.6 pts=107
+Step: 45957120  SPS: 1806  ε=0.050  ret=0.307  score=55.0  buf=100%  updates=358962
+  vs Random: 93W/7L/0D | score=72.0±66.8 inv=6.0 played=21.5 lanes=3.9 ddraw=27.2 pts=72
+  Self-play: 41W/59L/0D | score=92.7±51.4 inv=4.3 played=20.0 lanes=3.5 ddraw=21.9 pts=93
+Step: 46039040  SPS: 1806  ε=0.050  ret=0.266  score=65.4  buf=100%  updates=359602
+  vs Random: 123W/5L/0D | score=79.6±51.5 inv=5.8 played=21.4 lanes=3.8 ddraw=26.6 pts=80
+  Self-play: 50W/50L/0D | score=110.9±61.2 inv=4.7 played=20.7 lanes=3.4 ddraw=21.8 pts=111
+Step: 46120960  SPS: 1806  ε=0.050  ret=0.168  score=62.2  buf=100%  updates=360242
+  vs Random: 125W/3L/0D | score=79.9±56.2 inv=5.8 played=21.3 lanes=3.7 ddraw=27.2 pts=80
+  Self-play: 51W/49L/0D | score=110.8±48.9 inv=4.7 played=20.5 lanes=3.4 ddraw=22.0 pts=111
+Step: 46202880  SPS: 1806  ε=0.050  ret=0.147  score=60.4  buf=100%  updates=360882
+  vs Random: 122W/6L/0D | score=68.7±57.6 inv=6.1 played=21.6 lanes=3.9 ddraw=27.3 pts=69
+  Self-play: 44W/55L/1D | score=104.5±62.2 inv=5.0 played=20.7 lanes=3.5 ddraw=20.7 pts=105
+Step: 46284800  SPS: 1806  ε=0.050  ret=0.240  score=60.7  buf=100%  updates=361522
+  vs Random: 124W/4L/0D | score=77.9±56.8 inv=5.8 played=21.6 lanes=3.8 ddraw=27.0 pts=78
+  Self-play: 48W/52L/0D | score=94.2±55.0 inv=4.6 played=20.7 lanes=3.7 ddraw=20.8 pts=94
+Step: 46366720  SPS: 1806  ε=0.050  ret=0.234  score=49.9  buf=100%  updates=362162
+  vs Random: 121W/7L/0D | score=74.3±55.0 inv=5.7 played=21.5 lanes=3.8 ddraw=26.9 pts=74
+  Self-play: 48W/52L/0D | score=97.0±58.1 inv=4.5 played=20.5 lanes=3.6 ddraw=21.3 pts=97
+Step: 46448640  SPS: 1806  ε=0.050  ret=0.208  score=52.3  buf=100%  updates=362802
+  vs Random: 122W/6L/0D | score=70.8±57.6 inv=5.6 played=21.2 lanes=3.8 ddraw=27.0 pts=71
+  Self-play: 49W/51L/0D | score=100.9±55.3 inv=4.6 played=20.7 lanes=3.5 ddraw=22.4 pts=101
+Step: 46530560  SPS: 1806  ε=0.050  ret=0.218  score=59.8  buf=100%  updates=363442
+  vs Random: 124W/4L/0D | score=75.2±56.8 inv=5.8 played=21.3 lanes=3.8 ddraw=27.4 pts=75
+  Self-play: 40W/60L/0D | score=91.5±56.7 inv=4.7 played=20.3 lanes=3.6 ddraw=21.5 pts=91
+Step: 46612480  SPS: 1806  ε=0.050  ret=0.255  score=60.3  buf=100%  updates=364082
+  vs Random: 126W/2L/0D | score=73.5±47.2 inv=5.9 played=21.7 lanes=3.9 ddraw=26.7 pts=74
+  Self-play: 47W/53L/1D | score=99.4±56.2 inv=4.6 played=20.2 lanes=3.5 ddraw=20.6 pts=99
+Step: 46694400  SPS: 1806  ε=0.050  ret=0.262  score=65.0  buf=100%  updates=364722
+  vs Random: 121W/7L/0D | score=67.4±59.6 inv=5.8 played=20.9 lanes=3.8 ddraw=26.9 pts=67
+  Self-play: 48W/51L/1D | score=102.8±55.6 inv=4.6 played=20.2 lanes=3.5 ddraw=22.2 pts=103
+Step: 46776320  SPS: 1806  ε=0.050  ret=0.172  score=61.1  buf=100%  updates=365362
+  vs Random: 126W/2L/0D | score=72.2±49.5 inv=5.7 played=20.7 lanes=3.7 ddraw=26.5 pts=72
+  Self-play: 42W/58L/0D | score=98.0±57.1 inv=4.6 played=20.3 lanes=3.5 ddraw=21.6 pts=98
+Step: 46858240  SPS: 1806  ε=0.050  ret=0.275  score=68.0  buf=100%  updates=366002
+  vs Random: 124W/4L/0D | score=77.0±50.4 inv=6.2 played=22.5 lanes=4.0 ddraw=26.6 pts=77
+  Self-play: 50W/49L/1D | score=101.4±54.2 inv=4.6 played=20.4 lanes=3.5 ddraw=20.8 pts=101
+Step: 46940160  SPS: 1806  ε=0.050  ret=0.238  score=51.1  buf=100%  updates=366642
+  vs Random: 122W/6L/0D | score=64.7±55.2 inv=6.1 played=21.4 lanes=3.8 ddraw=26.6 pts=65
+  Self-play: 50W/50L/0D | score=107.5±59.8 inv=4.7 played=20.4 lanes=3.4 ddraw=22.2 pts=108
+Step: 47022080  SPS: 1806  ε=0.050  ret=0.180  score=49.5  buf=100%  updates=367282
+  vs Random: 124W/4L/0D | score=79.3±53.6 inv=5.9 played=21.4 lanes=3.8 ddraw=26.5 pts=79
+  Self-play: 42W/57L/1D | score=97.0±61.7 inv=4.8 played=20.9 lanes=3.7 ddraw=21.4 pts=97
+Step: 47104000  SPS: 1806  ε=0.050  ret=0.222  score=67.0  buf=100%  updates=367922
+  vs Random: 123W/5L/0D | score=76.3±60.7 inv=6.2 played=22.1 lanes=3.9 ddraw=26.8 pts=76
+  Self-play: 45W/57L/1D | score=92.7±62.9 inv=4.3 played=20.2 lanes=3.5 ddraw=22.4 pts=93
+Step: 47185920  SPS: 1806  ε=0.050  ret=0.329  score=57.5  buf=100%  updates=368562
+  vs Random: 120W/8L/0D | score=71.1±62.7 inv=6.1 played=21.7 lanes=3.9 ddraw=26.7 pts=71
+  Self-play: 43W/56L/2D | score=94.0±55.3 inv=4.6 played=20.3 lanes=3.7 ddraw=21.2 pts=94
+Step: 47267840  SPS: 1806  ε=0.050  ret=0.248  score=53.4  buf=100%  updates=369202
+  vs Random: 127W/1L/0D | score=76.5±54.1 inv=5.8 played=21.4 lanes=3.8 ddraw=26.7 pts=76
+  Self-play: 43W/58L/0D | score=101.0±56.9 inv=4.7 played=20.8 lanes=3.6 ddraw=21.5 pts=101
+Step: 47349760  SPS: 1806  ε=0.050  ret=0.210  score=43.7  buf=100%  updates=369842
+  vs Random: 124W/4L/0D | score=72.8±52.6 inv=6.0 played=21.4 lanes=3.8 ddraw=26.7 pts=73
+  Self-play: 46W/54L/0D | score=100.9±54.5 inv=4.6 played=20.0 lanes=3.4 ddraw=22.4 pts=101
+Step: 47431680  SPS: 1806  ε=0.050  ret=0.243  score=52.6  buf=100%  updates=370482
+  vs Random: 98W/3L/0D | score=71.6±54.1 inv=5.6 played=20.9 lanes=3.8 ddraw=26.6 pts=72
+  Self-play: 37W/63L/0D | score=93.8±60.4 inv=4.8 played=19.7 lanes=3.4 ddraw=22.6 pts=94
+Step: 47513600  SPS: 1806  ε=0.050  ret=0.178  score=48.4  buf=100%  updates=371122
+  vs Random: 120W/8L/0D | score=74.6±56.3 inv=5.8 played=20.9 lanes=3.7 ddraw=27.2 pts=75
+  Self-play: 43W/59L/1D | score=95.3±61.2 inv=4.6 played=20.0 lanes=3.6 ddraw=22.8 pts=95
+Step: 47595520  SPS: 1806  ε=0.050  ret=0.199  score=53.7  buf=100%  updates=371762
+  vs Random: 127W/1L/0D | score=79.3±49.6 inv=5.8 played=21.1 lanes=3.7 ddraw=26.4 pts=79
+  Self-play: 50W/51L/0D | score=94.4±57.5 inv=4.6 played=20.1 lanes=3.5 ddraw=21.9 pts=94
+Step: 47677440  SPS: 1806  ε=0.050  ret=0.154  score=49.2  buf=100%  updates=372402
+  vs Random: 119W/9L/0D | score=66.5±63.5 inv=5.8 played=20.6 lanes=3.7 ddraw=26.5 pts=66
+  Self-play: 43W/57L/0D | score=100.4±47.4 inv=4.4 played=20.2 lanes=3.5 ddraw=22.1 pts=100
+Step: 47759360  SPS: 1806  ε=0.050  ret=0.238  score=53.0  buf=100%  updates=373042
+  vs Random: 119W/8L/1D | score=66.3±53.8 inv=5.8 played=20.4 lanes=3.7 ddraw=26.8 pts=66
+  Self-play: 48W/52L/1D | score=91.1±59.5 inv=4.4 played=19.6 lanes=3.4 ddraw=22.3 pts=91
+Step: 47841280  SPS: 1806  ε=0.050  ret=0.228  score=40.7  buf=100%  updates=373682
+  vs Random: 124W/4L/0D | score=75.4±52.1 inv=5.8 played=21.6 lanes=3.8 ddraw=26.5 pts=75
+  Self-play: 43W/54L/3D | score=100.8±61.7 inv=4.7 played=20.5 lanes=3.5 ddraw=22.3 pts=101
+Step: 47923200  SPS: 1806  ε=0.050  ret=0.282  score=51.9  buf=100%  updates=374322
+  vs Random: 119W/9L/0D | score=65.8±55.0 inv=6.0 played=20.8 lanes=3.8 ddraw=26.8 pts=66
+  Self-play: 49W/52L/0D | score=101.4±57.0 inv=4.7 played=20.1 lanes=3.5 ddraw=23.1 pts=101
+Step: 48005120  SPS: 1806  ε=0.050  ret=0.274  score=53.8  buf=100%  updates=374962
+  vs Random: 94W/6L/0D | score=72.4±65.2 inv=5.8 played=20.8 lanes=3.7 ddraw=26.7 pts=72
+  Self-play: 54W/45L/1D | score=112.1±58.4 inv=4.6 played=21.0 lanes=3.4 ddraw=23.3 pts=112
+Step: 48087040  SPS: 1807  ε=0.050  ret=0.198  score=53.5  buf=100%  updates=375602
+  vs Random: 99W/1L/0D | score=69.1±56.7 inv=5.7 played=20.4 lanes=3.6 ddraw=26.7 pts=69
+  Self-play: 45W/54L/1D | score=96.0±65.4 inv=4.7 played=19.8 lanes=3.5 ddraw=22.4 pts=96
+Step: 48168960  SPS: 1807  ε=0.050  ret=0.259  score=50.0  buf=100%  updates=376242
+  vs Random: 116W/12L/0D | score=68.8±62.6 inv=5.6 played=20.2 lanes=3.6 ddraw=27.0 pts=69
+  Self-play: 36W/64L/0D | score=99.7±66.2 inv=4.5 played=19.4 lanes=3.3 ddraw=23.5 pts=100
+Step: 48250880  SPS: 1807  ε=0.050  ret=0.321  score=58.2  buf=100%  updates=376882
+  vs Random: 119W/9L/0D | score=60.4±60.2 inv=5.9 played=20.5 lanes=3.8 ddraw=26.8 pts=60
+  Self-play: 43W/57L/0D | score=88.5±65.7 inv=4.7 played=19.4 lanes=3.5 ddraw=22.8 pts=89
+Step: 48332800  SPS: 1807  ε=0.050  ret=0.269  score=42.2  buf=100%  updates=377522
+  vs Random: 118W/10L/0D | score=53.4±57.8 inv=5.9 played=20.4 lanes=3.9 ddraw=26.9 pts=53
+  Self-play: 43W/57L/0D | score=86.2±64.1 inv=4.8 played=19.5 lanes=3.6 ddraw=23.2 pts=86
+Step: 48414720  SPS: 1807  ε=0.050  ret=0.224  score=40.9  buf=100%  updates=378162
+  vs Random: 121W/7L/0D | score=60.6±55.2 inv=6.0 played=20.2 lanes=3.6 ddraw=26.7 pts=61
+  Self-play: 50W/50L/0D | score=102.1±60.1 inv=4.5 played=20.1 lanes=3.4 ddraw=23.4 pts=102
+Step: 48496640  SPS: 1807  ε=0.050  ret=0.203  score=45.9  buf=100%  updates=378802
+  vs Random: 124W/3L/1D | score=67.9±59.5 inv=5.9 played=20.9 lanes=3.9 ddraw=26.9 pts=68
+  Self-play: 47W/52L/1D | score=99.1±65.6 inv=4.9 played=20.0 lanes=3.4 ddraw=22.2 pts=99
+Step: 48578560  SPS: 1807  ε=0.050  ret=0.174  score=44.0  buf=100%  updates=379442
+  vs Random: 123W/4L/1D | score=58.2±53.2 inv=6.0 played=19.9 lanes=3.6 ddraw=26.4 pts=58
+  Self-play: 49W/52L/0D | score=97.4±58.0 inv=4.6 played=19.6 lanes=3.3 ddraw=22.6 pts=97
+Step: 48660480  SPS: 1807  ε=0.050  ret=0.203  score=51.8  buf=100%  updates=380082
+  vs Random: 121W/7L/0D | score=59.0±53.7 inv=5.7 played=20.1 lanes=3.7 ddraw=26.9 pts=59
+  Self-play: 48W/52L/0D | score=94.6±64.4 inv=4.7 played=19.9 lanes=3.5 ddraw=22.7 pts=95
+Step: 48742400  SPS: 1807  ε=0.050  ret=0.228  score=49.1  buf=100%  updates=380722
+  vs Random: 118W/10L/0D | score=64.5±61.3 inv=5.8 played=20.2 lanes=3.6 ddraw=26.9 pts=64
+  Self-play: 51W/49L/0D | score=87.5±61.5 inv=4.8 played=19.5 lanes=3.5 ddraw=23.5 pts=87
+Step: 48824320  SPS: 1808  ε=0.050  ret=0.186  score=40.7  buf=100%  updates=381362
+  vs Random: 120W/8L/0D | score=60.0±55.9 inv=5.8 played=20.4 lanes=3.8 ddraw=27.0 pts=60
+  Self-play: 44W/56L/0D | score=99.4±56.6 inv=4.6 played=20.2 lanes=3.5 ddraw=23.1 pts=99
+Step: 48906240  SPS: 1808  ε=0.050  ret=0.190  score=46.0  buf=100%  updates=382002
+  vs Random: 120W/8L/0D | score=56.2±60.1 inv=5.6 played=19.5 lanes=3.7 ddraw=27.3 pts=56
+  Self-play: 47W/53L/0D | score=112.7±48.9 inv=4.6 played=20.1 lanes=3.3 ddraw=22.9 pts=113
+Step: 48988160  SPS: 1808  ε=0.050  ret=0.230  score=51.7  buf=100%  updates=382642
+  vs Random: 91W/8L/1D | score=58.1±63.5 inv=5.5 played=19.3 lanes=3.6 ddraw=27.1 pts=58
+  Self-play: 43W/57L/0D | score=102.2±60.4 inv=4.7 played=20.0 lanes=3.4 ddraw=22.8 pts=102
+Step: 49070080  SPS: 1808  ε=0.050  ret=0.248  score=40.9  buf=100%  updates=383282
+  vs Random: 122W/5L/1D | score=62.1±60.3 inv=5.9 played=19.9 lanes=3.7 ddraw=26.3 pts=62
+  Self-play: 53W/47L/0D | score=103.0±60.3 inv=4.8 played=20.2 lanes=3.5 ddraw=22.9 pts=103
+Step: 49152000  SPS: 1808  ε=0.050  ret=0.254  score=50.8  buf=100%  updates=383922
+  vs Random: 123W/4L/1D | score=70.9±56.1 inv=5.6 played=20.0 lanes=3.6 ddraw=27.1 pts=71
+  Self-play: 50W/50L/0D | score=101.5±58.3 inv=4.6 played=19.9 lanes=3.4 ddraw=21.6 pts=101
+Step: 49233920  SPS: 1808  ε=0.050  ret=0.216  score=40.3  buf=100%  updates=384562
+  vs Random: 117W/11L/0D | score=53.9±59.7 inv=5.8 played=19.9 lanes=3.8 ddraw=27.4 pts=54
+  Self-play: 43W/57L/0D | score=86.7±57.3 inv=4.6 played=19.7 lanes=3.6 ddraw=22.8 pts=87
+Step: 49315840  SPS: 1809  ε=0.050  ret=0.236  score=45.6  buf=100%  updates=385202
+  vs Random: 119W/9L/0D | score=51.9±58.2 inv=5.7 played=19.2 lanes=3.6 ddraw=26.7 pts=52
+  Self-play: 53W/47L/0D | score=100.3±58.8 inv=4.6 played=19.9 lanes=3.5 ddraw=23.6 pts=100
+Step: 49397760  SPS: 1809  ε=0.050  ret=0.247  score=54.1  buf=100%  updates=385842
+  vs Random: 115W/12L/1D | score=50.5±60.0 inv=5.9 played=19.0 lanes=3.6 ddraw=27.4 pts=50
+  Self-play: 45W/53L/2D | score=92.4±67.1 inv=4.8 played=19.7 lanes=3.4 ddraw=22.6 pts=92
+Step: 49479680  SPS: 1809  ε=0.050  ret=0.225  score=43.2  buf=100%  updates=386482
+  vs Random: 92W/8L/0D | score=57.4±60.9 inv=5.9 played=20.1 lanes=3.7 ddraw=26.9 pts=57
+  Self-play: 47W/54L/0D | score=91.2±59.6 inv=4.6 played=19.7 lanes=3.6 ddraw=22.4 pts=91
+Step: 49561600  SPS: 1809  ε=0.050  ret=0.315  score=38.0  buf=100%  updates=387122
+  vs Random: 119W/9L/0D | score=59.8±57.0 inv=5.6 played=19.5 lanes=3.6 ddraw=27.2 pts=60
+  Self-play: 47W/53L/0D | score=94.0±66.3 inv=4.7 played=19.6 lanes=3.5 ddraw=23.1 pts=94
+Step: 49643520  SPS: 1809  ε=0.050  ret=0.192  score=46.3  buf=100%  updates=387762
+  vs Random: 116W/12L/0D | score=59.1±62.8 inv=5.9 played=19.8 lanes=3.7 ddraw=27.2 pts=59
+  Self-play: 47W/53L/0D | score=97.0±63.6 inv=4.6 played=20.4 lanes=3.6 ddraw=22.4 pts=97
+Step: 49725440  SPS: 1809  ε=0.050  ret=0.256  score=47.5  buf=100%  updates=388402
+  vs Random: 119W/9L/0D | score=47.6±56.4 inv=5.7 played=19.3 lanes=3.7 ddraw=26.8 pts=48
+  Self-play: 54W/45L/1D | score=101.0±53.6 inv=4.5 played=20.4 lanes=3.5 ddraw=22.3 pts=101
+Step: 49807360  SPS: 1810  ε=0.050  ret=0.244  score=53.3  buf=100%  updates=389042
+  vs Random: 95W/4L/1D | score=64.0±58.9 inv=5.9 played=20.8 lanes=3.8 ddraw=27.1 pts=64
+  Self-play: 46W/54L/0D | score=91.8±61.7 inv=4.7 played=19.8 lanes=3.5 ddraw=22.2 pts=92
+Step: 49889280  SPS: 1810  ε=0.050  ret=0.156  score=33.4  buf=100%  updates=389682
+  vs Random: 116W/12L/0D | score=40.7±59.1 inv=5.8 played=18.8 lanes=3.7 ddraw=26.8 pts=41
+  Self-play: 46W/54L/0D | score=96.9±59.1 inv=4.6 played=19.9 lanes=3.5 ddraw=22.2 pts=97
+Step: 49971200  SPS: 1810  ε=0.050  ret=0.243  score=45.0  buf=100%  updates=390322
+  vs Random: 121W/6L/1D | score=59.6±56.2 inv=5.8 played=19.7 lanes=3.6 ddraw=26.9 pts=60
+  Self-play: 46W/56L/0D | score=102.5±60.2 inv=4.6 played=19.3 lanes=3.3 ddraw=22.8 pts=102
+[1;34mwandb[0m: 
+[1;34mwandb[0m: 🚀 View run [33mlc__lc_dqn_vs_random_dense__1__1775591457[0m at: [34mhttps://wandb.ai/ningcong-chen/ppo-eco/runs/n2g7qo7g[0m
+[1;34mwandb[0m: Find logs at: [1;35mwandb/run-20260407_155057-n2g7qo7g/logs[0m

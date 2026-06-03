@@ -1,0 +1,68 @@
+Loaded DQN from model/lc_dqn_vs_random_dense_scorediff/final.pt
+PPO agent params: 2,312,805
+Epoch 1/50  loss=3.9751  actor=3.0102  critic=1.9298  acc=0.185  (205312 transitions, dqn_score=41.2)
+Epoch 2/50  loss=2.8610  actor=2.6751  critic=0.3718  acc=0.242  (204800 transitions, dqn_score=39.0)
+Epoch 3/50  loss=2.6819  actor=2.5320  critic=0.2999  acc=0.277  (205696 transitions, dqn_score=37.7)
+Epoch 4/50  loss=2.5163  actor=2.3822  critic=0.2683  acc=0.313  (205568 transitions, dqn_score=38.4)
+Epoch 5/50  loss=2.3818  actor=2.2608  critic=0.2420  acc=0.340  (204544 transitions, dqn_score=37.8)
+Epoch 6/50  loss=2.2793  actor=2.1666  critic=0.2255  acc=0.361  (205312 transitions, dqn_score=40.0)
+Epoch 7/50  loss=2.1989  actor=2.1041  critic=0.1896  acc=0.376  (205056 transitions, dqn_score=39.6)
+Epoch 8/50  loss=2.1275  actor=2.0495  critic=0.1559  acc=0.388  (205056 transitions, dqn_score=39.7)
+Epoch 9/50  loss=2.0573  actor=1.9883  critic=0.1381  acc=0.400  (205184 transitions, dqn_score=39.7)
+Epoch 10/50  loss=2.0128  actor=1.9459  critic=0.1338  acc=0.409  (205184 transitions, dqn_score=39.0)
+  vs_random: 184W/14L/3D  score=34.4  total_points=34.4  num_investment=6.0  num_played=22.6  open_lanes=4.9  cards_in_hand=8.0  discard_draws=24.0
+  self_play: 96W/102L/2D  score=16.2  total_points=16.2  num_investment=4.9  num_played=20.5  open_lanes=4.8  cards_in_hand=8.0  discard_draws=19.6
+Epoch 11/50  loss=1.9834  actor=1.9186  critic=0.1297  acc=0.417  (205824 transitions, dqn_score=39.0)
+Epoch 12/50  loss=1.9581  actor=1.8987  critic=0.1188  acc=0.419  (205056 transitions, dqn_score=39.0)
+Epoch 13/50  loss=1.9340  actor=1.8749  critic=0.1183  acc=0.426  (204928 transitions, dqn_score=38.2)
+Epoch 14/50  loss=1.9178  actor=1.8594  critic=0.1167  acc=0.428  (205184 transitions, dqn_score=39.7)
+Epoch 15/50  loss=1.8985  actor=1.8427  critic=0.1115  acc=0.434  (205184 transitions, dqn_score=39.7)
+Epoch 16/50  loss=1.8898  actor=1.8368  critic=0.1060  acc=0.435  (205440 transitions, dqn_score=39.5)
+Epoch 17/50  loss=1.8717  actor=1.8186  critic=0.1063  acc=0.438  (205184 transitions, dqn_score=39.1)
+Epoch 18/50  loss=1.8601  actor=1.8079  critic=0.1044  acc=0.442  (205056 transitions, dqn_score=38.1)
+Epoch 19/50  loss=1.8523  actor=1.8003  critic=0.1039  acc=0.444  (205952 transitions, dqn_score=39.5)
+Epoch 20/50  loss=1.8417  actor=1.7925  critic=0.0984  acc=0.446  (205312 transitions, dqn_score=39.0)
+  vs_random: 189W/11L/0D  score=51.6  total_points=51.6  num_investment=6.6  num_played=23.5  open_lanes=4.7  cards_in_hand=8.0  discard_draws=24.7
+  self_play: 114W/87L/0D  score=40.9  total_points=40.9  num_investment=4.9  num_played=21.1  open_lanes=4.7  cards_in_hand=8.0  discard_draws=19.4
+Epoch 21/50  loss=1.8250  actor=1.7749  critic=0.1001  acc=0.449  (204800 transitions, dqn_score=40.0)
+Epoch 22/50  loss=1.8099  actor=1.7615  critic=0.0967  acc=0.452  (205056 transitions, dqn_score=41.3)
+Epoch 23/50  loss=1.8105  actor=1.7612  critic=0.0985  acc=0.453  (204800 transitions, dqn_score=39.0)
+Epoch 24/50  loss=1.8067  actor=1.7582  critic=0.0969  acc=0.452  (205184 transitions, dqn_score=38.1)
+Epoch 25/50  loss=1.7946  actor=1.7468  critic=0.0956  acc=0.456  (205568 transitions, dqn_score=40.7)
+Epoch 26/50  loss=1.7859  actor=1.7402  critic=0.0913  acc=0.458  (205568 transitions, dqn_score=40.0)
+Epoch 27/50  loss=1.7859  actor=1.7386  critic=0.0947  acc=0.458  (205184 transitions, dqn_score=39.3)
+Epoch 28/50  loss=1.7796  actor=1.7333  critic=0.0927  acc=0.460  (205696 transitions, dqn_score=41.5)
+Epoch 29/50  loss=1.7703  actor=1.7256  critic=0.0896  acc=0.462  (204928 transitions, dqn_score=38.8)
+Epoch 30/50  loss=1.7687  actor=1.7226  critic=0.0922  acc=0.461  (205184 transitions, dqn_score=38.4)
+  vs_random: 183W/16L/1D  score=60.0  total_points=60.0  num_investment=6.8  num_played=23.9  open_lanes=4.7  cards_in_hand=8.0  discard_draws=24.3
+  self_play: 103W/97L/0D  score=35.8  total_points=35.8  num_investment=5.0  num_played=20.9  open_lanes=4.7  cards_in_hand=8.0  discard_draws=19.0
+Epoch 31/50  loss=1.7574  actor=1.7114  critic=0.0919  acc=0.465  (204800 transitions, dqn_score=40.2)
+Epoch 32/50  loss=1.7519  actor=1.7070  critic=0.0898  acc=0.466  (204672 transitions, dqn_score=39.7)
+Epoch 33/50  loss=1.7503  actor=1.7062  critic=0.0882  acc=0.466  (204800 transitions, dqn_score=39.2)
+Epoch 34/50  loss=1.7485  actor=1.7044  critic=0.0882  acc=0.466  (204672 transitions, dqn_score=38.8)
+Epoch 35/50  loss=1.7506  actor=1.7062  critic=0.0889  acc=0.466  (205312 transitions, dqn_score=39.8)
+Epoch 36/50  loss=1.7389  actor=1.6950  critic=0.0879  acc=0.469  (206208 transitions, dqn_score=39.6)
+Epoch 37/50  loss=1.7383  actor=1.6949  critic=0.0868  acc=0.470  (204672 transitions, dqn_score=38.5)
+Epoch 38/50  loss=1.7385  actor=1.6962  critic=0.0846  acc=0.469  (205312 transitions, dqn_score=39.0)
+Epoch 39/50  loss=1.7263  actor=1.6849  critic=0.0830  acc=0.471  (204928 transitions, dqn_score=38.4)
+Epoch 40/50  loss=1.7304  actor=1.6819  critic=0.0969  acc=0.472  (205824 transitions, dqn_score=39.3)
+  vs_random: 188W/11L/1D  score=63.8  total_points=63.8  num_investment=6.6  num_played=24.0  open_lanes=4.6  cards_in_hand=8.0  discard_draws=24.9
+  self_play: 108W/92L/0D  score=39.1  total_points=39.1  num_investment=5.0  num_played=21.3  open_lanes=4.6  cards_in_hand=8.0  discard_draws=18.5
+Epoch 41/50  loss=1.7191  actor=1.6670  critic=0.1041  acc=0.476  (204416 transitions, dqn_score=38.3)
+Epoch 42/50  loss=1.7179  actor=1.6780  critic=0.0798  acc=0.474  (204800 transitions, dqn_score=40.1)
+Epoch 43/50  loss=1.7197  actor=1.6773  critic=0.0848  acc=0.474  (205312 transitions, dqn_score=38.7)
+Epoch 44/50  loss=1.7156  actor=1.6750  critic=0.0812  acc=0.475  (204672 transitions, dqn_score=37.7)
+Epoch 45/50  loss=1.7191  actor=1.6778  critic=0.0826  acc=0.475  (204928 transitions, dqn_score=37.8)
+Epoch 46/50  loss=1.6989  actor=1.6567  critic=0.0843  acc=0.478  (204800 transitions, dqn_score=39.6)
+Epoch 47/50  loss=1.7052  actor=1.6639  critic=0.0826  acc=0.477  (205568 transitions, dqn_score=39.5)
+Epoch 48/50  loss=1.6977  actor=1.6569  critic=0.0815  acc=0.479  (205184 transitions, dqn_score=39.4)
+Epoch 49/50  loss=1.6950  actor=1.6539  critic=0.0820  acc=0.479  (204800 transitions, dqn_score=38.5)
+Epoch 50/50  loss=1.6957  actor=1.6544  critic=0.0827  acc=0.480  (204800 transitions, dqn_score=39.0)
+  vs_random: 194W/9L/0D  score=65.2  total_points=65.2  num_investment=6.7  num_played=24.2  open_lanes=4.7  cards_in_hand=8.0  discard_draws=25.2
+  self_play: 120W/81L/0D  score=51.3  total_points=51.3  num_investment=4.7  num_played=21.5  open_lanes=4.6  cards_in_hand=8.0  discard_draws=18.5
+
+Final benchmark:
+  vs_random: 187W/12L/1D  score=63.5  total_points=63.5  num_investment=6.6  num_played=23.8  open_lanes=4.6  cards_in_hand=8.0  discard_draws=24.9
+  self_play: 103W/95L/2D  score=38.5  total_points=38.5  num_investment=4.9  num_played=21.1  open_lanes=4.6  cards_in_hand=8.0  discard_draws=18.6
+
+Saved pretrained PPO to model/lc_ppo_from_dense_scorediff_ff/pretrained.pkt

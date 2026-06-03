@@ -1,0 +1,65 @@
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/zzhang18/.netrc.
+wandb: Currently logged in as: nchen3 (ningcong-chen) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/zzhang18/nchen3/eco/wandb/run-20260411_144749-vp9o5biv
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run lc__lc_p18_1b__1__1775933269
+wandb: ⭐️ View project at https://wandb.ai/ningcong-chen/ppo-eco
+wandb: 🚀 View run at https://wandb.ai/ningcong-chen/ppo-eco/runs/vp9o5biv
+Agent params: 827,481
+Step: 524288 SPS: 118239  ev=-0.903  ent=3.433  grad=0.22/0.22  h=2.0 c=4.5  kl=0.0112  vl=0.0468
+Step: 1048576 SPS: 106342  ev=-0.173  ent=3.414  grad=0.24/0.24  h=2.2 c=4.9  kl=0.0075  vl=0.0345
+Step: 1572864 SPS: 102783  ev=0.084  ent=3.359  grad=0.11/0.11  h=2.5 c=5.8  kl=0.0101  vl=0.0306
+Step: 2097152 SPS: 101558  ev=0.217  ent=3.326  grad=0.28/0.28  h=2.8 c=6.6  kl=0.0084  vl=0.0246
+Step: 2621440 SPS: 102007  ev=0.293  ent=3.230  grad=0.16/0.16  h=3.0 c=7.2  kl=0.0094  vl=0.0149
+Step: 3145728 SPS: 101778  ev=0.314  ent=3.161  grad=0.25/0.25  h=3.1 c=7.8  kl=0.0081  vl=0.0172
+Step: 3670016 SPS: 102522  ev=0.358  ent=3.120  grad=0.12/0.12  h=3.2 c=8.1  kl=0.0085  vl=0.0117
+Step: 4194304 SPS: 102929  ev=0.375  ent=3.057  grad=0.11/0.11  h=3.3 c=8.4  kl=0.0078  vl=0.0124
+Step: 4718592 SPS: 103473  ev=0.423  ent=3.010  grad=0.05/0.05  h=3.4 c=8.6  kl=0.0091  vl=0.0090
+Step: 5242880 SPS: 104053  ev=0.462  ent=2.987  grad=0.08/0.08  h=3.5 c=8.8  kl=0.0081  vl=0.0076
+Step: 5767168 SPS: 104613  ev=0.496  ent=2.947  grad=0.13/0.13  h=3.6 c=9.0  kl=0.0077  vl=0.0084
+Step: 6291456 SPS: 105146  ev=0.568  ent=2.915  grad=0.06/0.06  h=3.7 c=9.3  kl=0.0063  vl=0.0067
+Step: 6815744 SPS: 105674  ev=0.633  ent=2.910  grad=0.09/0.09  h=3.8 c=9.7  kl=0.0062  vl=0.0060
+Step: 7340032 SPS: 106026  ev=0.703  ent=2.919  grad=0.12/0.12  h=3.9 c=10.3  kl=0.0073  vl=0.0054
+Step: 7864320 SPS: 106377  ev=0.740  ent=2.925  grad=0.15/0.15  h=4.0 c=10.9  kl=0.0067  vl=0.0057
+Step: 8388608 SPS: 106682  ev=0.782  ent=2.922  grad=0.05/0.05  h=4.1 c=11.1  kl=0.0053  vl=0.0056
+Step: 8912896 SPS: 106953  ev=0.814  ent=2.936  grad=0.25/0.25  h=4.2 c=11.1  kl=0.0077  vl=0.0051
+Step: 9437184 SPS: 107150  ev=0.835  ent=2.949  grad=0.24/0.24  h=4.3 c=11.3  kl=0.0066  vl=0.0056
+Step: 9961472 SPS: 107284  ev=0.874  ent=2.978  grad=0.47/0.47  h=4.3 c=11.3  kl=0.0074  vl=0.0058
+  vs Random: 73W/26L/1D | score=-17.5±13.2 inv=0.1 played=10.6 lanes=5.0 ddraw=68.6 pts=-17
+  Self-play: 52W/48L/0D | score=-15.7±17.6 inv=0.1 played=11.1 lanes=5.0 ddraw=117.7 pts=-16
+Step: 10485760 SPS: 107320  ev=0.896  ent=2.953  grad=0.11/0.11  h=4.3 c=11.1  kl=0.0086  vl=0.0057
+Step: 11010048 SPS: 107365  ev=0.917  ent=2.937  grad=0.48/0.48  h=4.2 c=10.8  kl=0.0084  vl=0.0061
+Step: 11534336 SPS: 107186  ev=0.925  ent=2.940  grad=2.57/0.50  h=4.2 c=10.6  kl=0.0156  vl=0.0265
+Step: 12058624 SPS: 106938  ev=0.881  ent=2.908  grad=1.28/0.50  h=4.2 c=10.7  kl=0.0057  vl=0.0128
+Step: 12582912 SPS: 106757  ev=0.904  ent=2.910  grad=0.66/0.50  h=4.0 c=10.0  kl=0.0075  vl=0.0092
+Step: 13107200 SPS: 106445  ev=0.911  ent=2.877  grad=0.27/0.27  h=4.0 c=9.8  kl=0.0082  vl=0.0082
+Step: 13631488 SPS: 106072  ev=0.918  ent=2.823  grad=0.45/0.45  h=4.0 c=9.7  kl=0.0095  vl=0.0089
+Step: 14155776 SPS: 105685  ev=0.925  ent=2.782  grad=0.52/0.50  h=3.9 c=9.6  kl=0.0094  vl=0.0100
+Step: 14680064 SPS: 105303  ev=0.929  ent=2.740  grad=1.18/0.50  h=3.9 c=9.6  kl=0.0056  vl=0.0134
+Step: 15204352 SPS: 104893  ev=0.921  ent=2.692  grad=0.57/0.50  h=3.9 c=9.4  kl=0.0039  vl=0.0134
+Step: 15728640 SPS: 104387  ev=0.907  ent=2.605  grad=2.87/0.50  h=3.8 c=9.2  kl=0.0130  vl=0.0350
+Step: 16252928 SPS: 104564  ev=0.904  ent=2.587  grad=2.64/0.50  h=3.7 c=8.8  kl=0.0135  vl=0.0325
+Step: 16777216 SPS: 104720  ev=0.905  ent=2.558  grad=3.87/0.50  h=3.6 c=8.6  kl=0.0249  vl=0.0548
+Step: 17301504 SPS: 104092  ev=0.880  ent=2.507  grad=1.47/0.50  h=3.6 c=8.6  kl=0.0081  vl=0.0308
+Step: 17825792 SPS: 103532  ev=0.877  ent=2.450  grad=1.67/0.50  h=3.6 c=8.5  kl=0.0089  vl=0.0343
+Step: 18350080 SPS: 102881  ev=0.868  ent=2.404  grad=0.62/0.50  h=3.6 c=8.4  kl=0.0050  vl=0.0330
+Step: 18874368 SPS: 102482  ev=0.858  ent=2.302  grad=1.42/0.50  h=3.6 c=8.4  kl=0.0105  vl=0.0409
+Step: 19398656 SPS: 102054  ev=0.838  ent=2.205  grad=3.00/0.50  h=3.6 c=8.4  kl=0.0131  vl=0.0634
+Step: 19922944 SPS: 101265  ev=0.792  ent=2.105  grad=2.77/0.50  h=3.6 c=8.4  kl=0.0086  vl=0.0702
+Step: 20447232 SPS: 100172  ev=0.764  ent=2.049  grad=1.18/0.50  h=3.6 c=8.4  kl=0.0054  vl=0.0576
+  vs Random: 98W/1L/1D | score=-10.0±14.6 inv=0.0 played=10.6 lanes=5.0 ddraw=7.5 pts=-10
+  Self-play: 47W/51L/3D | score=-26.6±14.4 inv=0.0 played=8.7 lanes=4.9 ddraw=7.0 pts=-27
+Step: 20971520 SPS: 99174  ev=0.773  ent=1.989  grad=4.38/0.50  h=3.6 c=8.4  kl=0.0113  vl=0.1109
+Step: 21495808 SPS: 98144  ev=0.732  ent=1.953  grad=1.33/0.50  h=3.6 c=8.6  kl=0.0056  vl=0.0625
+Step: 22020096 SPS: 97223  ev=0.762  ent=1.925  grad=2.18/0.50  h=3.6 c=8.7  kl=0.0049  vl=0.0655
+Step: 22544384 SPS: 95895  ev=0.752  ent=1.867  grad=4.22/0.50  h=3.6 c=8.7  kl=0.0074  vl=0.1120
+Step: 23068672 SPS: 94716  ev=0.698  ent=1.823  grad=3.13/0.50  h=3.7 c=8.9  kl=0.0046  vl=0.0920
+Step: 23592960 SPS: 94145  ev=0.682  ent=1.808  grad=3.65/0.50  h=3.7 c=8.9  kl=0.0041  vl=0.1086
+Step: 24117248 SPS: 93563  ev=0.658  ent=1.811  grad=1.19/0.50  h=3.7 c=9.0  kl=0.0065  vl=0.0649
+Step: 24641536 SPS: 92901  ev=0.701  ent=1.748  grad=0.61/0.50  h=3.7 c=9.1  kl=0.0099  vl=0.0556
+Step: 25165824 SPS: 92643  ev=0.621  ent=1.760  grad=2.58/0.50  h=3.6 c=9.3  kl=0.0106  vl=0.0834
+Step: 25690112 SPS: 92132  ev=0.715  ent=1.726  grad=1.31/0.50  h=3.5 c=9.2  kl=0.0043  vl=0.0604
+Step: 26214400 SPS: 91644  ev=0.728  ent=1.677  grad=3.10/0.50  h=3.4 c=8.9  kl=0.0088  vl=0.1195
+Step: 26738688 SPS: 91173  ev=0.647  ent=1.700  grad=4.31/0.50  h=3.4 c=9.2  kl=0.0064  vl=0.1612
+Step: 27262976 SPS: 91002  ev=0.533  ent=1.700  grad=1.10/0.50  h=3.2 c=8.4  kl=0.0110  vl=0.0620
