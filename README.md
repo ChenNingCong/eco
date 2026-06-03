@@ -16,6 +16,23 @@ Train and play against an RL agent for the R-oko (R-öko) card game using PPO+LS
 
 > For the legacy non-LSTM PPO code, see the `legacy-ppo-no-lstm` tag.
 
+## Project State & Snapshots (read me first)
+
+- **`snapshot/pre-julia-rewrite`** (branch, pushed to `origin`) — full working-tree
+  snapshot taken before rewriting Python deps with free-threaded Julia. Sits on top
+  of commit `5a76b3c` (the Numba JIT `BatchStepper`). Captures code + training `logs/`
+  + docs. **This is the reference point to return to** if the Julia rewrite goes sideways.
+- **`abstract-numpy-rng`** (branch) — has the BatchStepper rewrite (`5a76b3c`) but not
+  the snapshot-only files (logs, docs, scratch).
+- **Architecture / call order:** see [`abstract/ARCHITECTURE.md`](abstract/ARCHITECTURE.md)
+  for how `BaseGameEngine → SinglePlayerEnv → VecSinglePlayerEnv → PPOLSTMTrainer` fit
+  together, both `step()` paths (generic vs BatchStepper), and the RNG caveats.
+
+> ⚠️ **Trained checkpoints are NOT in git.** `model/` and `wandb/` are `.gitignore`d, so
+> no branch or snapshot preserves the trained weights (e.g. the 1B-step `lc_p18_1b` runs).
+> **Back up `model/` separately** (tarball / LFS / release asset) before the Julia rewrite —
+> they cannot be recovered from the snapshot branch.
+
 ## Setup
 
 ```bash
