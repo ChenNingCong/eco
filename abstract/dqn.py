@@ -10,6 +10,7 @@
 
 import os
 import time
+from collections import deque
 from dataclasses import dataclass
 from typing import Optional, NamedTuple
 from abc import ABC, abstractmethod
@@ -45,6 +46,27 @@ class DQNConfig:
     gamma: float = 1.0
     tau: float = 1.0
     """target network update rate (1.0 = hard copy)"""
+    double_dqn: bool = False
+    """Double DQN: pick next action with online net, evaluate with target net (anti-overestimation)"""
+    huber_loss: bool = False
+    """use Huber/smooth-L1 loss instead of MSE (robust to TD-error spikes)"""
+    # ── Rainbow component toggles (default off → identical to vanilla DQN) ──
+    n_step: int = 1
+    """multi-step returns: accumulate n rewards before bootstrapping (1 = vanilla 1-step)"""
+    distributional: bool = False
+    """C51 distributional RL: predict a return distribution + cross-entropy loss"""
+    n_atoms: int = 51
+    """number of atoms in the C51 return distribution"""
+    v_min: float = -10.0
+    """lower bound of the C51 support"""
+    v_max: float = 10.0
+    """upper bound of the C51 support"""
+    prioritized: bool = False
+    """prioritized experience replay (simplest vectorized-proportional impl)"""
+    per_alpha: float = 0.5
+    """PER priority exponent"""
+    per_beta: float = 0.4
+    """PER importance-sampling exponent (annealed to 1 over training)"""
     target_network_frequency: int = 1000
     """update target network every N steps (in env steps, not gradient steps)"""
     batch_size: int = 256
@@ -98,7 +120,9 @@ def _obs_dim(obs) -> int:
 class ReplayBuffer:
     """Simple replay buffer storing flattened obs + masks."""
 
-    def __init__(self, buffer_size: int, obs_dim: int, num_actions: int, device):
+    def __init__(self, buffer_size: int, obs_dim: int, num_actions: int, device,
+                 n_step: int = 1, gamma: float = 1.0, num_envs: int = 1,
+                 prioritized: bool = False, alpha: float = 0.5):
         self.buffer_size = buffer_size
         self.device = device
         self.obs = np.zeros((buffer_size, obs_dim), dtype=np.float32)
@@ -110,6 +134,16 @@ class ReplayBuffer:
         self.dones = np.zeros(buffer_size, dtype=np.float32)
         self.pos = 0
         self.full = False
+        # ── Rainbow: multi-step returns (one n-step deque per env) ──
+        self.n_step = n_step
+        self.gamma = gamma
+        self._deques = [deque(maxlen=n_step) for _ in range(num_envs)] if n_step > 1 else None
+        # ── Rainbow: prioritized replay (simplest method = vectorized proportional,
+        #    no segment tree; new transitions inserted at max priority) ──
+        self.prioritized = prioritized
+        self.alpha = alpha
+        self.priorities = np.zeros(buffer_size, dtype=np.float32) if prioritized else None
+        self.max_priority = 1.0
 
     def add(self, obs, next_obs, mask, next_mask, action, reward, done):
         """Add a single transition."""
@@ -120,13 +154,39 @@ class ReplayBuffer:
         self.actions[self.pos] = action
         self.rewards[self.pos] = reward
         self.dones[self.pos] = done
+        if self.prioritized:
+            self.priorities[self.pos] = self.max_priority   # new sample → max priority
         self.pos = (self.pos + 1) % self.buffer_size
         if self.pos == 0:
             self.full = True
 
+    def _n_step_info(self, dq):
+        """Collapse an n-step deque into (reward_n, next_obs, next_mask, done)."""
+        reward, next_obs, next_mask, done = 0.0, dq[-1][1], dq[-1][3], dq[-1][6]
+        for i in range(len(dq)):
+            reward += self.gamma**i * dq[i][5]
+            if dq[i][6]:   # episode ended within the window → stop here
+                next_obs, next_mask, done = dq[i][1], dq[i][3], True
+                break
+        return reward, next_obs, next_mask, done
+
     def add_batch(self, obs, next_obs, masks, next_masks, actions, rewards, dones):
         """Add a batch of transitions. obs/next_obs are (N, D) flat arrays."""
         N = len(actions)
+        # ── Rainbow: multi-step path — accumulate per-env, store collapsed n-step ──
+        if self._deques is not None:
+            for e in range(N):
+                dq = self._deques[e]
+                dq.append((obs[e], next_obs[e], masks[e], next_masks[e],
+                           int(actions[e]), float(rewards[e]), bool(dones[e])))
+                if len(dq) < self.n_step:
+                    continue
+                r_n, no, nm, dn = self._n_step_info(dq)
+                self.add(dq[0][0], no, dq[0][2], nm, dq[0][4], r_n, float(dn))
+                if dones[e]:
+                    dq.clear()
+            return
+        # ── 1-step fast path (unchanged) ──
         if self.pos + N <= self.buffer_size:
             sl = slice(self.pos, self.pos + N)
             self.obs[sl] = obs
@@ -136,6 +196,8 @@ class ReplayBuffer:
             self.actions[sl] = actions
             self.rewards[sl] = rewards
             self.dones[sl] = dones
+            if self.prioritized:
+                self.priorities[sl] = self.max_priority
             self.pos += N
             if self.pos >= self.buffer_size:
                 self.full = True
@@ -146,9 +208,18 @@ class ReplayBuffer:
                 self.add(obs[i], next_obs[i], masks[i], next_masks[i],
                          actions[i], rewards[i], dones[i])
 
-    def sample(self, batch_size: int):
+    def sample(self, batch_size: int, beta: float = 0.4):
         upper = self.buffer_size if self.full else self.pos
-        idx = np.random.randint(0, upper, size=batch_size)
+        if self.prioritized:
+            # vectorized proportional sampling (no segment tree); IS weights for the loss
+            probs = self.priorities[:upper] ** self.alpha
+            probs = probs / probs.sum()
+            idx = np.random.choice(upper, size=batch_size, p=probs)
+            weights = (upper * probs[idx]) ** (-beta)
+            weights = (weights / weights.max()).astype(np.float32)
+        else:
+            idx = np.random.randint(0, upper, size=batch_size)
+            weights = np.ones(batch_size, dtype=np.float32)
         return (
             torch.as_tensor(self.obs[idx], device=self.device),
             torch.as_tensor(self.next_obs[idx], device=self.device),
@@ -157,7 +228,17 @@ class ReplayBuffer:
             torch.as_tensor(self.actions[idx], dtype=torch.long, device=self.device),
             torch.as_tensor(self.rewards[idx], device=self.device),
             torch.as_tensor(self.dones[idx], device=self.device),
+            torch.as_tensor(weights, device=self.device),
+            idx,
         )
+
+    def update_priorities(self, idx, td_errors):
+        """Set sampled transitions' priorities to |TD error| (+eps). PER only."""
+        if not self.prioritized:
+            return
+        p = np.abs(td_errors) + 1e-6
+        self.priorities[idx] = p
+        self.max_priority = max(self.max_priority, float(p.max()))
 
     def size(self):
         return self.buffer_size if self.full else self.pos
@@ -257,7 +338,13 @@ class DQNTrainer:
         obs, masks = envs.reset()
         o_dim = _obs_dim(obs)
         n_act = q_network.num_actions
-        rb = ReplayBuffer(config.buffer_size, o_dim, n_act, device)
+        rb = ReplayBuffer(config.buffer_size, o_dim, n_act, device,
+                          n_step=config.n_step, gamma=config.gamma, num_envs=N,
+                          prioritized=config.prioritized, alpha=config.per_alpha)
+        gamma_n = config.gamma ** config.n_step   # Rainbow: n-step bootstrap discount
+        # Rainbow: C51 support (only used when config.distributional)
+        support = torch.linspace(config.v_min, config.v_max, config.n_atoms, device=device)
+        delta_z = (config.v_max - config.v_min) / (config.n_atoms - 1)
 
         obs_flat = _flatten_obs_batch(obs)
         start_time = time.time()
@@ -321,25 +408,66 @@ class DQNTrainer:
 
             # ── Training ──
             if global_step >= config.learning_starts and global_step % config.train_frequency == 0:
+                # Rainbow/PER: anneal the IS exponent beta 0.4 → 1 over training
+                beta = config.per_beta + (1 - config.per_beta) * (global_step / config.total_timesteps)
                 for _ in range(config.grad_steps_per_train):
-                    s_obs, s_next_obs, s_masks, s_next_masks, s_actions, s_rewards, s_dones = \
-                        rb.sample(config.batch_size)
+                    s_obs, s_next_obs, s_masks, s_next_masks, s_actions, s_rewards, s_dones, \
+                        s_weights, s_idx = rb.sample(config.batch_size, beta)
 
-                    with torch.no_grad():
-                        target_q = target_network(s_next_obs)
-                        # Mask illegal next actions
-                        target_q[~s_next_masks] = -1e8
-                        target_max = target_q.max(dim=1).values
-                        td_target = s_rewards + config.gamma * target_max * (1 - s_dones)
+                    if config.distributional:
+                        # ── C51 distributional target (n-step + optional double) ──
+                        with torch.no_grad():
+                            next_dist = q_network.dist(s_next_obs)          # (B, A, atoms)
+                            next_q = (next_dist * support).sum(-1)
+                            next_q[~s_next_masks] = -1e8
+                            if config.double_dqn:
+                                next_act = next_q.argmax(1)
+                            else:
+                                tgt_q = (target_network.dist(s_next_obs) * support).sum(-1)
+                                tgt_q[~s_next_masks] = -1e8
+                                next_act = tgt_q.argmax(1)
+                            next_pmf = target_network.dist(s_next_obs)[torch.arange(config.batch_size), next_act]
+                            tz = (s_rewards.unsqueeze(1)
+                                  + gamma_n * support.unsqueeze(0) * (1 - s_dones.unsqueeze(1))).clamp(config.v_min, config.v_max)
+                            b = (tz - config.v_min) / delta_z
+                            lo, up = b.floor().clamp(0, config.n_atoms - 1), b.ceil().clamp(0, config.n_atoms - 1)
+                            d_lo = (up + (lo == b).float() - b) * next_pmf
+                            d_up = (b - lo) * next_pmf
+                            target_pmf = torch.zeros_like(next_pmf)
+                            for i in range(config.batch_size):
+                                target_pmf[i].index_add_(0, lo[i].long(), d_lo[i])
+                                target_pmf[i].index_add_(0, up[i].long(), d_up[i])
+                        pred_pmf = q_network.dist(s_obs)[torch.arange(config.batch_size), s_actions]
+                        log_pred = torch.log(pred_pmf.clamp(1e-5, 1 - 1e-5))
+                        per_sample = -(target_pmf * log_pred).sum(1)            # cross-entropy
+                        current_q = (pred_pmf * support).sum(-1)               # for logging / priorities
+                    else:
+                        # ── Scalar TD target (n-step + optional double) ──
+                        with torch.no_grad():
+                            target_q = target_network(s_next_obs)
+                            target_q[~s_next_masks] = -1e8
+                            if config.double_dqn:
+                                online_next = q_network(s_next_obs)
+                                online_next[~s_next_masks] = -1e8
+                                next_act = online_next.argmax(dim=1)
+                                target_max = target_q.gather(1, next_act.unsqueeze(1)).squeeze(1)
+                            else:
+                                target_max = target_q.max(dim=1).values
+                            td_target = s_rewards + gamma_n * target_max * (1 - s_dones)
+                        current_q = q_network(s_obs).gather(1, s_actions.unsqueeze(1)).squeeze(1)
+                        per_sample = (F.smooth_l1_loss(current_q, td_target, reduction="none") if config.huber_loss
+                                      else F.mse_loss(current_q, td_target, reduction="none"))
 
-                    current_q = q_network(s_obs).gather(1, s_actions.unsqueeze(1)).squeeze(1)
-                    loss = F.mse_loss(td_target, current_q)
+                    loss = (s_weights * per_sample).mean()   # PER IS-weights (=1 when off)
 
                     self.optimizer.zero_grad()
                     loss.backward()
                     nn.utils.clip_grad_norm_(q_network.parameters(), config.max_grad_norm)
                     self.optimizer.step()
                     num_updates += 1
+
+                    if config.prioritized:
+                        rb.update_priorities(s_idx, per_sample.detach().cpu().numpy())
 
                 # ── Update target network ──
                 if num_updates % config.target_network_frequency == 0:
