@@ -129,6 +129,11 @@ class ReplayBuffer:
     def __init__(self, buffer_size: int, obs_dim: int, num_actions: int, device,
                  n_step: int = 1, gamma: float = 1.0, num_envs: int = 1,
                  prioritized: bool = False, alpha: float = 0.5, tree_backup: bool = False):
+        # tree_backup recomputes n-step targets by striding num_envs forward through
+        # raw storage; snap capacity to a multiple of num_envs so a write never
+        # splits a row across the ring seam (which would misalign the env stride).
+        if tree_backup and n_step > 1:
+            buffer_size -= buffer_size % num_envs
         self.buffer_size = buffer_size
         self.device = device
         self.obs = np.zeros((buffer_size, obs_dim), dtype=np.float32)
@@ -246,7 +251,15 @@ class ReplayBuffer:
             weights = (upper * probs[idx]) ** (-beta)
             weights = (weights / weights.max()).astype(np.float32)
         else:
-            idx = np.random.randint(0, upper, size=batch_size)
+            if self.tree_backup and self.n_step > 1:
+                # exclude the last (n-1) rows before the write head: their forward
+                # stride would read not-yet-written (or previous-pass) data.
+                band = (self.n_step - 1) * self.num_envs
+                lo = self.pos if self.full else 0
+                hi = (self.buffer_size if self.full else self.pos) - band
+                idx = (lo + np.random.randint(0, hi, size=batch_size)) % self.buffer_size
+            else:
+                idx = np.random.randint(0, upper, size=batch_size)
             weights = np.ones(batch_size, dtype=np.float32)
         return (
             torch.as_tensor(self.obs[idx], device=self.device),
