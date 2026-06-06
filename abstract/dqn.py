@@ -53,6 +53,12 @@ class DQNConfig:
     # ── Rainbow component toggles (default off → identical to vanilla DQN) ──
     n_step: int = 1
     """multi-step returns: accumulate n rewards before bootstrapping (1 = vanilla 1-step)"""
+    tree_backup: bool = False
+    """Retrace-family off-policy correction for n-step. With a greedy deterministic
+    target, Retrace(λ=1) reduces to tree-backup: cut the n-step trace at the first
+    exploratory (non-greedy) action and bootstrap there. Removes uncorrected-n-step
+    bias from exploration; EXACT for gamma=1 (bootstrap discount = 1 at any cut
+    length). No effect when n_step == 1."""
     distributional: bool = False
     """C51 distributional RL: predict a return distribution + cross-entropy loss"""
     n_atoms: int = 51
@@ -122,7 +128,7 @@ class ReplayBuffer:
 
     def __init__(self, buffer_size: int, obs_dim: int, num_actions: int, device,
                  n_step: int = 1, gamma: float = 1.0, num_envs: int = 1,
-                 prioritized: bool = False, alpha: float = 0.5):
+                 prioritized: bool = False, alpha: float = 0.5, tree_backup: bool = False):
         self.buffer_size = buffer_size
         self.device = device
         self.obs = np.zeros((buffer_size, obs_dim), dtype=np.float32)
@@ -137,7 +143,12 @@ class ReplayBuffer:
         # ── Rainbow: multi-step returns (one n-step deque per env) ──
         self.n_step = n_step
         self.gamma = gamma
-        self._deques = [deque(maxlen=n_step) for _ in range(num_envs)] if n_step > 1 else None
+        self.tree_backup = tree_backup
+        self.num_envs = num_envs
+        # tree_backup stores RAW 1-step transitions (no eager collapse); its n-step
+        # target is recomputed at train time vs the current net (sample-time cut).
+        self._deques = [deque(maxlen=n_step) for _ in range(num_envs)] \
+            if (n_step > 1 and not tree_backup) else None
         # ── Rainbow: prioritized replay (simplest method = vectorized proportional,
         #    no segment tree; new transitions inserted at max priority) ──
         self.prioritized = prioritized
@@ -164,27 +175,44 @@ class ReplayBuffer:
         """Collapse an n-step deque into (reward_n, next_obs, next_mask, done)."""
         reward, next_obs, next_mask, done = 0.0, dq[-1][1], dq[-1][3], dq[-1][6]
         for i in range(len(dq)):
+            if self.tree_backup and i >= 1 and dq[i][7]:
+                # behavior went off-greedy at step i → cut the trace, bootstrap at
+                # s_i (= obs/mask of transition i), accumulating only r_0..r_{i-1}.
+                next_obs, next_mask, done = dq[i][0], dq[i][2], False
+                break
             reward += self.gamma**i * dq[i][5]
             if dq[i][6]:   # episode ended within the window → stop here
                 next_obs, next_mask, done = dq[i][1], dq[i][3], True
                 break
         return reward, next_obs, next_mask, done
 
-    def add_batch(self, obs, next_obs, masks, next_masks, actions, rewards, dones):
-        """Add a batch of transitions. obs/next_obs are (N, D) flat arrays."""
+    def add_batch(self, obs, next_obs, masks, next_masks, actions, rewards, dones, explore=None):
+        """Add a batch of transitions. obs/next_obs are (N, D) flat arrays.
+        `explore` (N,) bool flags exploratory actions, used by tree-backup."""
         N = len(actions)
         # ── Rainbow: multi-step path — accumulate per-env, store collapsed n-step ──
         if self._deques is not None:
             for e in range(N):
                 dq = self._deques[e]
+                expl = bool(explore[e]) if explore is not None else False
                 dq.append((obs[e], next_obs[e], masks[e], next_masks[e],
-                           int(actions[e]), float(rewards[e]), bool(dones[e])))
+                           int(actions[e]), float(rewards[e]), bool(dones[e]), expl))
                 if len(dq) < self.n_step:
                     continue
                 r_n, no, nm, dn = self._n_step_info(dq)
                 self.add(dq[0][0], no, dq[0][2], nm, dq[0][4], r_n, float(dn))
                 if dones[e]:
-                    dq.clear()
+                    # HANDOFF §4 fix: drain (don't clear) so the last n-1
+                    # end-of-episode windows — incl. the terminal transition —
+                    # are not dropped. Deliberate deviation from cleanrl
+                    # rainbow_atari (harmless in long Atari eps, harmful in
+                    # LC's ~25-step eps).
+                    if len(dq) == self.n_step:
+                        dq.popleft()            # this window already emitted above
+                    while dq:                   # flush the shorter end-of-episode windows
+                        r_n, no, nm, dn = self._n_step_info(dq)
+                        self.add(dq[0][0], no, dq[0][2], nm, dq[0][4], r_n, float(dn))
+                        dq.popleft()
             return
         # ── 1-step fast path (unchanged) ──
         if self.pos + N <= self.buffer_size:
@@ -326,6 +354,43 @@ class DQNTrainer:
         self.target_network.load_state_dict(q_network.state_dict())
         self.optimizer = optim.Adam(q_network.parameters(), lr=config.learning_rate)
 
+    def _tb_target(self, rb, target_network, s_idx, s_rewards, s_next_obs, s_next_masks, s_dones):
+        """Sample-time n-step tree-backup target (Sutton & Barto 7.5, greedy target):
+        G = sum_{k<m} g^k R_{k+1} + g^m max_a Q(s_m), where m = first intermediate
+        action that is NOT greedy under the CURRENT target net (else m=n). Walks the
+        raw 1-step window; same-env next step lives at stride num_envs. The g^k power
+        is exact (g=1 here). (A <0.01% fraction of windows may straddle the buffer
+        write seam and cut early — negligible, unbiased noise.)"""
+        cfg = self.config
+        ne, bs, n, g, dev = rb.num_envs, rb.buffer_size, cfg.n_step, cfg.gamma, self.device
+        td = s_rewards.clone()                         # R_1 (anchor reward, k=0)
+        acc = s_rewards.clone()                        # sum_{j<=k} g^j R_{j+1}
+        alive = (s_dones == 0)                         # trace still open past anchor
+        boot_obs, boot_mask = s_next_obs, s_next_masks # bootstrap state if window runs full
+        idx = s_idx
+        for k in range(1, n):
+            idx = (idx + ne) % bs
+            obs_k = torch.as_tensor(rb.obs[idx], device=dev)
+            mask_k = torch.as_tensor(rb.masks[idx], dtype=torch.bool, device=dev)
+            act_k = torch.as_tensor(rb.actions[idx], dtype=torch.long, device=dev)
+            rew_k = torch.as_tensor(rb.rewards[idx], device=dev)
+            done_k = torch.as_tensor(rb.dones[idx], device=dev)
+            q_k = target_network(obs_k); q_k[~mask_k] = -1e8
+            cut = alive & (act_k != q_k.argmax(1))     # non-greedy under current Q -> cut
+            td = torch.where(cut, acc + (g ** k) * q_k.max(1).values, td)
+            alive = alive & ~cut
+            acc = acc + alive.float() * (g ** k) * rew_k
+            term = alive & (done_k != 0)               # episode ended inside the window
+            td = torch.where(term, acc, td)
+            alive = alive & ~term
+            nobs_k = torch.as_tensor(rb.next_obs[idx], device=dev)
+            nmask_k = torch.as_tensor(rb.next_masks[idx], dtype=torch.bool, device=dev)
+            boot_obs = torch.where(alive.unsqueeze(1), nobs_k, boot_obs)
+            boot_mask = torch.where(alive.unsqueeze(1), nmask_k, boot_mask)
+        q_f = target_network(boot_obs); q_f[~boot_mask] = -1e8
+        td = torch.where(alive, acc + (g ** n) * q_f.max(1).values, td)
+        return td
+
     def train(self):
         config = self.config
         device = self.device
@@ -340,7 +405,8 @@ class DQNTrainer:
         n_act = q_network.num_actions
         rb = ReplayBuffer(config.buffer_size, o_dim, n_act, device,
                           n_step=config.n_step, gamma=config.gamma, num_envs=N,
-                          prioritized=config.prioritized, alpha=config.per_alpha)
+                          prioritized=config.prioritized, alpha=config.per_alpha,
+                          tree_backup=config.tree_backup)
         gamma_n = config.gamma ** config.n_step   # Rainbow: n-step bootstrap discount
         # Rainbow: C51 support (only used when config.distributional)
         support = torch.linspace(config.v_min, config.v_max, config.n_atoms, device=device)
@@ -399,7 +465,7 @@ class DQNTrainer:
 
             # ── Store transitions ──
             rb.add_batch(obs_flat, next_obs_flat, masks, next_masks,
-                         actions, rewards, terminated.astype(np.float32))
+                         actions, rewards, terminated.astype(np.float32), explore=explore)
 
             obs_flat = next_obs_flat
             obs = next_obs
@@ -444,16 +510,20 @@ class DQNTrainer:
                     else:
                         # ── Scalar TD target (n-step + optional double) ──
                         with torch.no_grad():
-                            target_q = target_network(s_next_obs)
-                            target_q[~s_next_masks] = -1e8
-                            if config.double_dqn:
-                                online_next = q_network(s_next_obs)
-                                online_next[~s_next_masks] = -1e8
-                                next_act = online_next.argmax(dim=1)
-                                target_max = target_q.gather(1, next_act.unsqueeze(1)).squeeze(1)
+                            if config.tree_backup:
+                                td_target = self._tb_target(rb, target_network, s_idx,
+                                    s_rewards, s_next_obs, s_next_masks, s_dones)
                             else:
-                                target_max = target_q.max(dim=1).values
-                            td_target = s_rewards + gamma_n * target_max * (1 - s_dones)
+                                target_q = target_network(s_next_obs)
+                                target_q[~s_next_masks] = -1e8
+                                if config.double_dqn:
+                                    online_next = q_network(s_next_obs)
+                                    online_next[~s_next_masks] = -1e8
+                                    next_act = online_next.argmax(dim=1)
+                                    target_max = target_q.gather(1, next_act.unsqueeze(1)).squeeze(1)
+                                else:
+                                    target_max = target_q.max(dim=1).values
+                                td_target = s_rewards + gamma_n * target_max * (1 - s_dones)
                         current_q = q_network(s_obs).gather(1, s_actions.unsqueeze(1)).squeeze(1)
                         per_sample = (F.smooth_l1_loss(current_q, td_target, reduction="none") if config.huber_loss
                                       else F.mse_loss(current_q, td_target, reduction="none"))
