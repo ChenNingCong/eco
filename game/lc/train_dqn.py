@@ -14,10 +14,12 @@ import numpy as np
 import torch
 import tyro
 
-from abstract import VecSinglePlayerEnv, RandomPlayer, key_from_seed
+from abstract import VecSinglePlayerEnv, RandomPlayer, key_from_seed, LSTMBatchedPlayer
 from abstract.dqn import DQNTrainer, DQNBatchedPlayer, _flatten_obs_batch, _obs_dim
 from game.lc import LCEnvFactory
+from game.lc.agent import LCAgent
 from game.lc.dqn_agent import LCDQNArgs, LCQNetwork
+from game.lc.heuristic_player import HeuristicPlayer
 
 
 class LCDQNTrainer(DQNTrainer):
@@ -32,6 +34,8 @@ class LCDQNTrainer(DQNTrainer):
                                            max_lanes=config.max_lanes,
                                            max_discard_draws=config.max_discard_draws)
         self._bench_random = RandomPlayer()
+        self._bench_heuristic = HeuristicPlayer()
+        self._bench_frozen = None  # set externally for best-response/exploitability runs
         self._bench_key = key_from_seed(config.seed + 10000)
 
     def _run_benchmark(self, opponent, n_games, prefix):
@@ -125,9 +129,30 @@ class LCDQNTrainer(DQNTrainer):
         log_self, w_s, l_s, d_s, ms_s, ss_s, ma_s = self._run_benchmark(
             self_opp, n_games, "benchmark/selfplay")
 
-        log = {**log_rand, **log_self, "global_step": global_step}
+        # vs heuristic (competent fixed opponent)
+        log_heur, w_h, l_h, d_h, ms_h, ss_h, ma_h = self._run_benchmark(
+            self._bench_heuristic, n_games, "benchmark/vs_heuristic")
+
+        log = {**log_rand, **log_self, **log_heur, "global_step": global_step}
+
+        # vs frozen PPO (THE exploitability number, for best-response runs)
+        if self._bench_frozen is not None:
+            log_fz, w_f, l_f, d_f, ms_f, ss_f, ma_f = self._run_benchmark(
+                self._bench_frozen, n_games, "benchmark/vs_frozen")
+            log.update(log_fz)
+            print(f"  vs FROZEN-PPO: {w_f}W/{l_f}L/{d_f}D  win={w_f/max(w_f+l_f+d_f,1)*100:.0f}% "
+                  f"| score={ms_f:.1f} inv={np.mean(ma_f['num_investment']):.1f} "
+                  f"played={np.mean(ma_f['num_played']):.1f} ddraw={np.mean(ma_f['discard_draws']):.1f}")
+
         wandb.log(log)
 
+        print(f"  vs Heur:   {w_h}W/{l_h}L/{d_h}D "
+              f"| score={ms_h:.1f}±{ss_h:.1f} "
+              f"inv={np.mean(ma_h['num_investment']):.1f} "
+              f"played={np.mean(ma_h['num_played']):.1f} "
+              f"lanes={np.mean(ma_h['open_lanes']):.1f} "
+              f"ddraw={np.mean(ma_h['discard_draws']):.1f} "
+              f"pts={np.mean(ma_h['total_points']):.0f}")
         print(f"  vs Random: {w_r}W/{l_r}L/{d_r}D "
               f"| score={ms_r:.1f}±{ss_r:.1f} "
               f"inv={np.mean(ma_r['num_investment']):.1f} "
@@ -172,8 +197,20 @@ def main():
     print(f"Q-network params: {sum(p.numel() for p in q_network.parameters()):,}")
 
     # Opponent
-    if args.opponent_mode == "self_play":
+    frozen_ppo = None
+    if args.frozen_ppo_path:
+        # Best-response / exploitability: train the DQN against a FIXED frozen PPO agent.
+        frozen_ppo = LCAgent(no_lstm=args.frozen_ppo_no_lstm, hidden_dim=args.frozen_ppo_hidden,
+                             mlp_depth=args.frozen_ppo_mlp_depth).to(device)
+        frozen_ppo.load_state_dict(torch.load(args.frozen_ppo_path, map_location=device, weights_only=False))
+        frozen_ppo.eval()
+        opponent = LSTMBatchedPlayer(frozen_ppo, device, num_envs=args.num_envs)
+        print(f"FROZEN PPO opponent (best-response/exploitability) from {args.frozen_ppo_path}")
+    elif args.opponent_mode == "self_play":
         opponent = DQNBatchedPlayer(q_network, device, num_envs=args.num_envs)
+    elif args.opponent_mode == "heuristic":
+        opponent = HeuristicPlayer()
+        print("Heuristic (rule-based) opponent")
     else:
         opponent = RandomPlayer()
 
@@ -204,6 +241,9 @@ def main():
         envs=envs,
         device=device,
     )
+    if frozen_ppo is not None:
+        # benchmark the DQN best-response vs the frozen PPO = the exploitability number
+        trainer._bench_frozen = LSTMBatchedPlayer(frozen_ppo, device, num_envs=trainer.BENCHMARK_ENVS)
     trainer.train()
 
 

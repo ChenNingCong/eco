@@ -21,14 +21,17 @@ from .engine import (LCObs, float_dim, NUM_ACTIONS, NUM_DECOMPOSED_ACTIONS, NUM_
 @dataclass
 class LCArgs(PPOConfig):
     """Lost Cities game-specific arguments, extends PPOConfig."""
-    opponent_mode: Literal["self_play", "random"] = "self_play"
-    """opponent policy: self_play or random."""
+    opponent_mode: Literal["self_play", "random", "heuristic"] = "self_play"
+    """opponent policy: self_play, random, or heuristic (rule-based fixed opponent)."""
     new_color_penalty: int = 20
     """penalty for starting a new color expedition (default 20, ablations: 15, 10)"""
     score_diff_reward: bool = False
     """use (score_diff / 30) as terminal reward instead of +1/-1"""
     zero_one_reward: bool = False
     """use [0,1] reward (win=1, lose=0) instead of +1/-1"""
+    dense_reward: bool = False
+    """per-step reward (score delta each move) instead of terminal-only. Combine with
+    score_diff_reward for the dense zero-sum (own-opp) signal: r=(Δown-Δopp)/30 each step."""
     max_lanes: int = 5
     """maximum number of expedition lanes a player can open (default 5 = no limit)"""
     decompose_actions: bool = False
@@ -41,6 +44,8 @@ class LCArgs(PPOConfig):
     """pure feedforward agent (no LSTM history), uses 2-layer middle MLP instead"""
     hidden_dim: int = 256
     """hidden dimension for encoder/trunk MLPs (default 256)"""
+    mlp_depth: int = 2
+    """number of layers per MLP block (encoder/middle/actor/critic); 2 = original arch"""
     mask_as_input: bool = False
     """feed action mask as additional input feature to the encoder"""
     product_actions: bool = False
@@ -73,7 +78,8 @@ class LCAgent(BaseAgent):
                  decompose_actions: bool = False, three_phase: bool = False,
                  blind_draw: bool = False,
                  mask_as_input: bool = False, no_lstm: bool = False,
-                 hidden_dim: int = 256, product_actions: bool = False):
+                 hidden_dim: int = 256, product_actions: bool = False,
+                 mlp_depth: int = 2):
         super().__init__()
         H = hidden_dim
         self.lstm_hidden = lstm_hidden if not no_lstm else 1
@@ -100,11 +106,15 @@ class LCAgent(BaseAgent):
         if mask_as_input:
             enc_in += self._num_actions
 
-        # 2-layer encoder for float features (+ optional mask)
-        self.flat_enc = nn.Sequential(
-            layer_init(nn.Linear(enc_in, H)), nn.LayerNorm(H), nn.ReLU(),
-            layer_init(nn.Linear(H, H)),      nn.LayerNorm(H), nn.ReLU(),
-        )
+        # MLP block builder: `mlp_depth` hidden layers of width H (depth=2 = original arch)
+        def _mlp(in_dim):
+            layers = [layer_init(nn.Linear(in_dim, H)), nn.LayerNorm(H), nn.ReLU()]
+            for _ in range(mlp_depth - 1):
+                layers += [layer_init(nn.Linear(H, H)), nn.LayerNorm(H), nn.ReLU()]
+            return nn.Sequential(*layers)
+
+        # encoder for float features (+ optional mask)
+        self.flat_enc = _mlp(enc_in)
 
         # Phase embedding (used for decompose_actions or three_phase)
         if three_phase:
@@ -119,11 +129,8 @@ class LCAgent(BaseAgent):
         if no_lstm:
             # Dummy LSTM (hidden=1) to satisfy trainer's state management
             self.lstm = nn.LSTM(fusion_in, 1, num_layers=lstm_layers)
-            # 2-layer middle MLP replaces LSTM for deeper representation
-            self.middle_mlp = nn.Sequential(
-                layer_init(nn.Linear(fusion_in, H)), nn.LayerNorm(H), nn.ReLU(),
-                layer_init(nn.Linear(H, H)),         nn.LayerNorm(H), nn.ReLU(),
-            )
+            # middle MLP replaces LSTM for deeper representation
+            self.middle_mlp = _mlp(fusion_in)
             trunk_in = H
         else:
             # LSTM parallel to FF path
@@ -134,14 +141,8 @@ class LCAgent(BaseAgent):
                 elif "weight" in name:
                     nn.init.orthogonal_(param, 1.0)
             trunk_in = fusion_in + lstm_hidden
-        self.actor_trunk = nn.Sequential(
-            layer_init(nn.Linear(trunk_in, H)), nn.LayerNorm(H), nn.ReLU(),
-            layer_init(nn.Linear(H, H)),        nn.LayerNorm(H), nn.ReLU(),
-        )
-        self.critic_trunk = nn.Sequential(
-            layer_init(nn.Linear(trunk_in, H)), nn.LayerNorm(H), nn.ReLU(),
-            layer_init(nn.Linear(H, H)),        nn.LayerNorm(H), nn.ReLU(),
-        )
+        self.actor_trunk = _mlp(trunk_in)
+        self.critic_trunk = _mlp(trunk_in)
         if product_actions:
             # Factored action heads: logits = card[c] + type[t] + draw[d]
             self.card_head = layer_init(nn.Linear(H, NUM_CARD_IDS), std=0.01)      # 50

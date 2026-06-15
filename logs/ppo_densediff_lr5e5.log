@@ -1,0 +1,154 @@
+[lr5e5] lr=5e-5 gpu=0 start 2026-06-06 12:05:33
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/zzhang18/.netrc.
+wandb: Currently logged in as: nchen3 (ningcong-chen) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/zzhang18/nchen3/eco/wandb/run-20260606_120536-fsmv9vc2
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run lc__lc_ppo_densediff_lr5e5__1__1780761935
+wandb: ⭐️ View project at https://wandb.ai/ningcong-chen/ppo-eco
+wandb: 🚀 View run at https://wandb.ai/ningcong-chen/ppo-eco/runs/fsmv9vc2
+Agent params: 2,243,161
+Loaded pretrained model from model/lc_ppo_from_dense_scorediff/pretrained.pkt
+Step: 4096 SPS: 1620  ev=0.136  ent=1.702  grad=3.50/0.50  h=4.9 c=10.6  kl=0.0044  vl=12.1673
+Step: 8192 SPS: 1678  ev=0.574  ent=1.644  grad=3.29/0.50  h=4.7 c=9.7  kl=0.0046  vl=4.5736
+Step: 12288 SPS: 1671  ev=0.444  ent=1.726  grad=4.14/0.50  h=4.6 c=9.4  kl=0.0027  vl=4.5352
+Step: 16384 SPS: 1684  ev=0.394  ent=1.784  grad=8.03/0.50  h=4.6 c=9.5  kl=0.0022  vl=9.1281
+Step: 20480 SPS: 1708  ev=0.367  ent=1.737  grad=5.43/0.50  h=4.7 c=10.0  kl=0.0030  vl=9.1445
+Step: 24576 SPS: 1701  ev=0.442  ent=1.669  grad=18.55/0.50  h=4.7 c=9.9  kl=0.0022  vl=7.9060
+Step: 28672 SPS: 1691  ev=0.379  ent=1.745  grad=0.56/0.50  h=4.8 c=9.9  kl=0.0026  vl=4.5570
+Step: 32768 SPS: 1695  ev=0.376  ent=1.558  grad=2.27/0.50  h=4.8 c=10.1  kl=0.0075  vl=5.0200
+Step: 36864 SPS: 1684  ev=0.525  ent=1.659  grad=1.53/0.50  h=4.8 c=10.0  kl=0.0044  vl=3.3785
+Step: 40960 SPS: 1689  ev=0.469  ent=1.653  grad=3.23/0.50  h=4.8 c=10.0  kl=0.0028  vl=5.0873
+Step: 45056 SPS: 1691  ev=0.466  ent=1.664  grad=5.93/0.50  h=4.8 c=10.2  kl=0.0027  vl=5.7037
+Step: 49152 SPS: 1694  ev=0.535  ent=1.786  grad=7.81/0.50  h=4.9 c=10.4  kl=0.0016  vl=6.2175
+Step: 53248 SPS: 1701  ev=0.593  ent=1.603  grad=3.08/0.50  h=4.8 c=10.2  kl=0.0022  vl=2.6656
+Step: 57344 SPS: 1707  ev=0.579  ent=1.643  grad=3.68/0.50  h=4.9 c=10.3  kl=0.0016  vl=3.8680
+Step: 61440 SPS: 1697  ev=0.589  ent=1.659  grad=3.12/0.50  h=4.9 c=10.5  kl=0.0033  vl=2.6332
+Step: 65536 SPS: 1696  ev=0.600  ent=1.689  grad=0.68/0.50  h=5.0 c=10.6  kl=0.0026  vl=2.2707
+Step: 69632 SPS: 1701  ev=0.675  ent=1.764  grad=5.80/0.50  h=5.1 c=10.9  kl=0.0041  vl=2.0819
+Step: 73728 SPS: 1702  ev=0.723  ent=1.644  grad=0.60/0.50  h=5.0 c=10.7  kl=0.0059  vl=2.7678
+Step: 77824 SPS: 1701  ev=0.664  ent=1.666  grad=5.06/0.50  h=5.2 c=11.2  kl=0.0039  vl=2.4354
+  vs Random: 97W/2L/1D | score=73.3±42.6 inv=6.1 played=24.6 lanes=4.9 ddraw=33.8 pts=73
+  Self-play: 47W/52L/1D | score=25.3±43.5 inv=4.8 played=19.7 lanes=4.8 ddraw=19.1 pts=25
+Step: 81920 SPS: 1701  ev=0.683  ent=1.572  grad=3.48/0.50  h=5.2 c=11.3  kl=0.0020  vl=1.8314
+Step: 86016 SPS: 1702  ev=0.798  ent=1.590  grad=1.04/0.50  h=5.2 c=11.1  kl=0.0016  vl=1.0477
+Step: 90112 SPS: 1707  ev=0.744  ent=1.585  grad=0.83/0.50  h=5.3 c=11.5  kl=0.0050  vl=1.1774
+Step: 94208 SPS: 1709  ev=0.728  ent=1.611  grad=1.79/0.50  h=5.2 c=11.2  kl=0.0035  vl=1.5390
+Step: 98304 SPS: 1712  ev=0.780  ent=1.584  grad=2.84/0.50  h=5.3 c=11.5  kl=0.0051  vl=1.1136
+Step: 102400 SPS: 1715  ev=0.780  ent=1.596  grad=2.37/0.50  h=5.4 c=11.8  kl=0.0116  vl=1.0335
+Step: 106496 SPS: 1711  ev=0.811  ent=1.577  grad=1.18/0.50  h=5.3 c=11.5  kl=0.0105  vl=0.8545
+Step: 110592 SPS: 1711  ev=0.803  ent=1.572  grad=2.85/0.50  h=5.2 c=11.3  kl=0.0084  vl=0.9447
+Step: 114688 SPS: 1711  ev=0.812  ent=1.570  grad=3.23/0.50  h=5.2 c=11.4  kl=0.0129  vl=0.7641
+Step: 118784 SPS: 1710  ev=0.812  ent=1.618  grad=1.53/0.50  h=5.3 c=11.6  kl=0.0100  vl=0.6927
+Step: 122880 SPS: 1710  ev=0.851  ent=1.543  grad=1.55/0.50  h=5.3 c=11.6  kl=0.0099  vl=0.4137
+Step: 126976 SPS: 1705  ev=0.786  ent=1.574  grad=1.47/0.50  h=5.3 c=11.5  kl=0.0109  vl=0.7452
+Step: 131072 SPS: 1704  ev=0.838  ent=1.599  grad=1.47/0.50  h=5.3 c=11.6  kl=0.0096  vl=0.4908
+Step: 135168 SPS: 1703  ev=0.767  ent=1.450  grad=1.47/0.50  h=5.2 c=11.3  kl=0.0112  vl=0.6439
+Step: 139264 SPS: 1702  ev=0.829  ent=1.606  grad=2.12/0.50  h=5.3 c=11.5  kl=0.0088  vl=0.6870
+Step: 143360 SPS: 1699  ev=0.799  ent=1.534  grad=1.04/0.50  h=5.3 c=11.4  kl=0.0119  vl=0.5190
+Step: 147456 SPS: 1699  ev=0.784  ent=1.587  grad=1.70/0.50  h=5.4 c=11.7  kl=0.0100  vl=0.7323
+Step: 151552 SPS: 1698  ev=0.774  ent=1.488  grad=1.16/0.50  h=5.3 c=11.4  kl=0.0114  vl=0.6622
+Step: 155648 SPS: 1695  ev=0.775  ent=1.495  grad=1.57/0.50  h=5.1 c=11.0  kl=0.0092  vl=0.3969
+Step: 159744 SPS: 1693  ev=0.795  ent=1.458  grad=1.11/0.50  h=5.1 c=11.1  kl=0.0094  vl=0.6088
+  vs Random: 100W/0L/0D | score=78.4±44.3 inv=5.5 played=24.7 lanes=4.9 ddraw=24.8 pts=78
+  Self-play: 42W/56L/2D | score=15.8±34.0 inv=4.3 played=19.8 lanes=4.8 ddraw=12.0 pts=16
+Step: 163840 SPS: 1693  ev=0.753  ent=1.486  grad=1.15/0.50  h=5.1 c=10.8  kl=0.0094  vl=0.7183
+Step: 167936 SPS: 1690  ev=0.747  ent=1.556  grad=2.79/0.50  h=5.1 c=11.0  kl=0.0118  vl=0.7879
+Step: 172032 SPS: 1687  ev=0.749  ent=1.497  grad=1.28/0.50  h=5.1 c=11.1  kl=0.0093  vl=0.4992
+Step: 176128 SPS: 1684  ev=0.727  ent=1.530  grad=1.08/0.50  h=5.1 c=11.0  kl=0.0111  vl=0.5296
+Step: 180224 SPS: 1682  ev=0.779  ent=1.540  grad=1.62/0.50  h=5.1 c=11.0  kl=0.0111  vl=0.4289
+Step: 184320 SPS: 1680  ev=0.747  ent=1.453  grad=2.39/0.50  h=5.1 c=11.1  kl=0.0098  vl=0.5690
+Step: 188416 SPS: 1681  ev=0.767  ent=1.446  grad=1.53/0.50  h=5.1 c=11.0  kl=0.0130  vl=0.6016
+Step: 192512 SPS: 1683  ev=0.785  ent=1.499  grad=0.97/0.50  h=5.1 c=11.1  kl=0.0119  vl=0.6359
+Step: 196608 SPS: 1685  ev=0.732  ent=1.438  grad=1.75/0.50  h=5.0 c=10.8  kl=0.0128  vl=0.7198
+Step: 200704 SPS: 1685  ev=0.745  ent=1.431  grad=5.64/0.50  h=5.1 c=11.0  kl=0.0103  vl=0.5917
+Step: 204800 SPS: 1685  ev=0.730  ent=1.488  grad=1.55/0.50  h=5.1 c=10.9  kl=0.0090  vl=0.8280
+Step: 208896 SPS: 1686  ev=0.765  ent=1.470  grad=3.78/0.50  h=5.1 c=11.0  kl=0.0115  vl=0.7145
+Step: 212992 SPS: 1685  ev=0.730  ent=1.461  grad=1.13/0.50  h=5.1 c=11.1  kl=0.0123  vl=0.5841
+Step: 217088 SPS: 1682  ev=0.741  ent=1.368  grad=1.58/0.50  h=5.1 c=11.1  kl=0.0099  vl=0.5842
+Step: 221184 SPS: 1680  ev=0.723  ent=1.398  grad=1.36/0.50  h=5.0 c=10.8  kl=0.0099  vl=0.6236
+Step: 225280 SPS: 1677  ev=0.771  ent=1.364  grad=1.89/0.50  h=5.0 c=11.0  kl=0.0096  vl=0.3886
+Step: 229376 SPS: 1677  ev=0.741  ent=1.404  grad=1.92/0.50  h=5.1 c=11.1  kl=0.0093  vl=0.5279
+Step: 233472 SPS: 1675  ev=0.750  ent=1.349  grad=1.23/0.50  h=5.1 c=11.2  kl=0.0110  vl=0.4690
+Step: 237568 SPS: 1676  ev=0.801  ent=1.336  grad=1.14/0.50  h=5.1 c=11.3  kl=0.0084  vl=0.5131
+Step: 241664 SPS: 1677  ev=0.731  ent=1.440  grad=1.21/0.50  h=5.1 c=11.3  kl=0.0110  vl=0.6265
+  vs Random: 100W/0L/0D | score=75.4±41.1 inv=4.9 played=24.1 lanes=4.9 ddraw=16.7 pts=75
+  Self-play: 51W/49L/1D | score=12.0±30.1 inv=3.7 played=19.1 lanes=4.8 ddraw=5.9 pts=12
+Step: 245760 SPS: 1677  ev=0.733  ent=1.380  grad=1.53/0.50  h=5.1 c=11.4  kl=0.0085  vl=0.5612
+Step: 249856 SPS: 1678  ev=0.751  ent=1.378  grad=1.18/0.50  h=5.0 c=11.3  kl=0.0110  vl=0.5481
+Step: 253952 SPS: 1677  ev=0.712  ent=1.355  grad=1.78/0.50  h=5.0 c=11.2  kl=0.0096  vl=0.6387
+Step: 258048 SPS: 1677  ev=0.732  ent=1.306  grad=1.83/0.50  h=5.0 c=11.3  kl=0.0083  vl=0.3891
+Step: 262144 SPS: 1679  ev=0.751  ent=1.360  grad=1.16/0.50  h=4.9 c=11.2  kl=0.0082  vl=0.5278
+Step: 266240 SPS: 1679  ev=0.741  ent=1.323  grad=1.10/0.50  h=5.0 c=11.3  kl=0.0104  vl=0.5190
+Step: 270336 SPS: 1678  ev=0.760  ent=1.313  grad=1.72/0.50  h=4.9 c=10.9  kl=0.0112  vl=0.5574
+Step: 274432 SPS: 1677  ev=0.747  ent=1.339  grad=1.36/0.50  h=5.0 c=11.2  kl=0.0105  vl=0.3997
+Step: 278528 SPS: 1677  ev=0.763  ent=1.295  grad=2.16/0.50  h=5.0 c=11.1  kl=0.0089  vl=0.6048
+Step: 282624 SPS: 1676  ev=0.734  ent=1.265  grad=1.84/0.50  h=5.0 c=11.0  kl=0.0078  vl=0.4201
+Step: 286720 SPS: 1677  ev=0.733  ent=1.366  grad=1.05/0.50  h=5.0 c=11.1  kl=0.0086  vl=0.5121
+Step: 290816 SPS: 1677  ev=0.781  ent=1.319  grad=2.44/0.50  h=5.0 c=11.0  kl=0.0085  vl=0.4509
+Step: 294912 SPS: 1677  ev=0.783  ent=1.329  grad=1.19/0.50  h=5.0 c=11.1  kl=0.0060  vl=0.4203
+Step: 299008 SPS: 1676  ev=0.760  ent=1.376  grad=1.22/0.50  h=5.0 c=11.2  kl=0.0071  vl=0.3149
+Step: 303104 SPS: 1677  ev=0.700  ent=1.339  grad=2.71/0.50  h=4.9 c=11.1  kl=0.0102  vl=0.6131
+Step: 307200 SPS: 1676  ev=0.767  ent=1.331  grad=2.96/0.50  h=5.0 c=11.2  kl=0.0097  vl=0.3617
+Step: 311296 SPS: 1676  ev=0.725  ent=1.360  grad=1.13/0.50  h=5.0 c=11.1  kl=0.0115  vl=0.4295
+Step: 315392 SPS: 1677  ev=0.675  ent=1.345  grad=2.29/0.50  h=4.9 c=11.0  kl=0.0101  vl=0.5575
+Step: 319488 SPS: 1675  ev=0.697  ent=1.375  grad=1.09/0.50  h=4.9 c=11.1  kl=0.0095  vl=0.6578
+Step: 323584 SPS: 1674  ev=0.743  ent=1.304  grad=1.72/0.50  h=5.0 c=11.2  kl=0.0076  vl=0.3605
+  vs Random: 100W/0L/0D | score=76.9±39.9 inv=4.5 played=23.1 lanes=4.8 ddraw=13.8 pts=77
+  Self-play: 45W/54L/2D | score=13.1±32.5 inv=3.7 played=18.4 lanes=4.7 ddraw=5.2 pts=13
+Step: 327680 SPS: 1674  ev=0.735  ent=1.335  grad=1.01/0.50  h=5.0 c=11.3  kl=0.0082  vl=0.3994
+Step: 331776 SPS: 1673  ev=0.770  ent=1.362  grad=1.42/0.50  h=4.9 c=10.8  kl=0.0092  vl=0.4144
+Step: 335872 SPS: 1672  ev=0.720  ent=1.387  grad=1.11/0.50  h=4.9 c=10.9  kl=0.0073  vl=0.3558
+Step: 339968 SPS: 1671  ev=0.670  ent=1.339  grad=2.87/0.50  h=4.9 c=10.8  kl=0.0109  vl=0.7146
+Step: 344064 SPS: 1670  ev=0.699  ent=1.335  grad=1.11/0.50  h=4.9 c=11.0  kl=0.0097  vl=0.4560
+Step: 348160 SPS: 1669  ev=0.731  ent=1.333  grad=3.64/0.50  h=5.1 c=11.4  kl=0.0117  vl=0.3911
+Step: 352256 SPS: 1669  ev=0.682  ent=1.261  grad=1.32/0.50  h=5.0 c=11.1  kl=0.0084  vl=0.6336
+Step: 356352 SPS: 1668  ev=0.682  ent=1.411  grad=1.31/0.50  h=4.9 c=10.9  kl=0.0081  vl=0.5781
+Step: 360448 SPS: 1669  ev=0.703  ent=1.258  grad=1.40/0.50  h=4.9 c=11.1  kl=0.0076  vl=0.5864
+Step: 364544 SPS: 1668  ev=0.683  ent=1.300  grad=1.36/0.50  h=4.9 c=11.0  kl=0.0093  vl=0.6277
+Step: 368640 SPS: 1668  ev=0.738  ent=1.353  grad=1.72/0.50  h=5.0 c=11.2  kl=0.0092  vl=0.4020
+Step: 372736 SPS: 1669  ev=0.677  ent=1.347  grad=2.32/0.50  h=5.0 c=11.1  kl=0.0077  vl=0.5615
+Step: 376832 SPS: 1668  ev=0.741  ent=1.290  grad=1.33/0.50  h=4.9 c=11.0  kl=0.0091  vl=0.2720
+Step: 380928 SPS: 1668  ev=0.647  ent=1.356  grad=1.08/0.50  h=4.9 c=11.2  kl=0.0088  vl=0.3325
+Step: 385024 SPS: 1668  ev=0.672  ent=1.283  grad=1.48/0.50  h=4.9 c=11.1  kl=0.0087  vl=0.5282
+Step: 389120 SPS: 1667  ev=0.690  ent=1.259  grad=1.31/0.50  h=5.0 c=11.3  kl=0.0083  vl=0.3756
+Step: 393216 SPS: 1666  ev=0.643  ent=1.348  grad=2.76/0.50  h=4.9 c=10.9  kl=0.0065  vl=0.4782
+Step: 397312 SPS: 1666  ev=0.707  ent=1.275  grad=2.14/0.50  h=4.8 c=10.9  kl=0.0087  vl=0.5020
+Step: 401408 SPS: 1667  ev=0.677  ent=1.266  grad=1.10/0.50  h=4.8 c=11.0  kl=0.0088  vl=0.5358
+Step: 405504 SPS: 1667  ev=0.699  ent=1.281  grad=2.65/0.50  h=4.9 c=11.2  kl=0.0091  vl=0.6408
+  vs Random: 100W/0L/0D | score=75.7±40.5 inv=3.9 played=22.7 lanes=4.8 ddraw=10.8 pts=76
+  Self-play: 50W/50L/2D | score=9.8±27.9 inv=3.4 played=18.5 lanes=4.8 ddraw=3.6 pts=10
+Step: 409600 SPS: 1667  ev=0.719  ent=1.250  grad=1.18/0.50  h=4.9 c=11.3  kl=0.0068  vl=0.4680
+Step: 413696 SPS: 1667  ev=0.711  ent=1.234  grad=1.58/0.50  h=4.9 c=11.2  kl=0.0071  vl=0.3628
+Step: 417792 SPS: 1668  ev=0.721  ent=1.240  grad=2.41/0.50  h=4.9 c=11.2  kl=0.0073  vl=0.4919
+Step: 421888 SPS: 1668  ev=0.722  ent=1.234  grad=2.71/0.50  h=5.0 c=11.7  kl=0.0096  vl=0.6003
+Step: 425984 SPS: 1668  ev=0.708  ent=1.260  grad=1.38/0.50  h=4.9 c=11.3  kl=0.0074  vl=0.5059
+Step: 430080 SPS: 1668  ev=0.653  ent=1.191  grad=1.02/0.50  h=4.9 c=11.3  kl=0.0087  vl=0.4226
+Step: 434176 SPS: 1668  ev=0.695  ent=1.233  grad=2.93/0.50  h=4.9 c=11.4  kl=0.0078  vl=0.4786
+Step: 438272 SPS: 1669  ev=0.685  ent=1.247  grad=1.05/0.50  h=4.9 c=11.4  kl=0.0074  vl=0.4248
+Step: 442368 SPS: 1669  ev=0.676  ent=1.235  grad=3.79/0.50  h=4.9 c=11.4  kl=0.0077  vl=0.4680
+Step: 446464 SPS: 1669  ev=0.691  ent=1.169  grad=1.13/0.50  h=4.9 c=11.6  kl=0.0084  vl=0.5219
+Step: 450560 SPS: 1669  ev=0.609  ent=1.206  grad=4.32/0.50  h=4.9 c=11.7  kl=0.0109  vl=0.6182
+Step: 454656 SPS: 1669  ev=0.674  ent=1.226  grad=1.18/0.50  h=4.9 c=11.7  kl=0.0085  vl=0.3498
+Step: 458752 SPS: 1669  ev=0.651  ent=1.233  grad=2.43/0.50  h=4.9 c=11.6  kl=0.0084  vl=0.4277
+Step: 462848 SPS: 1669  ev=0.700  ent=1.241  grad=1.16/0.50  h=4.9 c=11.7  kl=0.0063  vl=0.4750
+Step: 466944 SPS: 1668  ev=0.736  ent=1.212  grad=1.11/0.50  h=4.9 c=11.6  kl=0.0077  vl=0.3008
+Step: 471040 SPS: 1668  ev=0.663  ent=1.203  grad=1.14/0.50  h=4.9 c=11.8  kl=0.0066  vl=0.3268
+Step: 475136 SPS: 1669  ev=0.712  ent=1.161  grad=0.97/0.50  h=4.9 c=11.6  kl=0.0081  vl=0.3928
+Step: 479232 SPS: 1669  ev=0.673  ent=1.223  grad=0.94/0.50  h=4.9 c=11.8  kl=0.0100  vl=0.6213
+Step: 483328 SPS: 1669  ev=0.691  ent=1.249  grad=3.10/0.50  h=4.9 c=11.6  kl=0.0087  vl=0.5350
+Step: 487424 SPS: 1669  ev=0.693  ent=1.237  grad=1.14/0.50  h=4.8 c=11.5  kl=0.0076  vl=0.3913
+  vs Random: 100W/0L/0D | score=77.7±35.0 inv=4.0 played=23.1 lanes=4.9 ddraw=10.7 pts=78
+  Self-play: 44W/57L/1D | score=11.1±27.8 inv=3.1 played=18.0 lanes=4.7 ddraw=3.6 pts=11
+Step: 491520 SPS: 1669  ev=0.670  ent=1.247  grad=3.27/0.50  h=4.8 c=11.5  kl=0.0064  vl=0.5662
+Step: 495616 SPS: 1669  ev=0.652  ent=1.197  grad=1.09/0.50  h=4.9 c=11.7  kl=0.0069  vl=0.4666
+Step: 499712 SPS: 1668  ev=0.697  ent=1.259  grad=1.00/0.50  h=4.8 c=11.4  kl=0.0076  vl=0.5119
+Step: 503808 SPS: 1668  ev=0.672  ent=1.200  grad=1.83/0.50  h=4.9 c=11.6  kl=0.0078  vl=0.5381
+Step: 507904 SPS: 1668  ev=0.724  ent=1.178  grad=1.17/0.50  h=4.8 c=11.4  kl=0.0074  vl=0.5933
+Step: 512000 SPS: 1668  ev=0.757  ent=1.241  grad=1.47/0.50  h=4.8 c=11.7  kl=0.0070  vl=0.3846
+Step: 516096 SPS: 1667  ev=0.749  ent=1.203  grad=1.49/0.50  h=4.8 c=11.5  kl=0.0080  vl=0.3837
+Step: 520192 SPS: 1667  ev=0.748  ent=1.125  grad=1.21/0.50  h=4.8 c=11.3  kl=0.0082  vl=0.3581
+Step: 524288 SPS: 1667  ev=0.673  ent=1.154  grad=2.38/0.50  h=4.8 c=11.4  kl=0.0067  vl=0.5076
+Step: 528384 SPS: 1667  ev=0.732  ent=1.178  grad=1.17/0.50  h=4.7 c=11.1  kl=0.0085  vl=0.4509
+_launch_ppo_fixedlr.sh: line 22: 3787234 Killed                  python -u -m game.lc.train --pretrained model/lc_ppo_from_dense_scorediff/pretrained.pkt --dense-reward --score-diff-reward --opponent-mode self_play --hidden-dim 512 --lstm-hidden 128 --ent-coef 0.0 --critic-warmup-steps 100000 --learning-rate "$LR" --anneal-lr --target-kl None --gae-lambda 1 --gamma 1 --num-envs 128 --num-steps 32 --num-minibatches 4 --update-epochs 4 --clip-coef 0.2 --total-timesteps 50000000 --wandb-project-name ppo-eco --seed 1 --track --model-dir "model/lc_ppo_densediff_${TAG}" --exp-name "lc_ppo_densediff_${TAG}"
+[lr5e5] done 2026-06-06 12:12:01 exit=0

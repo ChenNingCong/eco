@@ -20,6 +20,7 @@ from abstract import (
 )
 from abstract.ppo_lstm import obs_to_tensor, make_lstm_state, LSTMState
 from game.lc import LCEnvFactory, LCAgent, LCArgs
+from game.lc.heuristic_player import HeuristicPlayer
 from game.lc.engine import seed_numba_rng
 from game.lc.batch_stepper import LCBatchStepper
 
@@ -35,9 +36,43 @@ class LCTrainer(PPOLSTMTrainer):
         # Benchmark factory uses default penalty (true scoring) + same lane limit + same action mode
         self._bench_factory = LCEnvFactory(new_color_penalty=20, max_lanes=config.max_lanes,
                                            decompose_actions=config.decompose_actions,
-                                           three_phase=config.three_phase)
+                                           three_phase=config.three_phase,
+                                           max_discard_draws=config.max_discard_draws)
         self._bench_random = RandomPlayer()
+        self._bench_heuristic = HeuristicPlayer()
         self._bench_key = key_from_seed(config.seed + 10000)
+        # Investment-play action indices: card value 0 played to an expedition, any draw source.
+        # action = card_id*12 + action_type*6 + draw; investment card_id in {0,10,20,30,40}, type 0.
+        inv = [cid * 12 + 0 * 6 + d for cid in (0, 10, 20, 30, 40) for d in range(6)]
+        self._inv_actions = torch.tensor(inv, dtype=torch.long, device=device)
+        self._inv_colors = torch.tensor([k // 6 for k in range(len(inv))], dtype=torch.long, device=device)
+        self._inv_color_slots = torch.tensor([0, 10, 20, 30, 40], dtype=torch.long, device=device)
+
+    def _forced_actions(self, obs, masks, ep_step):
+        """Spend the per-episode forcing budget (self._force_budget) on early-game investment
+        plays, STACKING in one color (self._force_color) so a budget of 2 builds a double.
+        Decrements the budget for envs it forces. Returns (num_envs,) long: action id, or -1."""
+        N = masks.shape[0]
+        dev = masks.device
+        INV = self._inv_actions
+        colors = self._inv_colors                              # (30,) color of each inv slot
+        inv_legal = masks[:, INV].float()                      # (N, 30) legal investment plays
+        has = inv_legal.sum(dim=1) > 0
+        active = (self._force_budget > 0) & (ep_step < self.cfg.force_explore_until) & has
+        if not bool(active.any()):
+            return None
+        committed = self._force_color                          # (N,) -1 if not yet committed
+        match = (colors.unsqueeze(0) == committed.unsqueeze(1)).float()  # prefer the committed color
+        score = inv_legal * (1.0 + 10.0 * match)               # legal required; stack in committed color
+        slot = torch.argmax(score, dim=1)
+        forced_act = INV[slot]
+        chosen_color = colors[slot]
+        neg1 = torch.full((N,), -1, dtype=torch.long, device=dev)
+        forced = torch.where(active, forced_act, neg1)
+        # commit color on the first forced play of the episode; spend one unit of budget
+        self._force_color = torch.where(active & (committed < 0), chosen_color, committed)
+        self._force_budget = self._force_budget - active.long()
+        return forced
 
     def _run_benchmark(self, opponent, n_games, prefix, global_step, wandb):
         agent = self.agent
@@ -136,9 +171,20 @@ class LCTrainer(PPOLSTMTrainer):
         log_self, w_s, l_s, d_s, ms_s, ss_s, ma_s = self._run_benchmark(
             self_opp, n_games, "benchmark/selfplay", global_step, wandb)
 
-        log = {**log_rand, **log_self, "global_step": global_step}
+        # vs heuristic (competent fixed opponent)
+        log_heur, w_h, l_h, d_h, ms_h, ss_h, ma_h = self._run_benchmark(
+            self._bench_heuristic, n_games, "benchmark/vs_heuristic", global_step, wandb)
+
+        log = {**log_rand, **log_self, **log_heur, "global_step": global_step}
         wandb.log(log)
 
+        print(f"  vs Heur:   {w_h}W/{l_h}L/{d_h}D "
+              f"| score={ms_h:.1f}±{ss_h:.1f} "
+              f"inv={np.mean(ma_h['num_investment']):.1f} "
+              f"played={np.mean(ma_h['num_played']):.1f} "
+              f"lanes={np.mean(ma_h['open_lanes']):.1f} "
+              f"ddraw={np.mean(ma_h['discard_draws']):.1f} "
+              f"pts={np.mean(ma_h['total_points']):.0f}")
         print(f"  vs Random: {w_r}W/{l_r}L/{d_r}D "
               f"| score={ms_r:.1f}±{ss_r:.1f} "
               f"inv={np.mean(ma_r['num_investment']):.1f} "
@@ -190,7 +236,8 @@ def main():
                     no_lstm=args.no_lstm,
                     hidden_dim=args.hidden_dim,
                     mask_as_input=args.mask_as_input,
-                    product_actions=args.product_actions).to(device)
+                    product_actions=args.product_actions,
+                    mlp_depth=args.mlp_depth).to(device)
     print(f"Agent params: {sum(p.numel() for p in agent.parameters()):,}")
 
     if args.pretrained:
@@ -209,7 +256,8 @@ def main():
                                     no_lstm=args.no_lstm,
                                     hidden_dim=args.hidden_dim,
                                     mask_as_input=args.mask_as_input,
-                                    product_actions=args.product_actions).to(device)
+                                    product_actions=args.product_actions,
+                                    mlp_depth=args.mlp_depth).to(device)
             opponent_model.load_state_dict(agent.state_dict())
             opponent_model.eval()
             opponent_model = torch.compile(opponent_model, dynamic=True)
@@ -217,6 +265,9 @@ def main():
             print(f"Frozen opponent (sync every {args.opponent_sync_interval} iters)")
         else:
             opponent = LSTMBatchedPlayer(agent, device, num_envs=args.num_envs)
+    elif args.opponent_mode == "heuristic":
+        opponent = HeuristicPlayer()
+        print("Heuristic (rule-based) opponent")
     else:
         opponent = RandomPlayer()
 
@@ -224,6 +275,7 @@ def main():
     factory = LCEnvFactory(new_color_penalty=args.new_color_penalty,
                            score_diff_reward=args.score_diff_reward,
                            zero_one_reward=args.zero_one_reward,
+                           dense_reward=args.dense_reward,
                            max_lanes=args.max_lanes,
                            decompose_actions=args.decompose_actions,
                            three_phase=args.three_phase,

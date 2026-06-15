@@ -592,10 +592,10 @@
   <!-- Thinking bar -->
   <div class="thinking-bar" id="thinking-bar">⏳ Opponent is thinking…</div>
 
-  <!-- Player 1 (Opponent) Expeditions -->
+  <!-- Player 0 (Human) Expeditions — LEFT column, same side as "You" score -->
   <div class="panel">
-    <div class="panel-title">Opponent Expeditions</div>
-    <div class="expedition-panel" id="exp-p1"></div>
+    <div class="panel-title">Your Expeditions</div>
+    <div class="expedition-panel" id="exp-p0"></div>
   </div>
 
   <!-- Center: discard piles (vertical) -->
@@ -611,10 +611,10 @@
     </div>
   </div>
 
-  <!-- Player 0 (Human) Expeditions -->
+  <!-- Player 1 (Opponent) Expeditions — RIGHT column, same side as "Opponent" score -->
   <div class="panel">
-    <div class="panel-title">Your Expeditions</div>
-    <div class="expedition-panel" id="exp-p0"></div>
+    <div class="panel-title">Opponent Expeditions</div>
+    <div class="expedition-panel" id="exp-p1"></div>
   </div>
 
   <!-- Opponent select -->
@@ -935,7 +935,14 @@ function updateUI() {
 }
 
 // ── Full render ────────────────────────────────────────────────────────────
+let lastRenderedSeq = -1;  // lock-step: highest server state-version we've rendered
 function renderGame(state) {
+  // Lock-step guard: drop stale / out-of-order responses (network congestion can deliver an
+  // older state after a newer one). 'seq' is a monotonic server-side state version.
+  if (state && typeof state.seq === 'number') {
+    if (state.seq < lastRenderedSeq) return;   // older than what's on screen -> ignore
+    lastRenderedSeq = state.seq;
+  }
   // expeditions[0] is ALWAYS the human (player 0), expeditions[1] is always the AI.
   // exp-p0 DOM panel = "Your Expeditions", exp-p1 DOM panel = "Opponent Expeditions".
   // These two facts are decoupled so flipping starting player doesn't break display.

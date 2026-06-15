@@ -64,6 +64,7 @@ class GameSession:
         self.decompose_actions = decompose_actions
         self.max_discard_draws = max_discard_draws
         self.autoplay_log = []  # log of actions for autoplay replay
+        self.seq = 0  # monotonic state version (lock-step: UI ignores responses with smaller seq)
 
     def new_game(self, seed=None):
         if seed is None:
@@ -72,11 +73,12 @@ class GameSession:
         self.engine = LCEngine(rng=self.rng, max_lanes=self.max_lanes,
                                decompose_actions=self.decompose_actions,
                                max_discard_draws=self.max_discard_draws)
-        self.engine.reset()
+        self.engine._reset()
         self.lstm_state = None
         self.autoplay_log = []
         # If AI goes first (player 1 starts), run its turns
         self._run_ai_turns()
+        self.seq += 1  # bump on every committed state change
 
     def human_action(self, card_index: int, action_type: str, draw_source: int):
         """Execute human (player 0) action.
@@ -122,6 +124,7 @@ class GameSession:
             e.step(action)
 
         self._run_ai_turns()
+        self.seq += 1  # bump on every committed state change
 
     def _run_ai_turns(self):
         e = self.engine
@@ -160,14 +163,15 @@ class GameSession:
         for p in range(2):
             player_exps = []
             for c in range(NUM_COLORS):
-                player_exps.append(_expedition_to_cards(e._expeditions[p][c], c))
+                vals = [int(v) for v in e._exp_vals[p][c][:int(e._exp_len[p][c])]]
+                player_exps.append(_expedition_to_cards(vals, c))
             expeditions.append(player_exps)
 
         # Discard piles: top card or None
         discard_top = []
         full_discard = []
         for c in range(NUM_COLORS):
-            pile = e._discard_piles[c]
+            pile = [int(cid) for cid in e._discard[c][:int(e._discard_len[c])]]
             if pile:
                 discard_top.append(_card_id_to_tuple(pile[-1]))
             else:
@@ -175,11 +179,12 @@ class GameSession:
             full_discard.append([_card_id_to_tuple(cid) for cid in pile])
 
         return {
+            "seq": self.seq,
             "player_id": player_id,
             "current_player": e.current_player,
             "game_over": e.done,
             "scores": [float(scores[0]), float(scores[1])],
-            "deck_size": len(e._deck),
+            "deck_size": int(e._state.deck_top),
             "hand": hand,
             "opponent_hand_size": int(e._hands[1 - player_id].sum()),
             "expeditions": expeditions,
@@ -196,6 +201,7 @@ _model_dirs = []
 _dqn_dirs = []
 _dqn_hidden_dim = 256
 _ppo_hidden_dim = 256
+_no_lstm = False  # feedforward PPO agents (no LSTM)
 _dqn_model_path = None  # legacy single file
 _max_lanes = 5
 _loaded_models = {}
@@ -225,18 +231,20 @@ def get_valid_actions(player_id: int):
     if e is None or e.current_player != player_id:
         return jsonify({"plays": [], "draws": []})
 
+    mask = e.legal_actions()
     hand = _hand_array_to_list(e._hands[player_id])
     valid_plays = []
     for i, (color, value) in enumerate(hand):
         val_idx = 0 if value == 0 else value - 1
         card_id = color_value_to_card_id(color, val_idx)
-        if e._is_valid_expedition_play(player_id, card_id):
+        # expedition play valid if legal under any draw source (flat mask)
+        if any(mask[encode_action(card_id, 0, d)] for d in range(6)):
             valid_plays.append((i, 'E', color))
         valid_plays.append((i, 'D', color))
 
     valid_draws = [0]
     for c in range(NUM_COLORS):
-        if e._discard_piles[c]:
+        if int(e._discard_len[c]) > 0:
             valid_draws.append(c + 1)
 
     return jsonify({"plays": valid_plays, "draws": valid_draws})
@@ -404,7 +412,7 @@ def set_opponent():
 
         device = "cpu"
         agent = LCAgent(lstm_hidden=128, hidden_dim=_ppo_hidden_dim,
-                        decompose_actions=session.decompose_actions).to(device)
+                        decompose_actions=session.decompose_actions, no_lstm=_no_lstm).to(device)
         agent.load_state_dict(torch.load(path, map_location=device, weights_only=False))
         agent.eval()
         print(f"Loaded PPO model from {path}")
@@ -444,17 +452,19 @@ def main():
     parser.add_argument("--dqn-model", default=None, help="Path to a single DQN .pt checkpoint (legacy)")
     parser.add_argument("--dqn-hidden-dim", type=int, default=256, help="DQN hidden dim (must match checkpoint)")
     parser.add_argument("--ppo-hidden-dim", type=int, default=256, help="PPO hidden dim (must match checkpoint)")
+    parser.add_argument("--no-lstm", action="store_true", help="PPO agent is feedforward (no LSTM) — required for --no-lstm checkpoints")
     parser.add_argument("--max-lanes", type=int, default=5, help="Max expedition lanes (default 5)")
     parser.add_argument("--decompose-actions", action="store_true", help="Use decomposed action space (106 instead of 600)")
     parser.add_argument("--port", type=int, default=5002)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
 
-    global _model_dirs, _dqn_dirs, _dqn_hidden_dim, _ppo_hidden_dim, _dqn_model_path, _max_lanes, session
+    global _model_dirs, _dqn_dirs, _dqn_hidden_dim, _ppo_hidden_dim, _no_lstm, _dqn_model_path, _max_lanes, session
     _model_dirs = args.model_dir or []
     _dqn_dirs = args.dqn_dir or []
     _dqn_hidden_dim = args.dqn_hidden_dim
     _ppo_hidden_dim = args.ppo_hidden_dim
+    _no_lstm = args.no_lstm
     _max_lanes = args.max_lanes
     session = GameSession(max_lanes=_max_lanes, decompose_actions=args.decompose_actions)
 
@@ -463,9 +473,12 @@ def main():
         latest = None
         first_dir = _model_dirs[0]
         if os.path.isdir(first_dir):
-            pkts = sorted([f for f in os.listdir(first_dir) if f.endswith(".pkt")])
-            if pkts:
-                latest = pkts[-1]
+            pkts = [f for f in os.listdir(first_dir) if f.endswith(".pkt")]
+            if "latest.pkt" in pkts:
+                latest = "latest.pkt"  # the trained checkpoint, not the BC seed
+            elif pkts:
+                import re
+                latest = max(pkts, key=lambda f: int((re.findall(r"\d+", f) or [0])[-1]))
         if latest:
             path = os.path.join(first_dir, latest)
             import torch
@@ -475,10 +488,10 @@ def main():
 
             device = "cpu"
             agent = LCAgent(lstm_hidden=128, hidden_dim=args.ppo_hidden_dim,
-                            decompose_actions=args.decompose_actions).to(device)
+                            decompose_actions=args.decompose_actions, no_lstm=args.no_lstm).to(device)
             agent.load_state_dict(torch.load(path, map_location=device, weights_only=False))
             agent.eval()
-            print(f"Loaded model from {path} (hidden_dim={args.ppo_hidden_dim})")
+            print(f"Loaded model from {path} (hidden_dim={args.ppo_hidden_dim}, no_lstm={args.no_lstm})")
 
             def ai_fn(engine, player_id, lstm_state):
                 obs = engine.encode(player_id)

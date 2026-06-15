@@ -1,0 +1,82 @@
+[br-sweep] === dense_raw start 2026-06-10 20:24:47 ===
+wandb: [wandb.login()] Loaded credentials for https://api.wandb.ai from /home/zzhang18/.netrc.
+wandb: Currently logged in as: nchen3 (ningcong-chen) to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+wandb: setting up run 7dmbicc8
+wandb: Tracking run with wandb version 0.25.1
+wandb: Run data is saved locally in /home/zzhang18/nchen3/eco/wandb/run-20260610_202450-7dmbicc8
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run lc__lc_br_dense_raw__1__1781137490
+wandb: ⭐️ View project at https://wandb.ai/ningcong-chen/ppo-eco
+wandb: 🚀 View run at https://wandb.ai/ningcong-chen/ppo-eco/runs/7dmbicc8
+Q-network params: 1,255,512
+FROZEN PPO opponent (best-response/exploitability) from model/lc_ppo_dqninit_final50m/latest.pkt
+Step: 81920  SPS: 5279  ε=0.948  ret=-0.005  score=-68.9  buf=8%  updates=562
+  vs FROZEN-PPO: 9W/95L/0D  win=9% | score=-9.8 inv=0.0 played=1.1 ddraw=4.6
+  vs Heur:   9W/97L/2D | score=-10.7±14.3 inv=0.1 played=1.2 lanes=1.0 ddraw=4.8 pts=-11
+  vs Random: 99W/1L/0D | score=-11.8±13.4 inv=0.0 played=1.2 lanes=1.1 ddraw=3.0 pts=-12
+  Self-play: 49W/37L/17D | score=-12.2±14.6 inv=0.1 played=1.2 lanes=1.1 ddraw=2.5 pts=-12
+Step: 163840  SPS: 5056  ε=0.896  ret=0.048  score=-67.2  buf=16%  updates=1202
+  vs FROZEN-PPO: 15W/87L/0D  win=15% | score=-10.2 inv=0.0 played=1.1 ddraw=4.6
+  vs Heur:   4W/95L/2D | score=-11.8±11.6 inv=0.0 played=1.3 lanes=1.1 ddraw=4.6 pts=-12
+  vs Random: 101W/1L/1D | score=-13.1±12.5 inv=0.0 played=1.6 lanes=1.3 ddraw=2.7 pts=-13
+  Self-play: 51W/50L/5D | score=-17.7±14.3 inv=0.0 played=2.0 lanes=1.7 ddraw=2.5 pts=-18
+Step: 245760  SPS: 4949  ε=0.844  ret=0.040  score=-61.6  buf=25%  updates=1842
+  vs FROZEN-PPO: 13W/97L/0D  win=12% | score=-4.4 inv=0.0 played=0.5 ddraw=4.4
+  vs Heur:   9W/96L/4D | score=-5.8±11.0 inv=0.0 played=0.6 lanes=0.5 ddraw=4.7 pts=-6
+  vs Random: 101W/0L/0D | score=-6.9±10.5 inv=0.0 played=0.8 lanes=0.7 ddraw=2.6 pts=-7
+  Self-play: 32W/40L/36D | score=-8.1±11.6 inv=0.1 played=1.0 lanes=0.8 ddraw=2.4 pts=-8
+Step: 327680  SPS: 4893  ε=0.793  ret=0.003  score=-54.5  buf=33%  updates=2482
+  vs FROZEN-PPO: 8W/98L/0D  win=8% | score=-15.1 inv=0.0 played=1.9 ddraw=4.5
+  vs Heur:   6W/100L/2D | score=-16.0±13.3 inv=0.0 played=1.9 lanes=1.6 ddraw=4.5 pts=-16
+  vs Random: 106W/1L/0D | score=-15.0±13.3 inv=0.0 played=2.0 lanes=1.6 ddraw=2.5 pts=-15
+  Self-play: 50W/54L/3D | score=-18.2±13.3 inv=0.0 played=2.9 lanes=2.2 ddraw=2.4 pts=-18
+Step: 409600  SPS: 4840  ε=0.741  ret=0.053  score=-53.8  buf=41%  updates=3122
+  vs FROZEN-PPO: 11W/91L/0D  win=11% | score=-8.9 inv=0.0 played=1.0 ddraw=4.5
+  vs Heur:   3W/102L/4D | score=-10.5±13.4 inv=0.0 played=1.1 lanes=1.0 ddraw=4.6 pts=-10
+  vs Random: 109W/1L/0D | score=-8.6±11.6 inv=0.0 played=1.0 lanes=0.8 ddraw=2.8 pts=-9
+  Self-play: 40W/53L/11D | score=-14.9±12.1 inv=0.0 played=1.8 lanes=1.5 ddraw=2.5 pts=-15
+Step: 491520  SPS: 4776  ε=0.689  ret=0.033  score=-52.2  buf=49%  updates=3762
+  vs FROZEN-PPO: 7W/101L/2D  win=6% | score=-9.3 inv=0.0 played=1.1 ddraw=4.4
+  vs Heur:   9W/101L/2D | score=-12.3±13.5 inv=0.0 played=1.3 lanes=1.1 ddraw=4.5 pts=-12
+  vs Random: 99W/1L/0D | score=-7.5±8.7 inv=0.0 played=0.9 lanes=0.8 ddraw=2.5 pts=-8
+  Self-play: 42W/53L/8D | score=-15.3±13.9 inv=0.0 played=1.8 lanes=1.5 ddraw=2.5 pts=-15
+Step: 573440  SPS: 4748  ε=0.637  ret=0.013  score=-48.4  buf=57%  updates=4402
+  vs FROZEN-PPO: 14W/85L/1D  win=14% | score=-8.0 inv=0.0 played=0.8 ddraw=4.3
+  vs Heur:   5W/98L/0D | score=-9.9±12.0 inv=0.0 played=1.0 lanes=0.9 ddraw=4.6 pts=-10
+  vs Random: 99W/1L/0D | score=-6.6±9.2 inv=0.0 played=0.8 lanes=0.7 ddraw=2.6 pts=-7
+  Self-play: 47W/42L/19D | score=-8.8±9.7 inv=0.0 played=1.1 lanes=0.9 ddraw=2.5 pts=-9
+Step: 655360  SPS: 4733  ε=0.585  ret=0.001  score=-49.3  buf=66%  updates=5042
+  vs FROZEN-PPO: 14W/93L/0D  win=13% | score=-6.5 inv=0.0 played=0.8 ddraw=4.2
+  vs Heur:   6W/97L/1D | score=-7.7±10.7 inv=0.0 played=0.8 lanes=0.7 ddraw=4.6 pts=-8
+  vs Random: 103W/0L/0D | score=-3.9±7.5 inv=0.0 played=0.7 lanes=0.5 ddraw=2.5 pts=-4
+  Self-play: 33W/49L/24D | score=-9.8±13.1 inv=0.0 played=1.2 lanes=0.9 ddraw=2.5 pts=-10
+Step: 737280  SPS: 4722  ε=0.533  ret=0.048  score=-42.0  buf=74%  updates=5682
+  vs FROZEN-PPO: 14W/91L/0D  win=13% | score=-3.0 inv=0.0 played=0.5 ddraw=4.5
+  vs Heur:   11W/95L/2D | score=-2.1±6.0 inv=0.0 played=0.2 lanes=0.2 ddraw=4.6 pts=-2
+  vs Random: 105W/1L/0D | score=-3.0±7.2 inv=0.0 played=0.3 lanes=0.3 ddraw=2.4 pts=-3
+  Self-play: 30W/42L/31D | score=-7.5±10.6 inv=0.0 played=0.9 lanes=0.8 ddraw=2.4 pts=-8
+Step: 819200  SPS: 4727  ε=0.481  ret=-0.050  score=-36.2  buf=82%  updates=6322
+  vs FROZEN-PPO: 14W/91L/2D  win=13% | score=-6.1 inv=0.0 played=0.9 ddraw=4.5
+  vs Heur:   4W/93L/3D | score=-7.7±10.7 inv=0.0 played=0.9 lanes=0.8 ddraw=4.5 pts=-8
+  vs Random: 105W/0L/0D | score=-4.4±8.7 inv=0.1 played=0.8 lanes=0.5 ddraw=2.8 pts=-4
+  Self-play: 37W/45L/25D | score=-7.3±9.9 inv=0.0 played=1.2 lanes=0.9 ddraw=2.6 pts=-7
+Step: 901120  SPS: 4718  ε=0.429  ret=-0.055  score=-41.0  buf=90%  updates=6962
+  vs FROZEN-PPO: 22W/81L/1D  win=21% | score=-2.5 inv=0.0 played=0.4 ddraw=4.6
+  vs Heur:   7W/99L/2D | score=-2.5±6.7 inv=0.0 played=0.4 lanes=0.3 ddraw=4.6 pts=-3
+  vs Random: 100W/2L/0D | score=-4.1±8.8 inv=0.0 played=0.5 lanes=0.4 ddraw=2.6 pts=-4
+  Self-play: 16W/33L/58D | score=-4.0±7.0 inv=0.0 played=0.6 lanes=0.4 ddraw=2.5 pts=-4
+Step: 983040  SPS: 4718  ε=0.377  ret=0.017  score=-32.6  buf=98%  updates=7602
+  vs FROZEN-PPO: 18W/83L/0D  win=18% | score=-2.2 inv=0.1 played=0.8 ddraw=4.2
+  vs Heur:   4W/101L/3D | score=-3.5±7.4 inv=0.1 played=0.6 lanes=0.4 ddraw=4.6 pts=-3
+  vs Random: 104W/0L/0D | score=-2.2±5.8 inv=0.0 played=0.5 lanes=0.3 ddraw=2.5 pts=-2
+  Self-play: 25W/41L/38D | score=-7.5±11.7 inv=0.0 played=1.1 lanes=0.8 ddraw=2.5 pts=-7
+Step: 1064960  SPS: 4715  ε=0.326  ret=0.013  score=-27.8  buf=100%  updates=8242
+  vs FROZEN-PPO: 16W/86L/0D  win=16% | score=-4.6 inv=0.1 played=1.5 ddraw=4.4
+  vs Heur:   6W/99L/2D | score=-4.3±8.9 inv=0.1 played=1.1 lanes=0.7 ddraw=4.6 pts=-4
+  vs Random: 101W/0L/0D | score=-3.4±9.5 inv=0.1 played=1.5 lanes=0.8 ddraw=2.7 pts=-3
+  Self-play: 41W/54L/9D | score=-9.8±11.4 inv=0.1 played=1.9 lanes=1.2 ddraw=2.5 pts=-10
+Step: 1146880  SPS: 4717  ε=0.274  ret=-0.042  score=-26.9  buf=100%  updates=8882
+  vs FROZEN-PPO: 21W/86L/0D  win=20% | score=-3.0 inv=0.1 played=1.1 ddraw=4.3
+  vs Heur:   15W/88L/2D | score=-2.9±9.5 inv=0.1 played=1.0 lanes=0.5 ddraw=4.6 pts=-3
+  vs Random: 108W/0L/0D | score=-3.2±9.5 inv=0.1 played=1.6 lanes=0.8 ddraw=2.6 pts=-3
+  Self-play: 42W/49L/13D | score=-5.7±12.0 inv=0.1 played=2.1 lanes=1.1 ddraw=2.5 pts=-6

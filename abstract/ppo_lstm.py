@@ -82,6 +82,20 @@ class PPOConfig:
     """the number of parallel game environments"""
     num_steps: int = 32
     """the number of steps to run in each environment per policy rollout"""
+    force_explore_prob1: float = 0.0
+    """curriculum exploration: prob that an EPISODE forces exactly 1 early-game exploratory
+    (game-specific, e.g. investment) play (0=off). Per-episode dose, not per-step."""
+    force_explore_prob2: float = 0.0
+    """prob that an EPISODE forces exactly 2 such plays, stacked in ONE color (e.g. a double
+    investment) -- the high-value combo the agent never reaches on its own."""
+    force_explore_until: int = 8
+    """only force during the first N decisions of an episode (early game)"""
+    force_explore_anneal_frac: float = 0.5
+    """anneal the force probs linearly to 0 over this fraction of total timesteps,
+    so the perturbation vanishes and does not pollute the final equilibrium"""
+    force_explore_clip: float = 5.0
+    """truncated-IS bound for forced (off-policy) samples: surrogate = -A*min(ratio, this).
+    Bounds the policy update so a near-zero-prob action revives stably (no logit blow-up)."""
     anneal_lr: bool = False
     """Toggle learning rate annealing for policy and value networks"""
     gamma: float = 1.0
@@ -114,8 +128,9 @@ class PPOConfig:
     """coefficient of the value function"""
     max_grad_norm: float = 0.5
     """the maximum norm for the gradient clipping"""
-    target_kl: float = 0.01
-    """the target KL divergence threshold"""
+    target_kl: Optional[float] = 0.01
+    """the target KL divergence threshold; pass None to disable KL early-stop and
+    the KL-adaptive LR (e.g. to use a fixed --anneal-lr schedule instead)."""
     critic_warmup_steps: int = 0
     """freeze actor for this many env steps, only train critic (for pretrained init)"""
     lstm_hidden: int = 128
@@ -359,6 +374,25 @@ class PPOLSTMTrainer:
         Called every log_interval steps during training."""
         pass
 
+    def _forced_actions(self, obs, masks, ep_step):
+        """Curriculum exploration hook. Using the per-episode forcing budget in
+        self._force_budget (and self._force_color for stacking), return a (num_envs,) long
+        tensor of forced actions (-1 = no force), decrementing the budget for envs it forces.
+        Base = no forcing. Subclasses override (e.g. play an investment card)."""
+        return None
+
+    def _resample_force_budget(self, mask, p1, p2):
+        """For envs in `mask` (bool), draw a fresh per-episode forcing budget: 1 play w.p. p1,
+        2 plays (stacked) w.p. p2, else 0. Resets the stacking color to -1 (unset)."""
+        N = self._force_budget.shape[0]
+        dev = self._force_budget.device
+        r = torch.rand(N, device=dev)
+        b = torch.zeros(N, dtype=torch.long, device=dev)
+        b = torch.where(r < p1, torch.ones_like(b), b)
+        b = torch.where((r >= p1) & (r < p1 + p2), torch.full_like(b, 2), b)
+        self._force_budget = torch.where(mask, b, self._force_budget)
+        self._force_color = torch.where(mask, torch.full_like(self._force_color, -1), self._force_color)
+
     def train(self):
         cfg = self.cfg
         agent = self.agent
@@ -391,6 +425,7 @@ class PPOLSTMTrainer:
         dones        = torch.zeros((cfg.num_steps, cfg.num_envs), device=device)
         values       = torch.zeros((cfg.num_steps, cfg.num_envs), device=device)
         action_masks = torch.zeros((cfg.num_steps, cfg.num_envs, agent.num_actions), dtype=torch.bool, device=device)
+        forced_flags = torch.zeros((cfg.num_steps, cfg.num_envs), dtype=torch.bool, device=device)  # curriculum-forced samples
 
         # Detect BatchStepper for zero-copy buffer optimization
         _use_stepper = hasattr(envs, '_stepper') and envs._stepper is not None
@@ -424,6 +459,14 @@ class PPOLSTMTrainer:
 
         next_done = torch.zeros(cfg.num_envs, device=device)
         next_lstm_state = make_lstm_state(agent.lstm_layers, cfg.num_envs, agent.lstm_hidden, device)
+        ep_step = torch.zeros(cfg.num_envs, device=device)  # per-env decisions since episode start
+        # per-episode curriculum-forcing budget (how many forced plays remain this episode) + stack color
+        self._force_budget = torch.zeros(cfg.num_envs, dtype=torch.long, device=device)
+        self._force_color = torch.full((cfg.num_envs,), -1, dtype=torch.long, device=device)
+        _force_on = (cfg.force_explore_prob1 > 0.0) or (cfg.force_explore_prob2 > 0.0)
+        if _force_on:
+            self._resample_force_budget(torch.ones(cfg.num_envs, dtype=torch.bool, device=device),
+                                        cfg.force_explore_prob1, cfg.force_explore_prob2)
 
         global_step = 0
         last_log_step = 0
@@ -467,12 +510,28 @@ class PPOLSTMTrainer:
                 tree_map(lambda buf, val: buf.__setitem__(step, val), obs, next_obs)
                 dones[step] = next_done
                 action_masks[step] = next_masks
+                forced_flags[step] = False
 
                 with torch.no_grad():
+                    in_lstm_state = next_lstm_state
                     action, logprob, _, value, next_lstm_state = compiled_agent.get_action_and_value(
-                        next_obs, action_masks[step], next_lstm_state, next_done
+                        next_obs, action_masks[step], in_lstm_state, next_done
                     )
                     values[step] = value.flatten()
+
+                    # Curriculum exploration: override some early-game actions with forced
+                    # (e.g. investment) actions, recorded with their CURRENT-policy logprob so
+                    # PPO's ratio stays valid and the zeroed-out action probability is revived.
+                    if _force_on:
+                        forced = self._forced_actions(next_obs, action_masks[step], ep_step)
+                        if forced is not None:
+                            ovr = forced >= 0
+                            if ovr.any():
+                                action = torch.where(ovr, forced, action)
+                                forced_flags[step] = ovr
+                                _, logprob, _, _, _ = compiled_agent.get_action_and_value(
+                                    next_obs, action_masks[step], in_lstm_state, next_done, action=action
+                                )
                 actions[step] = action
                 logprobs[step] = logprob
 
@@ -494,6 +553,17 @@ class PPOLSTMTrainer:
                     next_obs   = obs_to_tensor(next_obs_np, device)
                     next_masks = torch.as_tensor(next_masks_np, dtype=torch.bool, device=device)
                     next_done  = torch.Tensor(next_done_np).to(device)
+
+                # advance per-env episode-decision counter (reset envs that just finished)
+                ep_step = (ep_step + 1.0) * (1.0 - next_done)
+                # draw a fresh forcing budget for episodes that just ended (annealed probs)
+                if _force_on:
+                    done_mask = next_done.bool()
+                    if done_mask.any():
+                        frac = min(global_step / max(cfg.force_explore_anneal_frac * cfg.total_timesteps, 1.0), 1.0)
+                        self._resample_force_budget(done_mask,
+                                                    cfg.force_explore_prob1 * (1.0 - frac),
+                                                    cfg.force_explore_prob2 * (1.0 - frac))
 
                 if wandb and wandb.run is not None:
                     if _use_stepper:
@@ -534,6 +604,7 @@ class PPOLSTMTrainer:
             b_returns = returns.reshape(-1)
             b_values = values.reshape(-1)
             b_action_masks = action_masks.reshape((-1, action_masks.shape[-1]))
+            b_forced = forced_flags.reshape(-1)
 
             # ── PPO update (sequential minibatching for LSTM) ────────────
             clipfracs = []
@@ -568,9 +639,14 @@ class PPOLSTMTrainer:
                     ratio = logratio.exp()
 
                     with torch.no_grad():
-                        old_approx_kl = (-logratio).mean()
-                        approx_kl = ((ratio - 1) - logratio).mean()
-                        clipfracs += [((ratio - 1.0).abs() > cfg.clip_coef).float().mean().item()]
+                        # exclude forced (off-policy) samples: their huge ratios would pollute
+                        # the KL estimate and could trigger a false target_kl early-stop
+                        nf = ~b_forced[mb_inds]
+                        lr_kl = logratio[nf] if nf.any() else logratio
+                        r_kl = lr_kl.exp()
+                        old_approx_kl = (-lr_kl).mean()
+                        approx_kl = ((r_kl - 1) - lr_kl).mean()
+                        clipfracs += [((r_kl - 1.0).abs() > cfg.clip_coef).float().mean().item()]
 
                     mb_advantages = b_advantages[mb_inds]
                     if cfg.norm_adv:
@@ -579,7 +655,19 @@ class PPOLSTMTrainer:
                     # Policy loss
                     pg_loss1 = -mb_advantages * ratio
                     pg_loss2 = -mb_advantages * torch.clamp(ratio, 1 - cfg.clip_coef, 1 + cfg.clip_coef)
-                    pg_loss = torch.max(pg_loss1, pg_loss2).mean()
+                    pg_clip = torch.max(pg_loss1, pg_loss2)
+                    # Curriculum-forced samples are off-policy (pi_old ~ 0 for a collapsed action),
+                    # so standard PPO's ratio explodes. Use TRUNCATED importance sampling for them:
+                    # surrogate = -A * min(ratio, c_force). Bounded on both signs of A (stable, no
+                    # logit blow-up), yet still revives the action by up to x c_force per rollout.
+                    mb_forced = b_forced[mb_inds]
+                    if mb_forced.any():
+                        import math as _math
+                        ratio_trunc = torch.clamp(logratio, max=_math.log(cfg.force_explore_clip)).exp()
+                        pg_forced = -mb_advantages * ratio_trunc
+                        pg_loss = torch.where(mb_forced, pg_forced, pg_clip).mean()
+                    else:
+                        pg_loss = pg_clip.mean()
 
                     # Value loss
                     newvalue = newvalue.view(-1)

@@ -233,6 +233,7 @@ def main():
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--lstm-hidden", type=int, default=128)
     parser.add_argument("--hidden-dim", type=int, default=256)
+    parser.add_argument("--mlp-depth", type=int, default=2, help="layers per MLP block (2=original)")
     parser.add_argument("--max-discard-draws", type=int, default=5)
     parser.add_argument("--no-lstm", action="store_true", help="Use feedforward agent (no LSTM)")
     args = parser.parse_args()
@@ -247,7 +248,7 @@ def main():
 
     # Create PPO agent
     agent = LCAgent(lstm_hidden=args.lstm_hidden, hidden_dim=args.hidden_dim,
-                    no_lstm=args.no_lstm).to(device)
+                    no_lstm=args.no_lstm, mlp_depth=args.mlp_depth).to(device)
     print(f"PPO agent params: {sum(p.numel() for p in agent.parameters()):,}")
 
     # Train BC with online data generation

@@ -4,7 +4,7 @@ Lost Cities Q-network and DQN training config.
 Architecture: same encoder as LCAgent but outputs Q-values instead of policy+value.
 """
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 import torch
 import torch.nn as nn
@@ -17,7 +17,7 @@ from .engine import float_dim, NUM_ACTIONS
 @dataclass
 class LCDQNArgs(DQNConfig):
     """Lost Cities DQN arguments."""
-    opponent_mode: Literal["self_play", "random"] = "self_play"
+    opponent_mode: Literal["self_play", "random", "heuristic"] = "self_play"
     new_color_penalty: int = 20
     score_diff_reward: bool = False
     zero_one_reward: bool = False
@@ -32,6 +32,11 @@ class LCDQNArgs(DQNConfig):
     """dense reward uses delta(own - opp) / 30 every step (requires --dense-reward)"""
     dense_opp_penalty: bool = False
     """dense mid-game delta(own)/30 + terminal -opp_score/30 (requires --dense-reward)"""
+    frozen_ppo_path: Optional[str] = None
+    """if set: train as a BEST-RESPONSE against this frozen PPO checkpoint (exploitability test)"""
+    frozen_ppo_hidden: int = 512
+    frozen_ppo_no_lstm: bool = True
+    frozen_ppo_mlp_depth: int = 2
 
 
 class LCQNetwork(BaseQNetwork):
